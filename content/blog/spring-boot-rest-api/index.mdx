@@ -1,0 +1,103 @@
+---
+title: "Building Production-Ready REST APIs with Spring Boot"
+description: "A comprehensive guide to building REST APIs with Spring Boot 3, covering best practices for validation, error handling, and documentation."
+date: "2026-03-20"
+tags: ["java", "spring-boot", "rest-api", "backend"]
+category: "Java"
+draft: false
+featured: false
+---
+
+## Overview
+
+Spring Boot 3 with Java 21 is the current gold standard for building enterprise REST APIs on the JVM. In this guide, we'll build a real-world API from scratch with proper layering, validation, and error handling.
+
+## Project Setup
+
+```xml
+<!-- pom.xml dependencies -->
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-web</artifactId>
+</dependency>
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-validation</artifactId>
+</dependency>
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-data-jpa</artifactId>
+</dependency>
+```
+
+## Domain Model
+
+```java
+@Entity
+@Table(name = "articles")
+public class Article {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @NotBlank
+    @Size(min = 3, max = 255)
+    private String title;
+
+    @NotBlank
+    @Column(columnDefinition = "TEXT")
+    private String content;
+
+    @CreationTimestamp
+    private LocalDateTime createdAt;
+}
+```
+
+## Controller Layer
+
+```java
+@RestController
+@RequestMapping("/api/v1/articles")
+@RequiredArgsConstructor
+public class ArticleController {
+
+    private final ArticleService articleService;
+
+    @GetMapping
+    public Page<ArticleDto> list(
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "20") int size
+    ) {
+        return articleService.findAll(PageRequest.of(page, size));
+    }
+
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    public ArticleDto create(@Valid @RequestBody CreateArticleRequest request) {
+        return articleService.create(request);
+    }
+}
+```
+
+## Global Exception Handling
+
+```java
+@RestControllerAdvice
+public class GlobalExceptionHandler {
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ProblemDetail handleValidation(MethodArgumentNotValidException ex) {
+        var detail = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST);
+        detail.setTitle("Validation Failed");
+        detail.setProperty("errors",
+            ex.getBindingResult().getFieldErrors().stream()
+                .map(e -> e.getField() + ": " + e.getDefaultMessage())
+                .toList()
+        );
+        return detail;
+    }
+}
+```
+
+Spring Boot 3 uses the [RFC 7807 Problem Details](https://datatracker.ietf.org/doc/html/rfc7807) spec via `ProblemDetail` — no more custom error response DTOs.

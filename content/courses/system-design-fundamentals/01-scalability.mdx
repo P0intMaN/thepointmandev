@@ -1,0 +1,42 @@
+---
+title: "01 — Scalability Patterns"
+courseSlug: "system-design-fundamentals"
+lessonNumber: 1
+description: "Learn the difference between vertical and horizontal scaling, and when to use each."
+date: "2026-01-15"
+draft: false
+---
+
+## What is Scalability?
+
+Scalability is the system's ability to handle increased load without degrading performance. There are two primary scaling strategies.
+
+## Vertical Scaling (Scale Up)
+
+Add more resources to a single machine — more CPU, RAM, faster SSDs.
+
+**Pros:** Simple, no code changes, no distributed system complexity.
+
+**Cons:** Hard ceiling (biggest machine money can buy), single point of failure, expensive.
+
+## Horizontal Scaling (Scale Out)
+
+Add more machines and distribute load across them.
+
+**Pros:** Theoretically unlimited, fault tolerant (no single point of failure), cost-effective at scale.
+
+**Cons:** Requires application to be stateless, adds operational complexity, introduces distributed system problems (consistency, coordination).
+
+## Stateless vs Stateful Services
+
+For horizontal scaling to work, services must be **stateless** — any instance must be able to handle any request. Session state moves to external storage (Redis, database).
+
+```
+Request → Load Balancer → [App Server 1]
+                       → [App Server 2]  ← All read/write to shared Redis
+                       → [App Server 3]
+```
+
+## The Twelve-Factor App
+
+The [Twelve-Factor App](https://12factor.net/) methodology codifies stateless, horizontally-scalable service design. Factor VI ("Processes") directly addresses this: *"Execute the app as one or more stateless processes."*

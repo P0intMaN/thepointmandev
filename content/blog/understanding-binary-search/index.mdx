@@ -1,0 +1,92 @@
+---
+title: "Understanding Binary Search: A Deep Dive"
+description: "Binary search is one of the most fundamental algorithms every engineer must master. Let's break it down from first principles."
+date: "2026-04-01"
+tags: ["algorithms", "java", "search"]
+category: "DSA"
+series: "algorithms-fundamentals"
+seriesPart: 1
+featured: true
+draft: false
+---
+
+## What is Binary Search?
+
+Binary search is a divide-and-conquer algorithm that finds a target value in a **sorted** array in `O(log n)` time — dramatically faster than linear search's `O(n)`.
+
+The core insight: at each step, you can **eliminate half the remaining search space** by comparing the target with the middle element.
+
+## The Algorithm
+
+```java
+public int binarySearch(int[] nums, int target) {
+    int left = 0, right = nums.length - 1;
+
+    while (left <= right) {
+        int mid = left + (right - left) / 2; // avoids integer overflow
+
+        if (nums[mid] == target) return mid;
+        if (nums[mid] < target) left = mid + 1;
+        else right = mid - 1;
+    }
+
+    return -1; // target not found
+}
+```
+
+> Note: We use `left + (right - left) / 2` instead of `(left + right) / 2` to prevent integer overflow when `left + right > Integer.MAX_VALUE`.
+
+## Complexity Analysis
+
+| Case | Time | Space |
+|------|------|-------|
+| Best | O(1) | O(1) |
+| Average | O(log n) | O(1) |
+| Worst | O(log n) | O(1) |
+
+## When to Use It
+
+Binary search applies whenever you have:
+
+1. A **sorted** collection
+2. A **monotonic** condition (once the condition flips, it never flips back)
+
+This is why binary search shows up in problems like "find the minimum speed to deliver packages" — not just classic "find element in array".
+
+## Common Pitfalls
+
+- **Off-by-one errors**: Using `left < right` vs `left <= right` changes semantics
+- **Infinite loops**: When `mid` doesn't make progress — always ensure `left` or `right` changes
+- **Unsorted input**: Binary search silently gives wrong answers on unsorted arrays
+
+## Variants
+
+### Lower Bound (first occurrence)
+```java
+public int lowerBound(int[] nums, int target) {
+    int left = 0, right = nums.length;
+    while (left < right) {
+        int mid = left + (right - left) / 2;
+        if (nums[mid] < target) left = mid + 1;
+        else right = mid;
+    }
+    return left;
+}
+```
+
+### Upper Bound (last occurrence + 1)
+```java
+public int upperBound(int[] nums, int target) {
+    int left = 0, right = nums.length;
+    while (left < right) {
+        int mid = left + (right - left) / 2;
+        if (nums[mid] <= target) left = mid + 1;
+        else right = mid;
+    }
+    return left;
+}
+```
+
+## Next Steps
+
+In the next part of this series, we'll look at applying binary search on the **answer space** — a powerful pattern for optimization problems.

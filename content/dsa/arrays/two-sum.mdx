@@ -1,0 +1,70 @@
+---
+title: "Two Sum"
+description: "Given an array of integers and a target sum, return indices of two numbers that add up to the target."
+date: "2026-03-15"
+tags: ["array", "hash-map", "two-pointer"]
+category: "Arrays"
+difficulty: "easy"
+timeComplexity: "O(n)"
+spaceComplexity: "O(n)"
+companies: ["Google", "Amazon", "Meta"]
+leetcodeNumber: 1
+draft: false
+---
+
+## Problem Statement
+
+Given an array of integers `nums` and an integer `target`, return indices of the two numbers such that they add up to `target`.
+
+You may assume that each input would have **exactly one solution**, and you may not use the same element twice.
+
+## Examples
+
+```
+Input: nums = [2,7,11,15], target = 9
+Output: [0,1]
+Explanation: nums[0] + nums[1] = 2 + 7 = 9
+```
+
+```
+Input: nums = [3,2,4], target = 6
+Output: [1,2]
+```
+
+## Approach: Hash Map (One Pass)
+
+The brute force is O(n²) — check every pair. We can do better by storing each number's index in a hash map as we go.
+
+For each `num`, we check if its **complement** (`target - num`) already exists in the map.
+
+```java
+public int[] twoSum(int[] nums, int target) {
+    Map<Integer, Integer> seen = new HashMap<>();
+
+    for (int i = 0; i < nums.length; i++) {
+        int complement = target - nums[i];
+        if (seen.containsKey(complement)) {
+            return new int[]{seen.get(complement), i};
+        }
+        seen.put(nums[i], i);
+    }
+
+    throw new IllegalArgumentException("No solution exists");
+}
+```
+
+## Complexity
+
+| | Time | Space |
+|--|------|-------|
+| Brute Force | O(n²) | O(1) |
+| Hash Map | O(n) | O(n) |
+
+## Key Insight
+
+We trade space for time. The hash map gives us O(1) lookups, turning an O(n²) search into a single O(n) pass.
+
+## Edge Cases
+
+- Duplicate values: `[3, 3]` with target `6` — the map stores the first `3` at index 0, when we see the second `3`, we find the complement `3` is already in the map at index 0.
+- Negative numbers work the same way.
