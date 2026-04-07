@@ -118,10 +118,6 @@ export function DSAFlowGraph({ done, onToggle }: Props) {
     setPan({ x: dragOrigin.current.px + e.clientX - dragOrigin.current.mx, y: dragOrigin.current.py + e.clientY - dragOrigin.current.my });
   }, [dragging]);
   const onMouseUp = useCallback(() => setDragging(false), []);
-  const onWheel = useCallback((e: React.WheelEvent) => {
-    e.preventDefault();
-    setZoom((z) => Math.min(2, Math.max(0.25, z * (e.deltaY > 0 ? 0.92 : 1.09))));
-  }, []);
   const fitView = useCallback(() => {
     if (!containerRef.current) return;
     const { width, height } = containerRef.current.getBoundingClientRect();
@@ -131,6 +127,18 @@ export function DSAFlowGraph({ done, onToggle }: Props) {
   }, []);
   useEffect(() => { fitView(); }, [fitView]);
 
+  // Non-passive wheel handler so preventDefault actually stops page scroll
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const handler = (e: WheelEvent) => {
+      e.preventDefault();
+      setZoom((z) => Math.min(2, Math.max(0.25, z * (e.deltaY > 0 ? 0.92 : 1.09))));
+    };
+    el.addEventListener("wheel", handler, { passive: false });
+    return () => el.removeEventListener("wheel", handler);
+  }, []);
+
   return (
     <div className="relative flex h-[680px] w-full overflow-hidden rounded-[var(--radius-lg)] border border-[var(--color-bg-border)]">
       {/* Dot grid */}
@@ -138,7 +146,7 @@ export function DSAFlowGraph({ done, onToggle }: Props) {
 
       {/* Canvas */}
       <div ref={containerRef} className="absolute inset-0 z-10 select-none" style={{ cursor: dragging ? "grabbing" : "grab" }}
-        onMouseDown={onMouseDown} onMouseMove={onMouseMove} onMouseUp={onMouseUp} onMouseLeave={onMouseUp} onWheel={onWheel}
+        onMouseDown={onMouseDown} onMouseMove={onMouseMove} onMouseUp={onMouseUp} onMouseLeave={onMouseUp}
       >
         <div style={{ transform: `translate(${pan.x}px,${pan.y}px) scale(${zoom})`, transformOrigin: "0 0", width: CANVAS_W, height: CANVAS_H, position: "relative" }}>
 

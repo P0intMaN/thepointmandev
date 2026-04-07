@@ -206,11 +206,6 @@ export function JavaFlowGraph({ done, onToggle }: Props) {
 
   const onMouseUp = useCallback(() => setDragging(false), []);
 
-  const onWheel = useCallback((e: React.WheelEvent) => {
-    e.preventDefault();
-    setZoom((z) => Math.min(2, Math.max(0.25, z * (e.deltaY > 0 ? 0.92 : 1.09))));
-  }, []);
-
   const fitView = useCallback(() => {
     if (!containerRef.current) return;
     const { width, height } = containerRef.current.getBoundingClientRect();
@@ -220,6 +215,17 @@ export function JavaFlowGraph({ done, onToggle }: Props) {
   }, []);
 
   useEffect(() => { fitView(); }, [fitView]);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const handler = (e: WheelEvent) => {
+      e.preventDefault();
+      setZoom((z) => Math.min(2, Math.max(0.25, z * (e.deltaY > 0 ? 0.92 : 1.09))));
+    };
+    el.addEventListener("wheel", handler, { passive: false });
+    return () => el.removeEventListener("wheel", handler);
+  }, []);
 
   return (
     <div className="relative flex h-[680px] w-full overflow-hidden rounded-[var(--radius-lg)] border border-[var(--color-bg-border)]">
@@ -243,7 +249,6 @@ export function JavaFlowGraph({ done, onToggle }: Props) {
         onMouseMove={onMouseMove}
         onMouseUp={onMouseUp}
         onMouseLeave={onMouseUp}
-        onWheel={onWheel}
       >
         <div style={{ transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`, transformOrigin: "0 0", width: CANVAS_W_J, height: CANVAS_H_J, position: "relative" }}>
 
