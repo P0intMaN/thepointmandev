@@ -22,7 +22,7 @@ export function CategoryFilter({
 
   function setParam(key: string, value: string | null) {
     const params = new URLSearchParams(searchParams.toString());
-    params.delete("page"); // reset pagination on filter change
+    params.delete("page");
     if (value) {
       params.set(key, value);
     } else {
@@ -35,18 +35,15 @@ export function CategoryFilter({
     <div className="flex flex-wrap gap-2">
       {/* All */}
       <button
-        onClick={() => {
-          const params = new URLSearchParams();
-          router.push(pathname + (params.toString() ? `?${params}` : ""));
-        }}
+        onClick={() => router.push(pathname)}
         className={cn(
-          "rounded border px-3 py-1 font-mono text-xs transition-colors cursor-pointer",
+          "pixel-badge cursor-pointer transition-colors",
           !currentCategory && !currentTag
             ? "border-[var(--color-accent)] bg-[var(--color-accent-dim)] text-[var(--color-accent)]"
-            : "border-[var(--color-bg-border)] text-[var(--color-text-faint)] hover:border-[var(--color-text-faint)] hover:text-[var(--color-text-muted)]"
+            : "border-[var(--color-bg-border)] text-[var(--color-text-faint)] hover:border-[var(--color-text-muted)] hover:text-[var(--color-text-muted)]"
         )}
       >
-        All
+        ALL
       </button>
 
       {categories.map((cat) => (
@@ -54,28 +51,28 @@ export function CategoryFilter({
           key={cat}
           onClick={() => setParam("category", currentCategory === cat ? null : cat)}
           className={cn(
-            "rounded border px-3 py-1 font-mono text-xs transition-colors cursor-pointer",
+            "pixel-badge cursor-pointer transition-colors",
             currentCategory === cat
               ? "border-[var(--color-accent)] bg-[var(--color-accent-dim)] text-[var(--color-accent)]"
-              : "border-[var(--color-bg-border)] text-[var(--color-text-faint)] hover:border-[var(--color-text-faint)] hover:text-[var(--color-text-muted)]"
+              : "border-[var(--color-bg-border)] text-[var(--color-text-faint)] hover:border-[var(--color-text-muted)] hover:text-[var(--color-text-muted)]"
           )}
         >
-          {cat}
+          {cat.toUpperCase()}
         </button>
       ))}
 
       {tags.length > 0 && (
         <>
-          <span className="px-1 text-[var(--color-text-faint)]">/</span>
+          <span className="px-1 font-pixel text-[7px] text-[var(--color-text-faint)] self-center">|</span>
           {tags.map((tag) => (
             <button
               key={tag}
               onClick={() => setParam("tag", currentTag === tag ? null : tag)}
               className={cn(
-                "rounded border px-3 py-1 font-mono text-xs transition-colors cursor-pointer",
+                "pixel-badge cursor-pointer transition-colors",
                 currentTag === tag
                   ? "border-[var(--color-accent)] bg-[var(--color-accent-dim)] text-[var(--color-accent)]"
-                  : "border-[var(--color-bg-border)] text-[var(--color-text-faint)] hover:border-[var(--color-text-faint)] hover:text-[var(--color-text-muted)]"
+                  : "border-[var(--color-bg-border)] text-[var(--color-text-faint)] hover:border-[var(--color-text-muted)] hover:text-[var(--color-text-muted)]"
               )}
             >
               #{tag}

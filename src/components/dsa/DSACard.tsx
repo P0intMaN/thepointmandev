@@ -11,19 +11,11 @@ export function DSACard({ problem }: DSACardProps) {
   const { frontmatter, slug } = problem;
 
   return (
-    <article className="group relative flex flex-col gap-3 overflow-hidden rounded-[var(--radius-lg)] border border-[var(--color-bg-border)] bg-[var(--color-bg-elevated)] p-5 transition-all duration-300 hover:border-[#67e8f9]/40">
-      {/* Shimmer — cyan for DSA */}
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-[#67e8f9]/60 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-      {/* Corner glow */}
-      <div
-        className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-500 group-hover:opacity-100"
-        style={{ background: "radial-gradient(ellipse at 50% 0%, rgba(103,232,249,0.06) 0%, transparent 65%)" }}
-      />
-
+    <article className="pixel-card flex flex-col gap-3 bg-[var(--color-bg-elevated)] p-5">
       {/* Difficulty + category */}
       <div className="flex items-center gap-3">
         <DifficultyBadge difficulty={frontmatter.difficulty} />
-        <span className="font-mono text-xs text-[var(--color-text-faint)]">
+        <span className="font-pixel text-[7px] text-[var(--color-info)]">
           {frontmatter.category}
         </span>
         {frontmatter.leetcodeNumber && (
@@ -36,27 +28,27 @@ export function DSACard({ problem }: DSACardProps) {
       {/* Title */}
       <Link
         href={`/dsa/${slug}`}
-        className="text-lg font-semibold text-[var(--color-text-primary)] no-underline hover:text-[#67e8f9] hover:no-underline"
+        className="font-mono text-base font-semibold text-[var(--color-text-primary)] no-underline hover:text-[var(--color-info)] hover:no-underline"
       >
         {frontmatter.title}
       </Link>
 
       {/* Description */}
-      <p className="text-sm text-[var(--color-text-muted)]">{frontmatter.description}</p>
+      <p className="font-mono text-sm text-[var(--color-text-muted)]">{frontmatter.description}</p>
 
       {/* Complexity */}
-      <div className="flex gap-3 font-mono text-xs">
+      <div className="flex gap-4 font-mono text-xs">
         <span className="text-[var(--color-text-faint)]">
-          time: <span className="text-green-400">{frontmatter.timeComplexity}</span>
+          T: <span className="text-[var(--color-accent)]">{frontmatter.timeComplexity}</span>
         </span>
         <span className="text-[var(--color-text-faint)]">
-          space: <span className="text-cyan-400">{frontmatter.spaceComplexity}</span>
+          S: <span className="text-[var(--color-info)]">{frontmatter.spaceComplexity}</span>
         </span>
       </div>
 
       {/* Tags */}
       {frontmatter.tags.length > 0 && (
-        <div className="flex flex-wrap gap-1.5">
+        <div className="mt-auto flex flex-wrap gap-1.5 pt-2">
           {frontmatter.tags.slice(0, 4).map((tag) => (
             <TagBadge key={tag} tag={tag} />
           ))}

@@ -10,56 +10,50 @@ interface CalloutProps {
   children: ReactNode;
 }
 
-const config: Record<
-  CalloutType,
-  { icon: typeof Info; borderColor: string; bgColor: string; labelColor: string; label: string }
-> = {
+const config: Record<CalloutType, { icon: typeof Info; borderColor: string; labelColor: string; shadow: string; label: string }> = {
   info: {
     icon: Info,
-    borderColor: "border-l-[var(--color-info)]",
-    bgColor: "bg-cyan-950/20",
+    borderColor: "border-[var(--color-info)]",
     labelColor: "text-[var(--color-info)]",
+    shadow: "4px 4px 0 0 #004466",
     label: "NOTE",
   },
   warning: {
     icon: AlertTriangle,
-    borderColor: "border-l-[var(--color-warning)]",
-    bgColor: "bg-amber-950/20",
+    borderColor: "border-[var(--color-warning)]",
     labelColor: "text-[var(--color-warning)]",
+    shadow: "4px 4px 0 0 #553d00",
     label: "WARNING",
   },
   danger: {
     icon: AlertCircle,
-    borderColor: "border-l-[var(--color-danger)]",
-    bgColor: "bg-red-950/20",
+    borderColor: "border-[var(--color-danger)]",
     labelColor: "text-[var(--color-danger)]",
+    shadow: "4px 4px 0 0 #550000",
     label: "DANGER",
   },
   tip: {
     icon: Lightbulb,
-    borderColor: "border-l-[var(--color-accent)]",
-    bgColor: "bg-green-950/20",
-    labelColor: "text-[var(--color-accent)]",
+    borderColor: "border-[var(--color-tip)]",
+    labelColor: "text-[var(--color-tip)]",
+    shadow: "4px 4px 0 0 #330066",
     label: "TIP",
   },
 };
 
 export function Callout({ type = "info", title, children }: CalloutProps) {
-  const { icon: Icon, borderColor, bgColor, labelColor, label } = config[type];
+  const { icon: Icon, borderColor, labelColor, shadow, label } = config[type];
 
   return (
     <div
-      className={cn(
-        "my-6 border-l-[3px] py-3 pl-4 pr-4",
-        borderColor,
-        bgColor
-      )}
+      className={cn("my-6 border-2 bg-[var(--color-bg-elevated)] p-4", borderColor)}
+      style={{ boxShadow: shadow }}
     >
-      <div className={cn("mb-1 flex items-center gap-2 font-mono text-xs font-semibold", labelColor)}>
-        <Icon size={12} />
+      <div className={cn("mb-2 flex items-center gap-2 font-pixel text-[8px]", labelColor)}>
+        <Icon size={11} />
         <span>{title ?? label}</span>
       </div>
-      <div className="text-sm text-[var(--color-text-muted)] [&>p]:m-0">{children}</div>
+      <div className="font-mono text-sm text-[var(--color-text-muted)] [&>p]:m-0">{children}</div>
     </div>
   );
 }

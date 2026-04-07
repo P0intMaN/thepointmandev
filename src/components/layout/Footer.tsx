@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { GitFork, Rss } from "lucide-react";
 
-// LinkedIn SVG (not in lucide-react)
 function LinkedInIcon({ size = 16 }: { size?: number }) {
   return (
     <svg
@@ -20,44 +19,48 @@ export function Footer() {
   const year = new Date().getFullYear();
 
   return (
-    <footer className="mt-24 border-t border-[var(--color-bg-border)]">
-      <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-4 py-8 sm:flex-row sm:px-6">
-        <p className="font-mono text-xs text-[var(--color-text-faint)]">
-          © {year}{" "}
-          <Link
-            href="/"
-            className="text-[var(--color-text-faint)] no-underline hover:text-[var(--color-accent)] hover:no-underline"
-          >
-            thepointman.dev
-          </Link>{" "}
-          — built with Next.js
-        </p>
-        <div className="flex items-center gap-4">
-          <Link
-            href="/rss.xml"
-            aria-label="RSS Feed"
-            className="text-[var(--color-text-faint)] transition-colors hover:text-[var(--color-accent)] no-underline"
-          >
-            <Rss size={16} />
-          </Link>
-          <a
-            href="https://www.linkedin.com/in/pratheek-unni/"
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="LinkedIn"
-            className="text-[var(--color-text-faint)] transition-colors hover:text-[#0a66c2] no-underline"
-          >
-            <LinkedInIcon size={15} />
-          </a>
-          <a
-            href="https://github.com/P0intMaN"
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="GitHub"
-            className="text-[var(--color-text-faint)] transition-colors hover:text-[var(--color-text-secondary)] no-underline"
-          >
-            <GitFork size={16} />
-          </a>
+    <footer className="mt-24 border-t-2 border-[var(--color-bg-border)]">
+      <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
+        {/* Pixel divider art */}
+        <div className="mb-6 font-pixel text-[7px] text-[var(--color-text-faint)] overflow-hidden whitespace-nowrap">
+          ════════════════════════════════════════════════════════════════════════
+        </div>
+
+        <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
+          <div>
+            <p className="font-pixel text-[8px] text-[var(--color-accent)]">THEPOINTMAN.DEV</p>
+            <p className="mt-1 font-mono text-xs text-[var(--color-text-faint)]">
+              © {year} — built with Next.js + ♥
+            </p>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <Link
+              href="/rss.xml"
+              aria-label="RSS Feed"
+              className="text-[var(--color-text-faint)] transition-colors hover:text-[var(--color-accent)] no-underline"
+            >
+              <Rss size={16} />
+            </Link>
+            <a
+              href="https://www.linkedin.com/in/pratheek-unni/"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="LinkedIn"
+              className="text-[var(--color-text-faint)] transition-colors hover:text-[var(--color-info)] no-underline"
+            >
+              <LinkedInIcon size={15} />
+            </a>
+            <a
+              href="https://github.com/P0intMaN"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="GitHub"
+              className="text-[var(--color-text-faint)] transition-colors hover:text-[var(--color-text-secondary)] no-underline"
+            >
+              <GitFork size={16} />
+            </a>
+          </div>
         </div>
       </div>
     </footer>

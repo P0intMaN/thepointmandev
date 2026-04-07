@@ -12,17 +12,25 @@ export default function CoursesPage() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
-      <div className="mb-10">
-        <h1 className="mb-2 font-mono text-3xl font-bold text-[var(--color-text-primary)]">
-          Courses<span className="text-[var(--color-accent)]">_</span>
+      <div className="mb-10 border-b-2 border-[var(--color-bg-border)] pb-8">
+        <p className="mb-3 font-pixel text-[7px] text-[var(--color-warning)]">// COURSES</p>
+        <h1 className="mb-3 font-pixel text-lg leading-relaxed text-[var(--color-text-primary)]">
+          Learning Paths
+          <span
+            className="inline-block w-[12px] h-[18px] bg-[var(--color-warning)] ml-[4px] align-middle"
+            style={{ animation: "pixel-blink 1s steps(1) infinite" }}
+          />
         </h1>
-        <p className="text-[var(--color-text-muted)]">
-          Structured, multi-part learning paths. Start from scratch or jump to where you need to be.
+        <p className="font-mono text-sm text-[var(--color-text-muted)]">
+          Structured, multi-part courses. Start from scratch or jump to where you need to be.
         </p>
       </div>
 
       {courses.length === 0 ? (
-        <p className="text-[var(--color-text-faint)]">No courses yet — check back soon.</p>
+        <div className="border-2 border-[var(--color-bg-border)] p-8 text-center">
+          <p className="font-pixel text-[8px] text-[var(--color-text-faint)]">COMING SOON</p>
+          <p className="mt-2 font-mono text-xs text-[var(--color-text-faint)]">No courses yet — check back soon.</p>
+        </div>
       ) : (
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {courses.map((course) => {

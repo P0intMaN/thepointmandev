@@ -15,34 +15,36 @@ export function CourseSidebar({ lessons, courseSlug, courseTitle }: CourseSideba
   const pathname = usePathname();
 
   return (
-    <nav aria-label="Course lessons" className="space-y-1">
+    <nav aria-label="Course lessons">
       <Link
         href={`/courses/${courseSlug}`}
-        className="mb-3 block font-mono text-xs font-semibold uppercase tracking-widest text-[var(--color-text-faint)] no-underline hover:text-[var(--color-text-muted)] hover:no-underline"
+        className="mb-4 block border-b-2 border-[var(--color-bg-border)] pb-3 font-pixel text-[7px] text-[var(--color-warning)] no-underline hover:text-[var(--color-accent)] hover:no-underline"
       >
-        ← {courseTitle}
+        ◀ {courseTitle.toUpperCase()}
       </Link>
-      {lessons.map((lesson) => {
-        const href = `/courses/${courseSlug}/${lesson.slug}`;
-        const active = pathname === href;
-        return (
-          <Link
-            key={lesson.slug}
-            href={href}
-            className={cn(
-              "flex items-start gap-2 rounded px-2 py-2 text-sm no-underline transition-colors hover:no-underline",
-              active
-                ? "bg-[var(--color-accent-dim)] text-[var(--color-accent)]"
-                : "text-[var(--color-text-muted)] hover:bg-[var(--color-bg-muted)] hover:text-[var(--color-text-primary)]"
-            )}
-          >
-            <span className="mt-0.5 shrink-0 font-mono text-xs text-[var(--color-text-faint)]">
-              {String(lesson.frontmatter.lessonNumber).padStart(2, "0")}
-            </span>
-            <span className="leading-snug">{lesson.frontmatter.title}</span>
-          </Link>
-        );
-      })}
+      <div className="space-y-0.5">
+        {lessons.map((lesson) => {
+          const href = `/courses/${courseSlug}/${lesson.slug}`;
+          const active = pathname === href;
+          return (
+            <Link
+              key={lesson.slug}
+              href={href}
+              className={cn(
+                "flex items-start gap-2 px-2 py-2 font-mono text-xs no-underline transition-colors hover:no-underline",
+                active
+                  ? "border-l-2 border-[var(--color-warning)] bg-[var(--color-bg-muted)] text-[var(--color-warning)]"
+                  : "border-l-2 border-transparent text-[var(--color-text-muted)] hover:border-[var(--color-bg-border)] hover:text-[var(--color-text-primary)]"
+              )}
+            >
+              <span className="mt-0.5 shrink-0 font-pixel text-[7px] text-[var(--color-text-faint)]">
+                {String(lesson.frontmatter.lessonNumber).padStart(2, "0")}
+              </span>
+              <span className="leading-snug">{lesson.frontmatter.title}</span>
+            </Link>
+          );
+        })}
+      </div>
     </nav>
   );
 }

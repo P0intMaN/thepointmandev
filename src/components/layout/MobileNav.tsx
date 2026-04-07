@@ -19,18 +19,14 @@ interface MobileNavProps {
 export function MobileNav({ links, open, onClose }: MobileNavProps) {
   const pathname = usePathname();
 
-  // Close on route change
   useEffect(() => {
     onClose();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname]);
 
-  // Prevent scroll when open
   useEffect(() => {
     document.body.style.overflow = open ? "hidden" : "";
-    return () => {
-      document.body.style.overflow = "";
-    };
+    return () => { document.body.style.overflow = ""; };
   }, [open]);
 
   if (!open) return null;
@@ -38,12 +34,9 @@ export function MobileNav({ links, open, onClose }: MobileNavProps) {
   return (
     <div className="fixed inset-0 z-40 md:hidden">
       {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-        onClick={onClose}
-      />
+      <div className="absolute inset-0 bg-black/80" onClick={onClose} />
       {/* Drawer */}
-      <nav className="absolute left-0 right-0 top-14 border-b border-[var(--color-bg-border)] bg-[var(--color-bg-elevated)] px-4 py-4">
+      <nav className="absolute left-0 right-0 top-14 border-b-2 border-[var(--color-bg-border)] bg-[var(--color-bg-base)] px-4 py-2" style={{ boxShadow: "0 8px 0 0 #2e2e2e" }}>
         {links.map((link) => {
           const active = pathname === link.href || pathname.startsWith(link.href + "/");
           return (
@@ -51,13 +44,12 @@ export function MobileNav({ links, open, onClose }: MobileNavProps) {
               key={link.href}
               href={link.href}
               className={cn(
-                "flex items-center py-3 text-base font-medium border-b border-[var(--color-bg-border)] last:border-0 no-underline hover:no-underline transition-colors",
-                active
-                  ? "text-[var(--color-accent)]"
-                  : "text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
+                "flex items-center gap-3 border-b-2 border-[var(--color-bg-border)] py-4 font-pixel text-[10px] no-underline hover:no-underline last:border-0",
+                active ? "text-[var(--color-accent)]" : "text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
               )}
             >
-              {link.label}
+              {active && <span className="text-[var(--color-accent)]">▶</span>}
+              {link.label.toUpperCase()}
             </Link>
           );
         })}

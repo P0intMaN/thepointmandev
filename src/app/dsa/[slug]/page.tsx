@@ -20,10 +20,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const result = getDSAProblemBySlug(slug);
   if (!result) return {};
-  return {
-    title: result.frontmatter.title,
-    description: result.frontmatter.description,
-  };
+  return { title: result.frontmatter.title, description: result.frontmatter.description };
 }
 
 export default async function DSAProblemPage({ params }: Props) {
@@ -39,16 +36,15 @@ export default async function DSAProblemPage({ params }: Props) {
       <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
         <div className="lg:grid lg:grid-cols-[1fr_220px] lg:gap-12">
           <article>
-            {/* Header */}
-            <header className="mb-8 border-b border-[var(--color-bg-border)] pb-8">
-              <div className="mb-3 flex flex-wrap items-center gap-3">
+            <header className="mb-8 border-b-2 border-[var(--color-bg-border)] pb-8">
+              <div className="mb-4 flex flex-wrap items-center gap-3">
                 <DifficultyBadge difficulty={frontmatter.difficulty} />
-                <span className="font-mono text-xs text-[var(--color-text-faint)]">
+                <span className="font-pixel text-[7px] text-[var(--color-info)]">
                   {frontmatter.category}
                 </span>
                 {frontmatter.leetcodeNumber && (
                   <span className="font-mono text-xs text-[var(--color-text-faint)]">
-                    LeetCode #{frontmatter.leetcodeNumber}
+                    LC #{frontmatter.leetcodeNumber}
                   </span>
                 )}
                 <span className="ml-auto font-mono text-xs text-[var(--color-text-faint)]">
@@ -56,20 +52,22 @@ export default async function DSAProblemPage({ params }: Props) {
                 </span>
               </div>
 
-              <h1 className="mb-3 text-3xl font-bold text-[var(--color-text-primary)]">
+              <h1 className="mb-3 font-mono text-2xl font-bold text-[var(--color-text-primary)] sm:text-3xl">
                 {frontmatter.title}
               </h1>
-              <p className="mb-5 text-[var(--color-text-muted)]">{frontmatter.description}</p>
+              <p className="mb-5 font-mono text-sm leading-relaxed text-[var(--color-text-muted)]">
+                {frontmatter.description}
+              </p>
 
-              {/* Complexity */}
-              <div className="mb-4 flex flex-wrap gap-4 font-mono text-sm">
-                <span className="flex items-center gap-2 rounded border border-green-900 bg-green-950/30 px-3 py-1">
-                  <span className="text-[var(--color-text-faint)] text-xs">time</span>
-                  <span className="text-green-400">{frontmatter.timeComplexity}</span>
+              {/* Complexity — pixel boxes */}
+              <div className="mb-5 flex flex-wrap gap-3">
+                <span className="flex items-center gap-2 border-2 border-[var(--color-accent)] px-3 py-1" style={{ boxShadow: "2px 2px 0 0 #003d10" }}>
+                  <span className="font-pixel text-[7px] text-[var(--color-text-faint)]">TIME</span>
+                  <span className="font-mono text-sm text-[var(--color-accent)]">{frontmatter.timeComplexity}</span>
                 </span>
-                <span className="flex items-center gap-2 rounded border border-cyan-900 bg-cyan-950/30 px-3 py-1">
-                  <span className="text-[var(--color-text-faint)] text-xs">space</span>
-                  <span className="text-cyan-400">{frontmatter.spaceComplexity}</span>
+                <span className="flex items-center gap-2 border-2 border-[var(--color-info)] px-3 py-1" style={{ boxShadow: "2px 2px 0 0 #004466" }}>
+                  <span className="font-pixel text-[7px] text-[var(--color-text-faint)]">SPACE</span>
+                  <span className="font-mono text-sm text-[var(--color-info)]">{frontmatter.spaceComplexity}</span>
                 </span>
               </div>
 
@@ -77,10 +75,7 @@ export default async function DSAProblemPage({ params }: Props) {
               {frontmatter.companies && frontmatter.companies.length > 0 && (
                 <div className="mb-4 flex flex-wrap gap-2">
                   {frontmatter.companies.map((c) => (
-                    <span
-                      key={c}
-                      className="rounded border border-[var(--color-bg-border)] bg-[var(--color-bg-muted)] px-2 py-0.5 font-mono text-xs text-[var(--color-text-faint)]"
-                    >
+                    <span key={c} className="pixel-badge border-[var(--color-bg-border)] text-[var(--color-text-faint)]">
                       {c}
                     </span>
                   ))}

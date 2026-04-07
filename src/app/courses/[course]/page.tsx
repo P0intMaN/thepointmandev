@@ -31,28 +31,27 @@ export default async function CourseOverviewPage({ params }: Props) {
 
   const lessons = getCourseLessons(slug);
 
-  // Read course intro content from _meta.mdx
   const metaPath = path.join(process.cwd(), "content", "courses", slug, "_meta.mdx");
   const source = fs.readFileSync(metaPath, "utf-8");
   const { content } = parseFrontmatter(source, CourseFrontmatterSchema, metaPath);
 
-  const levelColors = {
-    beginner: "text-green-400 border-green-900 bg-green-950/30",
-    intermediate: "text-amber-400 border-amber-900 bg-amber-950/30",
-    advanced: "text-red-400 border-red-900 bg-red-950/30",
+  const levelStyles: Record<string, string> = {
+    beginner: "border-[var(--color-accent)] text-[var(--color-accent)]",
+    intermediate: "border-[var(--color-warning)] text-[var(--color-warning)]",
+    advanced: "border-[var(--color-danger)] text-[var(--color-danger)]",
   };
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6">
       {/* Header */}
-      <div className="mb-10 border-b border-[var(--color-bg-border)] pb-8">
-        <p className="mb-2 font-mono text-xs text-[var(--color-text-faint)]">COURSE</p>
-        <h1 className="mb-4 text-3xl font-bold leading-tight text-[var(--color-text-primary)]">
+      <div className="mb-10 border-b-2 border-[var(--color-bg-border)] pb-8">
+        <p className="mb-3 font-pixel text-[7px] text-[var(--color-warning)]">// COURSE</p>
+        <h1 className="mb-4 font-mono text-2xl font-bold leading-tight text-[var(--color-text-primary)] sm:text-3xl">
           {course.frontmatter.title}
         </h1>
         <div className="flex flex-wrap items-center gap-3">
-          <span className={`rounded border px-2 py-0.5 font-mono text-xs ${levelColors[course.frontmatter.level]}`}>
-            {course.frontmatter.level}
+          <span className={`pixel-badge ${levelStyles[course.frontmatter.level]}`}>
+            {course.frontmatter.level.toUpperCase()}
           </span>
           <span className="font-mono text-xs text-[var(--color-text-faint)]">
             {lessons.length} lessons
@@ -65,27 +64,26 @@ export default async function CourseOverviewPage({ params }: Props) {
 
       {/* Lessons list */}
       <div className="mt-10">
-        <h2 className="mb-4 font-mono text-sm font-semibold uppercase tracking-widest text-[var(--color-text-faint)]">
-          Lessons
-        </h2>
+        <p className="mb-4 font-pixel text-[8px] text-[var(--color-warning)]">// LESSONS</p>
         <ol className="space-y-2">
           {lessons.map((lesson) => (
             <li key={lesson.slug}>
               <Link
                 href={`/courses/${slug}/${lesson.slug}`}
-                className="flex items-start gap-4 rounded-[var(--radius-lg)] border border-[var(--color-bg-border)] bg-[var(--color-bg-elevated)] p-4 no-underline transition-colors hover:border-[var(--color-text-faint)] hover:no-underline"
+                className="pixel-card flex items-start gap-4 bg-[var(--color-bg-elevated)] p-4 no-underline hover:no-underline"
               >
-                <span className="mt-0.5 shrink-0 font-mono text-xs text-[var(--color-text-faint)]">
+                <span className="mt-0.5 shrink-0 font-pixel text-[8px] text-[var(--color-warning)]">
                   {String(lesson.frontmatter.lessonNumber).padStart(2, "0")}
                 </span>
                 <div>
-                  <p className="text-sm font-medium text-[var(--color-text-primary)]">
+                  <p className="font-mono text-sm font-medium text-[var(--color-text-primary)]">
                     {lesson.frontmatter.title}
                   </p>
-                  <p className="mt-0.5 text-xs text-[var(--color-text-faint)]">
+                  <p className="mt-0.5 font-mono text-xs text-[var(--color-text-faint)]">
                     {lesson.frontmatter.description}
                   </p>
                 </div>
+                <span className="ml-auto self-center font-mono text-xs text-[var(--color-text-faint)]">▶</span>
               </Link>
             </li>
           ))}
@@ -96,9 +94,9 @@ export default async function CourseOverviewPage({ params }: Props) {
         <div className="mt-8">
           <Link
             href={`/courses/${slug}/${lessons[0].slug}`}
-            className="inline-flex items-center gap-2 rounded-[var(--radius-md)] bg-[var(--color-accent)] px-5 py-2.5 font-mono text-sm font-semibold text-[var(--color-bg-base)] no-underline transition-colors hover:bg-[var(--color-accent-muted)] hover:no-underline"
+            className="pixel-btn inline-flex items-center gap-2 bg-[var(--color-accent)] px-6 py-3 font-pixel text-[9px] text-[var(--color-bg-base)] no-underline hover:no-underline"
           >
-            Start Learning →
+            START LEARNING ▶
           </Link>
         </div>
       )}

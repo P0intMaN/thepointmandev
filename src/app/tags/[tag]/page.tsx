@@ -24,11 +24,13 @@ export default async function TagPage({ params }: Props) {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
-      <div className="mb-10">
-        <h1 className="mb-2 font-mono text-3xl font-bold text-[var(--color-text-primary)]">
-          <span className="text-[var(--color-accent)]">#</span>{decoded}
+      <div className="mb-10 border-b-2 border-[var(--color-bg-border)] pb-8">
+        <p className="mb-3 font-pixel text-[7px] text-[var(--color-tip)]">// TAG</p>
+        <h1 className="mb-3 font-pixel text-lg leading-relaxed">
+          <span className="text-[var(--color-tip)]">#</span>
+          <span className="text-[var(--color-text-primary)]">{decoded}</span>
         </h1>
-        <p className="text-[var(--color-text-muted)]">{posts.length} articles</p>
+        <p className="font-mono text-sm text-[var(--color-text-muted)]">{posts.length} articles</p>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

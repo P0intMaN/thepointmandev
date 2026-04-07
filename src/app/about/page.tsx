@@ -6,39 +6,52 @@ export const metadata: Metadata = {
   description: "About Pratheek Unni — software engineer, writer, and the person behind thepointman.dev.",
 };
 
-const recommendedReading = [
+const sections = [
   {
-    category: "Start with DSA",
-    description: "Build your algorithmic foundation from scratch.",
+    label: "Blog",
+    color: "var(--color-accent)",
+    desc: "Long-form technical articles. Deep dives, tutorials, and architectural discussions.",
+    href: "/blog",
+    cta: "BROWSE ARTICLES ▶",
+  },
+  {
+    label: "Courses",
+    color: "var(--color-warning)",
+    desc: "Structured, multi-part learning paths you can follow end-to-end.",
+    href: "/courses",
+    cta: "VIEW COURSES ▶",
+  },
+  {
+    label: "DSA",
+    color: "var(--color-info)",
+    desc: "Data structures and algorithms, explained with working code and complexity analysis.",
     href: "/dsa",
-    label: "Browse problems →",
+    cta: "SOLVE PROBLEMS ▶",
   },
-  {
-    category: "System Design",
-    description: "Learn how to design scalable distributed systems.",
-    href: "/courses/system-design-fundamentals",
-    label: "Take the course →",
-  },
-  {
-    category: "Java & Spring Boot",
-    description: "In-depth production-ready Java engineering articles.",
-    href: "/blog?category=Java",
-    label: "Read articles →",
-  },
+];
+
+const recommended = [
+  { step: "01", label: "Start with DSA", desc: "Build your algorithmic foundation from scratch.", href: "/dsa", color: "var(--color-info)" },
+  { step: "02", label: "System Design", desc: "Learn how to design scalable distributed systems.", href: "/courses/system-design-fundamentals", color: "var(--color-warning)" },
+  { step: "03", label: "Java & Spring Boot", desc: "In-depth production-ready Java engineering articles.", href: "/blog?category=Java", color: "var(--color-accent)" },
 ];
 
 export default function AboutPage() {
   return (
     <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
       {/* Header */}
-      <header className="mb-12 border-b border-[var(--color-bg-border)] pb-10">
-        <p className="mb-2 font-mono text-xs text-[var(--color-text-faint)]">$ whoami</p>
-        <h1 className="mb-1 font-mono text-4xl font-black">
+      <header className="mb-12 border-b-2 border-[var(--color-bg-border)] pb-10">
+        <p className="mb-3 font-pixel text-[7px] text-[var(--color-text-faint)]">$ whoami</p>
+        <h1 className="mb-1 font-pixel text-base leading-relaxed">
           <span className="text-[var(--color-text-primary)]">thepointman</span>
-          <span className="text-[var(--color-accent)]">.dev_</span>
+          <span className="text-[var(--color-accent)]">.dev</span>
+          <span
+            className="inline-block w-[10px] h-[14px] bg-[var(--color-accent)] ml-[3px] align-middle"
+            style={{ animation: "pixel-blink 1s steps(1) infinite" }}
+          />
         </h1>
-        <p className="mb-5 font-mono text-sm text-[var(--color-text-faint)]">Pratheek Unni</p>
-        <p className="mb-5 text-lg leading-relaxed text-[var(--color-text-muted)]">
+        <p className="mb-5 font-pixel text-[8px] text-[var(--color-text-faint)]">Pratheek Unni</p>
+        <p className="mb-6 font-mono text-sm leading-relaxed text-[var(--color-text-muted)]">
           Senior software engineer. I write the kind of technical content I wish existed when I was
           learning — no hand-waving, no incomplete examples, no marketing fluff.
         </p>
@@ -48,78 +61,67 @@ export default function AboutPage() {
             href="https://github.com/P0intMaN"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 rounded border border-[var(--color-bg-border)] bg-[var(--color-bg-elevated)] px-3 py-1.5 font-mono text-xs text-[var(--color-text-faint)] no-underline transition-colors hover:border-[var(--color-text-faint)] hover:text-[var(--color-text-secondary)] hover:no-underline"
+            className="pixel-btn border-[var(--color-bg-border)] px-3 py-1.5 font-mono text-xs text-[var(--color-text-faint)] no-underline hover:border-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:no-underline"
           >
-            <span>⌥</span> github/P0intMaN
+            ⌥ github/P0intMaN
           </a>
           <a
             href="https://www.linkedin.com/in/pratheek-unni/"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 rounded border border-[var(--color-bg-border)] bg-[var(--color-bg-elevated)] px-3 py-1.5 font-mono text-xs text-[var(--color-text-faint)] no-underline transition-colors hover:border-[var(--color-text-faint)] hover:text-[#0a66c2] hover:no-underline"
+            className="pixel-btn border-[var(--color-bg-border)] px-3 py-1.5 font-mono text-xs text-[var(--color-text-faint)] no-underline hover:border-[var(--color-info)] hover:text-[var(--color-info)] hover:no-underline"
           >
-            <span>in</span> pratheek-unni
+            in pratheek-unni
           </a>
         </div>
       </header>
 
       {/* What you'll find */}
       <section className="mb-12">
-        <h2 className="mb-6 font-mono text-sm font-semibold uppercase tracking-widest text-[var(--color-text-faint)]">
-          What you&apos;ll find here
-        </h2>
-        <div className="space-y-4">
-          {[
-            ["Blog", "Long-form technical articles. Deep dives, tutorials, and architectural discussions.", "/blog"],
-            ["Courses", "Structured, multi-part learning paths you can follow end-to-end.", "/courses"],
-            ["DSA", "Data structures and algorithms, explained with working code and complexity analysis.", "/dsa"],
-          ].map(([title, desc, href]) => (
+        <p className="mb-6 font-pixel text-[8px] text-[var(--color-accent)]">// WHAT_YOU_FIND</p>
+        <div className="space-y-3">
+          {sections.map((s) => (
             <Link
-              key={href}
-              href={href}
-              className="flex gap-4 rounded-[var(--radius-lg)] border border-[var(--color-bg-border)] bg-[var(--color-bg-elevated)] p-5 no-underline transition-colors hover:border-[var(--color-text-faint)] hover:no-underline"
+              key={s.href}
+              href={s.href}
+              className="pixel-card flex items-start gap-4 bg-[var(--color-bg-elevated)] p-5 no-underline hover:no-underline"
             >
+              <span className="font-pixel text-[8px] shrink-0 mt-1" style={{ color: s.color }}>{s.label}</span>
+              <div className="flex-1">
+                <p className="font-mono text-sm text-[var(--color-text-muted)]">{s.desc}</p>
+              </div>
+              <span className="font-pixel text-[7px] self-center shrink-0" style={{ color: s.color }}>▶</span>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      {/* Recommended path — jules.google style numbered steps */}
+      <section className="mb-12">
+        <p className="mb-6 font-pixel text-[8px] text-[var(--color-warning)]">// WHERE_TO_START</p>
+        <div className="space-y-3">
+          {recommended.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className="pixel-card flex items-start gap-4 bg-[var(--color-bg-elevated)] p-5 no-underline hover:no-underline"
+            >
+              <span className="font-pixel text-[14px] shrink-0" style={{ color: item.color }}>
+                {item.step}
+              </span>
               <div>
-                <p className="mb-1 font-mono text-sm font-semibold text-[var(--color-accent)]">
-                  {title}
-                </p>
-                <p className="text-sm text-[var(--color-text-muted)]">{desc}</p>
+                <p className="mb-1 font-pixel text-[8px]" style={{ color: item.color }}>{item.label}</p>
+                <p className="font-mono text-sm text-[var(--color-text-muted)]">{item.desc}</p>
               </div>
             </Link>
           ))}
         </div>
       </section>
 
-      {/* Where to start */}
-      <section className="mb-12">
-        <h2 className="mb-6 font-mono text-sm font-semibold uppercase tracking-widest text-[var(--color-text-faint)]">
-          Where to start
-        </h2>
-        <div className="space-y-4">
-          {recommendedReading.map((item) => (
-            <div
-              key={item.href}
-              className="rounded-[var(--radius-lg)] border border-[var(--color-bg-border)] bg-[var(--color-bg-elevated)] p-5"
-            >
-              <p className="mb-1 font-mono text-xs text-[var(--color-text-faint)]">{item.category}</p>
-              <p className="mb-3 text-sm text-[var(--color-text-muted)]">{item.description}</p>
-              <Link
-                href={item.href}
-                className="font-mono text-sm text-[var(--color-accent)] no-underline hover:text-[var(--color-accent-muted)] hover:no-underline"
-              >
-                {item.label}
-              </Link>
-            </div>
-          ))}
-        </div>
-      </section>
-
       {/* Philosophy */}
       <section>
-        <h2 className="mb-4 font-mono text-sm font-semibold uppercase tracking-widest text-[var(--color-text-faint)]">
-          Philosophy
-        </h2>
-        <div className="space-y-4 text-[var(--color-text-muted)]">
+        <p className="mb-4 font-pixel text-[8px] text-[var(--color-text-faint)]">// PHILOSOPHY</p>
+        <div className="space-y-4 font-mono text-sm leading-relaxed text-[var(--color-text-muted)]">
           <p>
             Good engineering writing is rare. Most content either stops at &ldquo;hello world&rdquo; or
             drowns you in abstraction without showing the code. This blog tries to live in between:

@@ -25,10 +25,7 @@ export function TableOfContents({ items }: TableOfContentsProps) {
           }
         }
       },
-      {
-        rootMargin: "0px 0px -70% 0px",
-        threshold: 1.0,
-      }
+      { rootMargin: "0px 0px -70% 0px", threshold: 1.0 }
     );
 
     for (const id of headingIds) {
@@ -37,33 +34,34 @@ export function TableOfContents({ items }: TableOfContentsProps) {
     }
     observers.push(observer);
 
-    return () => {
-      for (const obs of observers) obs.disconnect();
-    };
+    return () => { for (const obs of observers) obs.disconnect(); };
   }, [items]);
 
   if (items.length === 0) return null;
 
   return (
-    <nav aria-label="Table of contents" className="space-y-1">
-      <p className="mb-3 font-mono text-xs font-semibold uppercase tracking-widest text-[var(--color-text-faint)]">
-        On this page
+    <nav aria-label="Table of contents">
+      <p className="mb-3 border-b-2 border-[var(--color-bg-border)] pb-2 font-pixel text-[7px] text-[var(--color-accent)]">
+        // ON_THIS_PAGE
       </p>
-      {items.map((item) => (
-        <a
-          key={item.id}
-          href={`#${item.id}`}
-          className={cn(
-            "block py-0.5 text-sm leading-snug transition-colors no-underline hover:no-underline",
-            item.level === 3 && "pl-3",
-            activeId === item.id
-              ? "text-[var(--color-accent)] font-medium"
-              : "text-[var(--color-text-faint)] hover:text-[var(--color-text-muted)]"
-          )}
-        >
-          {item.text}
-        </a>
-      ))}
+      <div className="space-y-0.5">
+        {items.map((item) => (
+          <a
+            key={item.id}
+            href={`#${item.id}`}
+            className={cn(
+              "block py-1 font-mono text-xs leading-snug transition-colors no-underline hover:no-underline",
+              item.level === 3 && "pl-3",
+              activeId === item.id
+                ? "text-[var(--color-accent)]"
+                : "text-[var(--color-text-faint)] hover:text-[var(--color-text-muted)]"
+            )}
+          >
+            {activeId === item.id && <span className="mr-1">▶</span>}
+            {item.text}
+          </a>
+        ))}
+      </div>
     </nav>
   );
 }

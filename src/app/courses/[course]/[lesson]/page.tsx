@@ -61,14 +61,16 @@ export default async function LessonPage({ params }: Props) {
 
           {/* Lesson content */}
           <article>
-            <header className="mb-8 border-b border-[var(--color-bg-border)] pb-6">
-              <p className="mb-1 font-mono text-xs text-[var(--color-text-faint)]">
-                Lesson {frontmatter.lessonNumber}
+            <header className="mb-8 border-b-2 border-[var(--color-bg-border)] pb-6">
+              <p className="mb-2 font-pixel text-[7px] text-[var(--color-warning)]">
+                LESSON {String(frontmatter.lessonNumber).padStart(2, "0")}
               </p>
-              <h1 className="text-2xl font-bold text-[var(--color-text-primary)] sm:text-3xl">
+              <h1 className="font-mono text-2xl font-bold text-[var(--color-text-primary)] sm:text-3xl">
                 {frontmatter.title}
               </h1>
-              <p className="mt-2 text-[var(--color-text-muted)]">{frontmatter.description}</p>
+              <p className="mt-2 font-mono text-sm leading-relaxed text-[var(--color-text-muted)]">
+                {frontmatter.description}
+              </p>
             </header>
 
             <MDXContent source={content} />

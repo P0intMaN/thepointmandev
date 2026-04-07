@@ -31,11 +31,16 @@ export default async function BlogPage({ searchParams }: BlogPageProps) {
   return (
     <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
       {/* Header */}
-      <div className="mb-10">
-        <h1 className="mb-2 font-mono text-3xl font-bold text-[var(--color-text-primary)]">
-          Blog<span className="text-[var(--color-accent)]">_</span>
+      <div className="mb-10 border-b-2 border-[var(--color-bg-border)] pb-8">
+        <p className="mb-3 font-pixel text-[7px] text-[var(--color-accent)]">// BLOG</p>
+        <h1 className="mb-3 font-pixel text-lg leading-relaxed text-[var(--color-text-primary)]">
+          Articles
+          <span
+            className="inline-block w-[12px] h-[18px] bg-[var(--color-accent)] ml-[4px] align-middle"
+            style={{ animation: "pixel-blink 1s steps(1) infinite" }}
+          />
         </h1>
-        <p className="text-[var(--color-text-muted)]">
+        <p className="font-mono text-sm text-[var(--color-text-muted)]">
           {allPosts.length} articles on software engineering, algorithms, and system design.
         </p>
       </div>
@@ -54,13 +59,21 @@ export default async function BlogPage({ searchParams }: BlogPageProps) {
 
       {/* Results */}
       {filtered.length === 0 ? (
-        <p className="text-[var(--color-text-faint)]">No articles match this filter.</p>
-      ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {filtered.map((post) => (
-            <ArticleCard key={post.slug} post={post} />
-          ))}
+        <div className="border-2 border-[var(--color-bg-border)] p-8 text-center">
+          <p className="font-pixel text-[8px] text-[var(--color-text-faint)]">NO RESULTS FOUND</p>
+          <p className="mt-2 font-mono text-xs text-[var(--color-text-faint)]">No articles match this filter.</p>
         </div>
+      ) : (
+        <>
+          <p className="mb-4 font-pixel text-[7px] text-[var(--color-text-faint)]">
+            {filtered.length} RESULTS
+          </p>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {filtered.map((post) => (
+              <ArticleCard key={post.slug} post={post} />
+            ))}
+          </div>
+        </>
       )}
     </div>
   );
