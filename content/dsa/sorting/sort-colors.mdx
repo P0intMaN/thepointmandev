@@ -1,0 +1,100 @@
+---
+title: "Sort Colors"
+description: "Sort an array of 0s, 1s, and 2s in-place in one pass (Dutch National Flag problem)."
+date: "2026-04-08"
+tags: ["sorting", "two-pointers", "array"]
+category: "Sorting"
+difficulty: "medium"
+timeComplexity: "O(n)"
+spaceComplexity: "O(1)"
+companies: ["Amazon", "Google", "Microsoft", "Facebook"]
+leetcodeNumber: 75
+draft: false
+---
+
+## Problem Statement
+
+Given an array `nums` with values 0, 1, and 2 (representing colors red, white, and blue), sort it in-place so all 0s come first, then 1s, then 2s. Use O(1) space and at most one pass.
+
+```
+Input:  nums = [2,0,2,1,1,0]
+Output: [0,0,1,1,2,2]
+
+Input:  nums = [2,0,1]
+Output: [0,1,2]
+```
+
+## Approach: Dutch National Flag — O(n), O(1)
+
+Three pointers:
+- `low`: all elements before `low` are 0
+- `mid`: current element to process
+- `high`: all elements after `high` are 2
+
+```java
+public void sortColors(int[] nums) {
+    int low = 0, mid = 0, high = nums.length - 1;
+
+    while (mid <= high) {
+        if (nums[mid] == 0) {
+            swap(nums, low++, mid++); // 0 goes to front
+        } else if (nums[mid] == 1) {
+            mid++;                    // 1 is in correct position
+        } else {
+            swap(nums, mid, high--);  // 2 goes to back (don't increment mid!)
+        }
+    }
+}
+
+private void swap(int[] nums, int i, int j) {
+    int tmp = nums[i]; nums[i] = nums[j]; nums[j] = tmp;
+}
+```
+
+**Why not increment `mid` after swapping with `high`?** The element swapped from `high` to `mid` hasn't been processed yet — it could be 0, 1, or 2. We must examine it before moving forward.
+
+**When swapping with `low`**: `nums[low]` is always 1 (since `mid` is already past the 0s region), so after swapping, `nums[mid]` becomes 1 and we can safely increment `mid`.
+
+## Trace: `[2,0,2,1,1,0]`
+
+```
+low=0, mid=0, high=5
+nums[0]=2 → swap(0,5) → [0,0,2,1,1,2], high=4
+nums[0]=0 → swap(0,0) → [0,0,2,1,1,2], low=1, mid=1
+nums[1]=0 → swap(1,1) → no change, low=2, mid=2
+nums[2]=2 → swap(2,4) → [0,0,1,1,2,2], high=3
+nums[2]=1 → mid=3
+nums[3]=1 → mid=4 > high=3, done
+Result: [0,0,1,1,2,2] ✓
+```
+
+## Generalization: k-Way Partition
+
+For k colors (not just 3), counting sort is simpler: count frequencies of each color, then fill the array.
+
+```java
+// Counting sort: O(n + k) time, O(k) space
+int[] count = new int[k];
+for (int x : nums) count[x]++;
+int idx = 0;
+for (int color = 0; color < k; color++)
+    while (count[color]-- > 0) nums[idx++] = color;
+```
+
+## Complexity
+
+| Approach | Time | Space | Passes |
+|---|---|---|---|
+| **Dutch National Flag** | **O(n)** | **O(1)** | **1** |
+| Two-pass counting sort | O(n) | O(k) | 2 |
+| Built-in sort | O(n log n) | O(log n) | — |
+
+## Key Insight
+
+The Dutch National Flag algorithm is the canonical three-way partitioning technique. It processes each element exactly once and maintains the invariant: `[0..low-1]` = all 0s, `[low..mid-1]` = all 1s, `[high+1..n-1]` = all 2s. The region `[mid..high]` is unprocessed.
+
+## Edge Cases
+
+- **All same color**: trivially sorted, algorithm processes each element once
+- **Already sorted**: no swaps needed, O(n) comparisons
+- **Only two colors**: two of the three branches are never taken

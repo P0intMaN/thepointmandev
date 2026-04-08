@@ -1,0 +1,113 @@
+---
+title: "Critical Connections in a Network"
+description: "Find all critical connections (bridges) whose removal increases the number of connected components."
+date: "2026-04-08"
+tags: ["advanced-graphs", "graph", "dfs", "bridge-finding"]
+category: "Advanced Graphs"
+difficulty: "hard"
+timeComplexity: "O(V + E)"
+spaceComplexity: "O(V + E)"
+companies: ["Amazon", "Google", "Facebook", "LinkedIn"]
+leetcodeNumber: 1192
+draft: false
+---
+
+## Problem Statement
+
+There are `n` servers numbered `0` to `n-1` connected by `connections[i] = [a, b]`. A **critical connection** is one that, if removed, makes some servers unable to communicate. Return all critical connections.
+
+```
+Input:  n = 4, connections = [[0,1],[1,2],[2,0],[1,3]]
+Output: [[1,3]]
+Explanation: Removing [1,3] disconnects server 3.
+```
+
+## Approach: Tarjan's Bridge-Finding Algorithm — O(V + E)
+
+Two key values per node:
+- `disc[u]`: discovery time (order node was first visited)
+- `low[u]`: the smallest discovery time reachable from the subtree rooted at `u` (including back edges)
+
+An edge `(u, v)` (tree edge, `v` is child of `u`) is a **bridge** if `low[v] > disc[u]`. This means the subtree under `v` has no back edge reaching `u` or above — so removing `(u,v)` disconnects the graph.
+
+```java
+public List<List<Integer>> criticalConnections(int n, List<List<Integer>> connections) {
+    List<Integer>[] graph = new List[n];
+    for (int i = 0; i < n; i++) graph[i] = new ArrayList<>();
+    for (List<Integer> c : connections) {
+        graph[c.get(0)].add(c.get(1));
+        graph[c.get(1)].add(c.get(0));
+    }
+
+    int[] disc = new int[n], low = new int[n];
+    boolean[] visited = new boolean[n];
+    List<List<Integer>> bridges = new ArrayList<>();
+
+    // Start DFS from node 0 (graph is connected)
+    dfs(graph, 0, -1, disc, low, visited, bridges, new int[]{0});
+
+    return bridges;
+}
+
+private void dfs(List<Integer>[] graph, int u, int parent,
+                 int[] disc, int[] low, boolean[] visited,
+                 List<List<Integer>> bridges, int[] timer) {
+    visited[u] = true;
+    disc[u] = low[u] = timer[0]++;
+
+    for (int v : graph[u]) {
+        if (!visited[v]) {
+            dfs(graph, v, u, disc, low, visited, bridges, timer);
+            low[u] = Math.min(low[u], low[v]);
+
+            // Bridge condition: subtree at v can't reach u or above
+            if (low[v] > disc[u]) {
+                bridges.add(Arrays.asList(u, v));
+            }
+        } else if (v != parent) {
+            // Back edge: update low[u] with disc[v]
+            low[u] = Math.min(low[u], disc[v]);
+        }
+    }
+}
+```
+
+## Key Values Explained
+
+For the example `[0,1],[1,2],[2,0],[1,3]`:
+
+```
+DFS from 0: 0→1→2→(back to 0)→(return to 1)→3
+
+disc: [0, 1, 2, 3]
+low:  [0, 0, 0, 3]
+
+Edge (1,3): low[3]=3 > disc[1]=1 → BRIDGE ✓
+Edge (0,1): low[1]=0 = disc[0]=0 → not bridge (1→2→0 back edge)
+```
+
+## The `low[]` Array
+
+`low[u]` = minimum of:
+1. `disc[u]` itself
+2. `disc[w]` for all back edges `(u,w)` (w is an ancestor)
+3. `low[v]` for all children `v` of `u` in DFS tree
+
+After a child `v` returns: `low[u] = min(low[u], low[v])`. This propagates reachability up the tree.
+
+## Complexity
+
+| | Time | Space |
+|---|---|---|
+| **Tarjan's bridge finding** | **O(V + E)** | **O(V + E)** |
+| Brute force (remove each edge, check connectivity) | O(E · (V + E)) | O(V + E) |
+
+## Key Insight
+
+`low[v] > disc[u]` means the entire subtree rooted at `v` is only connected to the rest of the graph through the edge `(u, v)`. There's no "escape route" via back edges — so `(u, v)` is a bridge.
+
+## Edge Cases
+
+- **Multiple edges between same pair**: the edge from child to parent check `v != parent` might need a parent-edge-index check for multigraphs
+- **Single bridge**: graph is biconnected except for this one bridge
+- **Fully biconnected graph**: no bridges (every edge is in a cycle)

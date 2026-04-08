@@ -1,0 +1,106 @@
+---
+title: "House Robber III"
+description: "Maximize robbery from a binary tree where adjacent nodes cannot both be robbed."
+date: "2026-04-08"
+tags: ["advanced-dp", "tree-dp", "tree", "dfs"]
+category: "Advanced DP"
+difficulty: "medium"
+timeComplexity: "O(n)"
+spaceComplexity: "O(h)"
+companies: ["Amazon", "Google", "Facebook"]
+leetcodeNumber: 337
+draft: false
+---
+
+## Problem Statement
+
+The thief has found a binary tree neighborhood where each node contains money. The constraint: you cannot rob two directly connected nodes (parent-child). Find the maximum amount you can rob.
+
+```
+Input:  root = [3,2,3,null,3,null,1]
+Output: 7   (rob root 3, then 3 and 1)
+
+Input:  root = [3,4,5,1,3,null,1]
+Output: 9   (rob 4 and 5)
+```
+
+## Approach: Tree DP — O(n), O(h)
+
+For each node, compute two values:
+- `rob`: max money if we **rob** this node (can't rob children)
+- `skip`: max money if we **skip** this node (children can be robbed or skipped)
+
+```java
+public int rob(TreeNode root) {
+    int[] result = dfs(root);
+    return Math.max(result[0], result[1]);
+}
+
+// Returns [rob, skip] for the subtree rooted at node
+private int[] dfs(TreeNode node) {
+    if (node == null) return new int[]{0, 0};
+
+    int[] left = dfs(node.left);
+    int[] right = dfs(node.right);
+
+    // Rob this node: can't rob children
+    int rob = node.val + left[1] + right[1];
+
+    // Skip this node: children can be either robbed or skipped
+    int skip = Math.max(left[0], left[1]) + Math.max(right[0], right[1]);
+
+    return new int[]{rob, skip};
+}
+```
+
+**`left[0]`** = max if left child is robbed.
+**`left[1]`** = max if left child is skipped.
+
+When we rob the current node, we must skip children → use `left[1]` and `right[1]`.
+When we skip the current node, each child independently picks the better option.
+
+## Comparison: House Robber Trilogy
+
+| | Structure | DP Type |
+|---|---|---|
+| House Robber I (#198) | Linear array | 1D DP |
+| House Robber II (#213) | Circular array | 1D DP ×2 (two passes) |
+| **House Robber III (#337)** | **Binary tree** | **Tree DP** |
+
+## House Robber II
+
+For a circular array (first and last are adjacent), run 1D DP twice:
+1. Rob elements `[0..n-2]` (exclude last)
+2. Rob elements `[1..n-1]` (exclude first)
+Return the max of both.
+
+```java
+public int robCircular(int[] nums) {
+    if (nums.length == 1) return nums[0];
+    return Math.max(
+        robRange(nums, 0, nums.length - 2),
+        robRange(nums, 1, nums.length - 1)
+    );
+}
+
+private int robRange(int[] nums, int start, int end) {
+    int prev2 = 0, prev1 = 0;
+    for (int i = start; i <= end; i++) {
+        int curr = Math.max(prev1, prev2 + nums[i]);
+        prev2 = prev1; prev1 = curr;
+    }
+    return prev1;
+}
+```
+
+## Key Insight
+
+Tree DP generalizes 1D DP to tree structures. The key is defining a state vector that captures all information the parent needs — here, `[rob, skip]`. Return the pair from each subtree and let the parent combine them optimally.
+
+The avoid-HashMap optimization (returning an array instead of memoizing with a HashMap) makes this O(n) time and O(h) space (call stack).
+
+## Edge Cases
+
+- **Single node**: rob = node.val, no children
+- **All same values**: greedy doesn't work — DP handles it
+- **Skewed tree (linked list)**: same as House Robber I

@@ -1,0 +1,63 @@
+---
+title: "Meeting Rooms"
+description: "Determine if a person can attend all meetings (no overlapping intervals)."
+date: "2026-04-08"
+tags: ["intervals", "greedy", "sorting"]
+category: "Intervals"
+difficulty: "easy"
+timeComplexity: "O(n log n)"
+spaceComplexity: "O(1)"
+companies: ["Amazon", "Google", "Facebook", "Bloomberg"]
+leetcodeNumber: 252
+draft: false
+---
+
+## Problem Statement
+
+Given an array of meeting time intervals where `intervals[i] = [start_i, end_i]`, determine if a person could attend all meetings.
+
+```
+Input:  intervals = [[0,30],[5,10],[15,20]]
+Output: false  ([0,30] overlaps with [5,10] and [15,20])
+
+Input:  intervals = [[7,10],[2,4]]
+Output: true   (no overlap)
+```
+
+## Approach: Sort + Check Adjacent — O(n log n)
+
+Sort by start time. Check if any meeting starts before the previous one ends.
+
+```java
+public boolean canAttendMeetings(int[][] intervals) {
+    Arrays.sort(intervals, (a, b) -> a[0] - b[0]); // sort by start
+
+    for (int i = 1; i < intervals.length; i++) {
+        if (intervals[i][0] < intervals[i-1][1]) {
+            return false; // overlap: next starts before current ends
+        }
+    }
+    return true;
+}
+```
+
+**Overlap condition**: `next.start < prev.end` (strict less-than: if `next.start == prev.end`, they merely touch, not overlap).
+
+## Comparison: Meeting Rooms I vs II
+
+| | Meeting Rooms I (#252) | Meeting Rooms II (#253) |
+|---|---|---|
+| Question | Can one person attend all? | Minimum rooms needed? |
+| Answer type | boolean | integer |
+| Approach | Sort + check adjacent | Min heap / coordinate sweep |
+| Time | O(n log n) | O(n log n) |
+
+## Key Insight
+
+After sorting by start time, you only need to check each meeting against the immediately preceding one. If they don't overlap, no earlier meeting can overlap with it either (since all earlier meetings end even sooner).
+
+## Edge Cases
+
+- **0 or 1 meeting**: always can attend → return true
+- **Touching meetings** `[1,3],[3,5]`: `3 < 3` is false → no overlap → true
+- **Identical intervals** `[1,2],[1,2]`: `1 < 2` → overlap → false

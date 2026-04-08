@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { getAllDSAPatterns, getAllDSAProblems } from "@/lib/mdx/getAllContent";
+import { getAllDSAProblems } from "@/lib/mdx/getAllContent";
 import { getDSAProblemBySlug, getDSAPatternBySlug } from "@/lib/mdx/getBySlug";
 import { DifficultyBadge } from "@/components/dsa/DifficultyBadge";
 import { TagBadge } from "@/components/blog/TagBadge";

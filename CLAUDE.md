@@ -134,6 +134,7 @@ Located in `content/dsa/arrays/`. Written interactively — one problem at a tim
 - ✅ `_meta.mdx` — build/update/query/lazy/BIT templates
 - ✅ `range-sum-query-mutable.mdx` — #307
 - ✅ `count-of-smaller-numbers.mdx` — #315
+- ✅ `falling-squares.mdx` — #699
 
 **Monotonic Stack / Deque section** (order: 20):
 - ✅ `_meta.mdx` — next greater template, deque sliding window template
@@ -144,6 +145,7 @@ Located in `content/dsa/arrays/`. Written interactively — one problem at a tim
 
 **Greedy section** (ordered by LeetCode number):
 - ✅ `jump-game.mdx` — #55
+- ✅ `jump-game-ii.mdx` — #45
 - ✅ `merge-intervals.mdx` — #56
 - ✅ `gas-station.mdx` — #134
 - ✅ `candy.mdx` — #135
@@ -153,27 +155,84 @@ Located in `content/dsa/arrays/`. Written interactively — one problem at a tim
 **Dijkstra's Algorithm section** (order: 22):
 - ✅ `network-delay-time.mdx` — #743
 - ✅ `cheapest-flights-within-k-stops.mdx` — #787
+- ✅ `path-with-minimum-effort.mdx` — #1631
 
 **Bellman-Ford / SPFA section** (order: 23):
 - ✅ `_meta.mdx` — Bellman-Ford, hop-limited, SPFA, negative cycle detection
-- ✅ `network-delay-time-bellman.mdx` — negative cycle detection + arbitrage
+- ✅ `network-delay-time-bellman.mdx` — negative cycle detection
+- ✅ `arbitrage-detection.mdx` — arbitrage via log-transform + Bellman-Ford
+
+**Minimum Spanning Tree section** (order: 27):
+- ✅ `_meta.mdx` — Kruskal's (sort+UF) and Prim's (min heap) templates
+- ✅ `min-cost-to-connect-all-points.mdx` — #1584
 
 **Bit Manipulation section** (order: 24):
 - ✅ `_meta.mdx` — core bit ops, XOR properties, bitmask subsets, Brian Kernighan
 - ✅ `single-number.mdx` — #136 (+ variants #137, #260)
-- ✅ `number-of-1-bits.mdx` — #191 (+ counting bits #338)
+- ✅ `number-of-1-bits.mdx` — #191
+- ✅ `counting-bits.mdx` — #338
 - ✅ `missing-number.mdx` — #268
 - ✅ `reverse-bits.mdx` — #190
+- ✅ `sum-of-two-integers.mdx` — #371
 
 **Math & Number Theory section** (order: 25):
 - ✅ `_meta.mdx` — GCD, sieve, fast exp, modular arithmetic
 - ✅ `count-primes.mdx` — #204
 - ✅ `pow-x-n.mdx` — #50
+- ✅ `happy-number.mdx` — #202
+- ✅ `gcd-of-strings.mdx` — #1071
+- ✅ `integer-to-roman.mdx` — #12
+
+**String Algorithms section** (order: 28):
+- ✅ `_meta.mdx` — KMP, Rabin-Karp, palindrome expand, anagram detection
+- ✅ `find-all-anagrams-in-a-string.mdx` — #438
+- ✅ `longest-palindromic-substring.mdx` — #5
+- ✅ `repeated-dna-sequences.mdx` — #187
+- ✅ `implement-strstr.mdx` — #28
 
 **Intervals section** (order: 26):
 - ✅ `_meta.mdx` — merge template, overlap detection, coordinate sweep
 - ✅ `insert-interval.mdx` — #57
 - ✅ `merge-intervals.mdx` — #56
+- ✅ `non-overlapping-intervals.mdx` — #435
+- ✅ `meeting-rooms-i.mdx` — #252
+- ✅ `meeting-rooms-ii.mdx` (also in greedy) — #253
+
+**Matrix / Grid Problems section** (order: 30):
+- ✅ `_meta.mdx` — rotation, spiral, direction arrays, cellular automata
+- ✅ `spiral-matrix.mdx` — #54
+- ✅ `rotate-image.mdx` — #48
+- ✅ `game-of-life.mdx` — #289
+- ✅ `set-matrix-zeroes.mdx` — #73
+
+**Advanced DP section** (order: 31):
+- ✅ `_meta.mdx` — Interval DP, Tree DP, Bitmask DP templates
+- ✅ `palindrome-partitioning-ii.mdx` — #132
+- ✅ `house-robber-iii.mdx` — #337 (+ House Robber II #213)
+- ✅ `burst-balloons.mdx` — #312
+
+**Sorting Algorithms section** (order: 32):
+- ✅ `_meta.mdx` — Merge Sort, Quick Sort, QuickSelect, Dutch National Flag
+- ✅ `sort-colors.mdx` — #75
+
+**Divide and Conquer section** (order: 34):
+- ✅ `_meta.mdx` — Master Theorem, Count Inversions, template
+
+**Advanced Graph Algorithms section** (order: 35):
+- ✅ `_meta.mdx` — Bridges, Articulation Points, SCC, Eulerian Path (Hierholzer's)
+- ✅ `critical-connections-in-a-network.mdx` — #1192
+- ✅ `reconstruct-itinerary.mdx` — #332
+
+**Additional problems added across sections:**
+- ✅ `dp-1d/word-break.mdx` — #139
+- ✅ `dp-1d/decode-ways.mdx` — #91
+- ✅ `dp-1d/maximum-product-subarray.mdx` — #152
+- ✅ `dp-2d/burst-balloons.mdx` — #312
+- ✅ `trees/binary-tree-right-side-view.mdx` — #199
+- ✅ `trees/construct-binary-tree-from-preorder-and-inorder.mdx` — #105
+- ✅ `linked-list/reorder-list.mdx` — #143
+- ✅ `greedy/jump-game-ii.mdx` — #45
+- ✅ `dijkstra/path-with-minimum-effort.mdx` — #1631
 
 **Stack section** (ordered by LeetCode number):
 - ✅ `valid-parentheses.mdx` — #20
@@ -192,6 +251,20 @@ Located in `content/dsa/arrays/`. Written interactively — one problem at a tim
 - ✅ `sliding-window-maximum.mdx` — #239
 
 **Source of truth:** `~/Downloads/Senior_Interview_MasterSheet.xlsx`, sheet "🧩 DSA Patterns". Problems are ordered by LeetCode number within each pattern section.
+
+**Reading the Excel sheet** (use openpyxl in Python with UTF-8 stdout):
+```bash
+python -c "
+import openpyxl, sys, io
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+wb = openpyxl.load_workbook('C:/Users/prath/Downloads/Senior_Interview_MasterSheet.xlsx', read_only=True, data_only=True)
+ws = [s for s in wb if 'DSA' in s.title][0]
+for row in ws.rows:
+    vals = [str(c.value) if c.value else '' for c in row]
+    if vals[0].strip().isdigit() or vals[1].strip():
+        print(f'{vals[0]:4} | {vals[1]:45} | {vals[5]}')
+" 2>&1
+```
 
 **Write-up format** (follow this structure for every problem):
 1. Frontmatter with `leetcodeNumber` (controls sort order), `difficulty`, `timeComplexity`, `spaceComplexity`, `companies`, `tags`

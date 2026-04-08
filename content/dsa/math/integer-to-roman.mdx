@@ -1,0 +1,104 @@
+---
+title: "Integer to Roman"
+description: "Convert an integer to its Roman numeral representation."
+date: "2026-04-08"
+tags: ["math", "string", "greedy"]
+category: "Math"
+difficulty: "medium"
+timeComplexity: "O(1)"
+spaceComplexity: "O(1)"
+companies: ["Amazon", "Google", "Facebook", "Bloomberg"]
+leetcodeNumber: 12
+draft: false
+---
+
+## Problem Statement
+
+Given an integer, convert it to a Roman numeral. Roman numerals use symbols: I, V, X, L, C, D, M.
+
+| Symbol | Value |
+|---|---|
+| I | 1 |
+| IV | 4 |
+| V | 5 |
+| IX | 9 |
+| X | 10 |
+| XL | 40 |
+| L | 50 |
+| XC | 90 |
+| C | 100 |
+| CD | 400 |
+| D | 500 |
+| CM | 900 |
+| M | 1000 |
+
+```
+Input:  num = 3749
+Output: "MMMDCCXLIX"
+
+Input:  num = 58
+Output: "LVIII"   (L=50, V=5, III=3)
+```
+
+## Approach: Greedy — Largest Symbol First
+
+Use a lookup table of all symbol/value pairs in descending order. Greedily subtract the largest symbol that fits.
+
+```java
+public String intToRoman(int num) {
+    int[] values =    {1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1};
+    String[] symbols = {"M","CM","D","CD","C","XC","L","XL","X","IX","V","IV","I"};
+
+    StringBuilder sb = new StringBuilder();
+    for (int i = 0; i < values.length; i++) {
+        while (num >= values[i]) {
+            sb.append(symbols[i]);
+            num -= values[i];
+        }
+    }
+    return sb.toString();
+}
+```
+
+**Trace** num = 3749:
+- 3749 ÷ 1000 = 3 → "MMM", num=749
+- 749 ÷ 500 = 1 → "D", num=249
+- 249 ÷ 100 = 2 → "CC", num=49
+- 49 ÷ 40 = 1 → "XL", num=9
+- 9 ÷ 9 = 1 → "IX", num=0
+- Result: "MMMDCCXLIX" ✓
+
+## Why Include Subtractive Pairs (IV, IX, ...)?
+
+Roman numerals use subtractive notation: `IV = 4`, not `IIII`. Including these pairs in the lookup table with the right precedence handles them automatically. No special-casing needed.
+
+## Inverse: Roman to Integer (#13)
+
+```java
+public int romanToInt(String s) {
+    Map<Character, Integer> map = new HashMap<>();
+    map.put('I', 1); map.put('V', 5); map.put('X', 10);
+    map.put('L', 50); map.put('C', 100); map.put('D', 500); map.put('M', 1000);
+
+    int total = 0, prev = 0;
+    for (int i = s.length() - 1; i >= 0; i--) {
+        int curr = map.get(s.charAt(i));
+        if (curr < prev) total -= curr; // subtractive case (IV, IX, etc.)
+        else total += curr;
+        prev = curr;
+    }
+    return total;
+}
+```
+
+**Trick**: scan right-to-left. If current symbol < previous symbol, it's a subtractive case (e.g., I in IV → subtract 1).
+
+## Complexity
+
+Both directions run in O(1) — the input is bounded (1 ≤ num ≤ 3999), so at most 15 characters in the Roman numeral.
+
+## Key Insight
+
+Integer-to-Roman is a greedy problem: always use the largest symbol that fits. The lookup table with subtractive pairs makes the algorithm uniform — no special cases for 4, 9, 40, etc.
+
+Roman-to-Integer is even simpler: scan right-to-left and add/subtract based on whether the current symbol is smaller than the previous.

@@ -1,0 +1,160 @@
+---
+title: "Falling Squares"
+description: "Simulate squares falling onto a number line; after each drop, report the current maximum height."
+date: "2026-04-08"
+tags: ["segment-tree", "coordinate-compression", "array"]
+category: "Segment Tree"
+difficulty: "hard"
+timeComplexity: "O(n² ) brute / O(n log n) segment tree"
+spaceComplexity: "O(n)"
+companies: ["Amazon", "Google"]
+leetcodeNumber: 699
+draft: false
+---
+
+## Problem Statement
+
+There are several squares being dropped onto the X-axis. Each `positions[i] = [left, sideLength]` represents a square of side `sideLength` dropped at x = `left`. Each square stacks on top of any square it overlaps. After each drop, report the current **maximum height** of any stack.
+
+```
+Input:  positions = [[1,2],[2,3],[6,1]]
+Output: [2,5,5]
+Explanation:
+  Drop 1: Square [1,3] lands on floor at height 0 → top = 2. Max = 2.
+  Drop 2: Square [2,5] overlaps square 1 → lands at height 2 → top = 5. Max = 5.
+  Drop 3: Square [6,7] no overlap → top = 1. Max = 5.
+```
+
+## Approach 1: Brute Force — O(n²)
+
+For each new square, find the maximum height of all previously placed squares that overlap with it. The new square lands on top of that height.
+
+```java
+public List<Integer> fallingSquares(int[][] positions) {
+    // heights[i] = top height of square i
+    int[] heights = new int[positions.length];
+    List<Integer> result = new ArrayList<>();
+    int maxHeight = 0;
+
+    for (int i = 0; i < positions.length; i++) {
+        int left = positions[i][0];
+        int size = positions[i][1];
+        int right = left + size; // exclusive
+
+        heights[i] = size; // lands at least at its own height
+
+        for (int j = 0; j < i; j++) {
+            int pLeft = positions[j][0];
+            int pRight = pLeft + positions[j][1];
+
+            // Check overlap: intervals [left, right) and [pLeft, pRight) overlap
+            if (left < pRight && pLeft < right) {
+                heights[i] = Math.max(heights[i], heights[j] + size);
+            }
+        }
+
+        maxHeight = Math.max(maxHeight, heights[i]);
+        result.add(maxHeight);
+    }
+
+    return result;
+}
+```
+
+## Approach 2: Segment Tree with Coordinate Compression — O(n log n)
+
+Use a **range-max segment tree with lazy propagation**. Compress coordinates to reduce the range.
+
+```java
+public List<Integer> fallingSquares(int[][] positions) {
+    // Coordinate compression
+    Set<Integer> coords = new TreeSet<>();
+    for (int[] p : positions) {
+        coords.add(p[0]);
+        coords.add(p[0] + p[1]);
+    }
+    List<Integer> sorted = new ArrayList<>(coords);
+    Map<Integer, Integer> compress = new HashMap<>();
+    for (int i = 0; i < sorted.size(); i++) compress.put(sorted.get(i), i);
+
+    int n = sorted.size();
+    int[] tree = new int[4 * n]; // range-max segment tree
+    int[] lazy = new int[4 * n]; // lazy max update
+
+    List<Integer> result = new ArrayList<>();
+    int globalMax = 0;
+
+    for (int[] pos : positions) {
+        int l = compress.get(pos[0]);
+        int r = compress.get(pos[0] + pos[1]) - 1; // inclusive
+
+        // Query max height in [l, r]
+        int baseHeight = query(tree, lazy, 1, 0, n - 1, l, r);
+        int newHeight = baseHeight + pos[1];
+
+        // Update [l, r] to newHeight (set, not add)
+        update(tree, lazy, 1, 0, n - 1, l, r, newHeight);
+
+        globalMax = Math.max(globalMax, newHeight);
+        result.add(globalMax);
+    }
+
+    return result;
+}
+
+void update(int[] tree, int[] lazy, int node, int start, int end, int l, int r, int val) {
+    if (r < start || end < l) return;
+    if (l <= start && end <= r) {
+        tree[node] = Math.max(tree[node], val);
+        lazy[node] = Math.max(lazy[node], val);
+        return;
+    }
+    pushDown(tree, lazy, node);
+    int mid = (start + end) / 2;
+    update(tree, lazy, 2*node, start, mid, l, r, val);
+    update(tree, lazy, 2*node+1, mid+1, end, l, r, val);
+    tree[node] = Math.max(tree[2*node], tree[2*node+1]);
+}
+
+int query(int[] tree, int[] lazy, int node, int start, int end, int l, int r) {
+    if (r < start || end < l) return 0;
+    if (l <= start && end <= r) return tree[node];
+    pushDown(tree, lazy, node);
+    int mid = (start + end) / 2;
+    return Math.max(query(tree, lazy, 2*node, start, mid, l, r),
+                    query(tree, lazy, 2*node+1, mid+1, end, l, r));
+}
+
+void pushDown(int[] tree, int[] lazy, int node) {
+    if (lazy[node] > 0) {
+        tree[2*node] = Math.max(tree[2*node], lazy[node]);
+        lazy[2*node] = Math.max(lazy[2*node], lazy[node]);
+        tree[2*node+1] = Math.max(tree[2*node+1], lazy[node]);
+        lazy[2*node+1] = Math.max(lazy[2*node+1], lazy[node]);
+        lazy[node] = 0;
+    }
+}
+```
+
+## Complexity
+
+| Approach | Time | Space |
+|---|---|---|
+| Brute force | O(n²) | O(n) |
+| **Segment tree + coord compression** | **O(n log n)** | **O(n)** |
+
+## Key Insight
+
+This is a **range max update + range max query** problem. Each square performs:
+1. Query: max height in its x-range (what it lands on)
+2. Update: set its x-range to the new max height
+
+The lazy propagation uses `max` (not add) because heights are set to the maximum, not accumulated.
+
+Coordinate compression is needed because x-coordinates can be up to 10⁸.
+
+## Edge Cases
+
+- **No overlaps**: each square just lands at its own height
+- **Perfect stacking** (all same x): heights accumulate linearly
+- **One square contains another**: inner square's height bounded by outer's footprint

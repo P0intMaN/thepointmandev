@@ -1,0 +1,98 @@
+---
+title: "Sorting Algorithms"
+description: "Merge Sort (stable, O(n log n)), Quick Sort (in-place, O(n log n) average), Heap Sort, and linear-time counting/radix sort. Plus: Three-way partition (Dutch National Flag)."
+signal: "Sort a custom comparator. Partial sort (kth largest). Sort linked list. Sort nearly sorted array. Sort colors/integers in limited range. Signal: 'sort in-place with limited memory', 'kth smallest/largest', 'sort by custom criterion'."
+gotchas: "Merge Sort is stable and O(n log n) always but O(n) extra space. Quick Sort is O(n log n) average, O(n²) worst (bad pivot), O(log n) average space. Use randomized pivot to avoid worst case. For kth largest: use QuickSelect O(n) average. Three-way partition handles duplicates efficiently. Java's Arrays.sort uses TimSort for objects, dual-pivot QuickSort for primitives."
+color: "#f97316"
+colorDim: "#1a0500"
+colorBorder: "#ea580c"
+icon: "sorting"
+order: 32
+tier: 2
+draft: false
+---
+
+## Merge Sort — O(n log n), stable, O(n) space
+
+```java
+void mergeSort(int[] arr, int left, int right) {
+    if (left >= right) return;
+    int mid = left + (right - left) / 2;
+    mergeSort(arr, left, mid);
+    mergeSort(arr, mid + 1, right);
+    merge(arr, left, mid, right);
+}
+
+void merge(int[] arr, int left, int mid, int right) {
+    int[] temp = Arrays.copyOfRange(arr, left, right + 1);
+    int i = 0, j = mid - left + 1, k = left;
+
+    while (i <= mid - left && j <= right - left) {
+        if (temp[i] <= temp[j]) arr[k++] = temp[i++];
+        else arr[k++] = temp[j++];
+    }
+    while (i <= mid - left) arr[k++] = temp[i++];
+    while (j <= right - left) arr[k++] = temp[j++];
+}
+```
+
+## Quick Sort — O(n log n) avg, O(n²) worst, O(log n) avg space
+
+```java
+void quickSort(int[] arr, int left, int right) {
+    if (left >= right) return;
+    int pivotIdx = partition(arr, left, right);
+    quickSort(arr, left, pivotIdx - 1);
+    quickSort(arr, pivotIdx + 1, right);
+}
+
+int partition(int[] arr, int left, int right) {
+    // Randomize pivot to avoid O(n²) on sorted input
+    int randIdx = left + (int)(Math.random() * (right - left + 1));
+    swap(arr, randIdx, right);
+
+    int pivot = arr[right], i = left - 1;
+    for (int j = left; j < right; j++) {
+        if (arr[j] <= pivot) swap(arr, ++i, j);
+    }
+    swap(arr, i + 1, right);
+    return i + 1;
+}
+```
+
+## QuickSelect — O(n) average for Kth Largest
+
+```java
+int quickSelect(int[] nums, int left, int right, int k) {
+    // k is 0-indexed from right (k=0 → largest)
+    int pivot = partition(nums, left, right);
+    if (pivot == k) return nums[pivot];
+    else if (pivot < k) return quickSelect(nums, pivot + 1, right, k);
+    else return quickSelect(nums, left, pivot - 1, k);
+}
+```
+
+## Dutch National Flag / Three-Way Partition
+
+Sort an array of 0s, 1s, and 2s in-place in O(n):
+
+```java
+void threeWayPartition(int[] nums) {
+    int low = 0, mid = 0, high = nums.length - 1;
+    while (mid <= high) {
+        if (nums[mid] == 0) swap(nums, low++, mid++);
+        else if (nums[mid] == 1) mid++;
+        else swap(nums, mid, high--); // don't increment mid
+    }
+}
+```
+
+## Comparison
+
+| Algorithm | Time (avg) | Time (worst) | Space | Stable? |
+|---|---|---|---|---|
+| Merge Sort | O(n log n) | O(n log n) | O(n) | ✓ |
+| Quick Sort | O(n log n) | O(n²) | O(log n) | ✗ |
+| Heap Sort | O(n log n) | O(n log n) | O(1) | ✗ |
+| Counting Sort | O(n + k) | O(n + k) | O(k) | ✓ |
+| Radix Sort | O(nk) | O(nk) | O(n+k) | ✓ |

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import Link from "next/link";
 import { getAllDSAPatterns, getAllDSAProblems } from "@/lib/mdx/getAllContent";
 import { getDSAPatternBySlug } from "@/lib/mdx/getBySlug";
 import { MDXContent } from "@/components/mdx/MDXContent";
@@ -42,12 +43,12 @@ export default async function PatternPage({ params, searchParams }: Props) {
   return (
     <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
       {/* Back link */}
-      <a
+      <Link
         href="/dsa"
         className="mb-8 inline-flex items-center gap-1.5 font-mono text-xs text-[var(--color-text-faint)] no-underline hover:text-[var(--color-text-muted)] hover:no-underline"
       >
         ← All Patterns
-      </a>
+      </Link>
 
       {/* Pattern header */}
       <div

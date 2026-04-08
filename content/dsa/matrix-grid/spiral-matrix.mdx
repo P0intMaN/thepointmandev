@@ -1,0 +1,108 @@
+---
+title: "Spiral Matrix"
+description: "Return all elements of a matrix in spiral order."
+date: "2026-04-08"
+tags: ["matrix-grid", "array", "simulation"]
+category: "Matrix / Grid"
+difficulty: "medium"
+timeComplexity: "O(m · n)"
+spaceComplexity: "O(1)"
+companies: ["Amazon", "Google", "Microsoft", "Facebook", "Apple"]
+leetcodeNumber: 54
+draft: false
+---
+
+## Problem Statement
+
+Given an `m x n` matrix, return all elements in **spiral order** (clockwise from top-left).
+
+```
+Input:  matrix = [[1,2,3],[4,5,6],[7,8,9]]
+Output: [1,2,3,6,9,8,7,4,5]
+
+Input:  matrix = [[1,2,3,4],[5,6,7,8],[9,10,11,12]]
+Output: [1,2,3,4,8,12,11,10,9,5,6,7]
+```
+
+## Approach: Four Boundary Pointers — O(m·n)
+
+Maintain `top`, `bottom`, `left`, `right` boundaries. Peel one layer per four-direction pass.
+
+```java
+public List<Integer> spiralOrder(int[][] matrix) {
+    List<Integer> result = new ArrayList<>();
+    int top = 0, bottom = matrix.length - 1;
+    int left = 0, right = matrix[0].length - 1;
+
+    while (top <= bottom && left <= right) {
+        // → Right: traverse top row left to right
+        for (int i = left; i <= right; i++)
+            result.add(matrix[top][i]);
+        top++;
+
+        // ↓ Down: traverse right column top to bottom
+        for (int i = top; i <= bottom; i++)
+            result.add(matrix[i][right]);
+        right--;
+
+        // ← Left: traverse bottom row right to left (if row still exists)
+        if (top <= bottom) {
+            for (int i = right; i >= left; i--)
+                result.add(matrix[bottom][i]);
+            bottom--;
+        }
+
+        // ↑ Up: traverse left column bottom to top (if column still exists)
+        if (left <= right) {
+            for (int i = bottom; i >= top; i--)
+                result.add(matrix[i][left]);
+            left++;
+        }
+    }
+
+    return result;
+}
+```
+
+**Why check `top <= bottom` and `left <= right` mid-loop?** For non-square matrices, after traversing the top row and right column, the remaining rectangle might be a single row or column. Without the check, the left and up traversals would double-count.
+
+## Trace: `[[1,2,3],[4,5,6],[7,8,9]]`
+
+- Round 1: top=0,bot=2,l=0,r=2
+  - Right: 1,2,3 → top=1
+  - Down: 6,9 → right=1
+  - Left: 8,7 → bottom=1
+  - Up: 4 → left=1
+- Round 2: top=1,bot=1,l=1,r=1
+  - Right: 5 → top=2 (top > bottom, loop exits)
+- Result: [1,2,3,6,9,8,7,4,5] ✓
+
+## Related: Spiral Matrix II (#59)
+
+Fill an n×n matrix with numbers 1 to n² in spiral order. Same four-pointer technique, but write instead of read.
+
+```java
+public int[][] generateMatrix(int n) {
+    int[][] matrix = new int[n][n];
+    int top = 0, bottom = n-1, left = 0, right = n-1, num = 1;
+
+    while (top <= bottom && left <= right) {
+        for (int i = left;  i <= right;  i++) matrix[top][i]    = num++;  top++;
+        for (int i = top;   i <= bottom; i++) matrix[i][right]   = num++;  right--;
+        if (top <= bottom) for (int i = right; i >= left; i--)   matrix[bottom][i] = num++; bottom--;
+        if (left <= right) for (int i = bottom; i >= top; i--)   matrix[i][left]   = num++; left++;
+    }
+    return matrix;
+}
+```
+
+## Key Insight
+
+The four-pointer pattern cleanly handles the spiral without direction tracking or visited arrays. The guard conditions `if (top <= bottom)` and `if (left <= right)` are essential for non-square matrices to avoid double-counting single rows or columns.
+
+## Edge Cases
+
+- **1×1 matrix**: single element
+- **Single row**: only the "right" pass runs
+- **Single column**: right + down + (no left) + up... handled by guards
+- **Non-square m×n**: guards prevent double-counting

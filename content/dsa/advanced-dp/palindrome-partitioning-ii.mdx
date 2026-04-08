@@ -1,0 +1,115 @@
+---
+title: "Palindrome Partitioning II"
+description: "Find the minimum number of cuts needed to partition a string into palindromes."
+date: "2026-04-08"
+tags: ["advanced-dp", "interval-dp", "string", "dynamic-programming"]
+category: "Advanced DP"
+difficulty: "hard"
+timeComplexity: "O(n²)"
+spaceComplexity: "O(n²)"
+companies: ["Amazon", "Google", "Facebook"]
+leetcodeNumber: 132
+draft: false
+---
+
+## Problem Statement
+
+Given a string `s`, partition it into substrings where every substring is a palindrome. Return the **minimum number of cuts** needed.
+
+```
+Input:  s = "aab"
+Output: 1   ("a" | "ab"? No → "aa" | "b" = 1 cut)
+
+Input:  s = "a"
+Output: 0   (already a palindrome)
+
+Input:  s = "ab"
+Output: 1   ("a" | "b")
+```
+
+## Approach: DP — O(n²)
+
+`cuts[i]` = minimum cuts for `s[0..i]`.
+
+First precompute `isPalin[i][j]` using the expand-around-center technique.
+
+```java
+public int minCut(String s) {
+    int n = s.length();
+
+    // Precompute isPalin[i][j]
+    boolean[][] isPalin = new boolean[n][n];
+    for (int i = 0; i < n; i++) isPalin[i][i] = true;
+    for (int i = 0; i < n-1; i++) isPalin[i][i+1] = (s.charAt(i) == s.charAt(i+1));
+    for (int len = 3; len <= n; len++) {
+        for (int i = 0; i + len - 1 < n; i++) {
+            int j = i + len - 1;
+            isPalin[i][j] = (s.charAt(i) == s.charAt(j)) && isPalin[i+1][j-1];
+        }
+    }
+
+    // cuts[i] = min cuts for s[0..i]
+    int[] cuts = new int[n];
+    for (int i = 0; i < n; i++) {
+        if (isPalin[0][i]) {
+            cuts[i] = 0; // whole prefix is a palindrome
+        } else {
+            cuts[i] = i; // worst case: cut after every character
+            for (int j = 1; j <= i; j++) {
+                if (isPalin[j][i]) {
+                    cuts[i] = Math.min(cuts[i], cuts[j-1] + 1);
+                }
+            }
+        }
+    }
+
+    return cuts[n-1];
+}
+```
+
+**Recurrence**: `cuts[i] = min over all j where isPalin[j][i]: cuts[j-1] + 1`. If `s[j..i]` is a palindrome, we can cut after index `j-1` and the suffix `s[j..i]` needs no more cuts.
+
+## Optimized: Expand Around Center — O(n²), O(n) space
+
+Instead of precomputing all palindromes, use the expand-around-center technique and update `cuts` on the fly:
+
+```java
+public int minCut(String s) {
+    int n = s.length();
+    int[] cuts = new int[n + 1];
+    for (int i = 0; i <= n; i++) cuts[i] = i - 1; // cuts[i] = min cuts for s[0..i-1]
+
+    for (int i = 0; i < n; i++) {
+        // Odd length palindromes centered at i
+        for (int j = 0; i - j >= 0 && i + j < n && s.charAt(i-j) == s.charAt(i+j); j++) {
+            cuts[i+j+1] = Math.min(cuts[i+j+1], cuts[i-j] + 1);
+        }
+        // Even length palindromes centered between i and i+1
+        for (int j = 1; i-j+1 >= 0 && i+j < n && s.charAt(i-j+1) == s.charAt(i+j); j++) {
+            cuts[i+j+1] = Math.min(cuts[i+j+1], cuts[i-j+1] + 1);
+        }
+    }
+    return cuts[n];
+}
+```
+
+`cuts[i]` = min cuts for `s[0..i-1]` (1-indexed). `cuts[0] = -1` (empty string needs -1 cuts — base case).
+
+## Complexity
+
+| Approach | Time | Space |
+|---|---|---|
+| DP with isPalin table | O(n²) | O(n²) |
+| **Expand around center** | **O(n²)** | **O(n)** |
+
+## Key Insight
+
+The key is splitting "is this substring a palindrome?" (precomputed) from "what's the minimum cuts?" (1D DP). The 1D `cuts` array builds up from left to right: `cuts[i]` only depends on `cuts[j-1]` for `j ≤ i`.
+
+The expand-around-center approach avoids the O(n²) space for `isPalin` by updating `cuts` directly as each palindrome center expands.
+
+## Edge Cases
+
+- **Entire string is a palindrome**: 0 cuts
+- **All distinct characters**: n-1 cuts
+- **Single character**: 0 cuts

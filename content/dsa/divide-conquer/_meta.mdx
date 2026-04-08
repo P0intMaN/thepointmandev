@@ -1,0 +1,92 @@
+---
+title: "Divide and Conquer"
+description: "Split the problem into independent subproblems, solve recursively, then combine. The master theorem governs the time complexity."
+signal: "Problem splits into k equal subproblems of size n/b. Optimal substructure + independent subproblems. Signal: 'find max/min in range', 'merge sorted halves', 'closest pair', 'count inversions'."
+gotchas: "Recurrence: T(n) = aT(n/b) + O(n^d). Master theorem: if a > b^d → O(n^log_b(a)); if a = b^d → O(n^d log n); if a < b^d → O(n^d). Merge step must run in O(n^d) or better. Ensure subproblems are truly independent (no shared state). Base case: single element or empty."
+color: "#22d3ee"
+colorDim: "#001a20"
+colorBorder: "#06b6d4"
+icon: "divide-conquer"
+order: 34
+tier: 3
+draft: false
+---
+
+## The Divide and Conquer Template
+
+```java
+T solve(problem P) {
+    // 1. Base case
+    if (P is small enough) return direct solution;
+
+    // 2. Divide
+    (P1, P2, ...) = split(P);
+
+    // 3. Conquer
+    T r1 = solve(P1);
+    T r2 = solve(P2);
+    // ...
+
+    // 4. Combine
+    return combine(r1, r2, ...);
+}
+```
+
+## Master Theorem
+
+For recurrences `T(n) = a * T(n/b) + O(n^d)`:
+
+| Case | Condition | Complexity |
+|---|---|---|
+| 1 (leaf-heavy) | a > b^d | O(n^log_b(a)) |
+| 2 (balanced) | a = b^d | O(n^d log n) |
+| 3 (root-heavy) | a < b^d | O(n^d) |
+
+**Examples**:
+- Merge Sort: `T(n) = 2T(n/2) + O(n)`. a=2, b=2, d=1. 2 = 2^1 → **O(n log n)**
+- Binary Search: `T(n) = T(n/2) + O(1)`. a=1, b=2, d=0. 1 = 2^0 → **O(log n)**
+- Karatsuba Multiplication: `T(n) = 3T(n/2) + O(n)`. a=3, b=2, d=1. 3 > 2^1 → **O(n^log₂3) ≈ O(n^1.585)**
+
+## Classic Applications
+
+| Problem | a | b | Combine | Total |
+|---|---|---|---|---|
+| Merge Sort | 2 | 2 | O(n) merge | O(n log n) |
+| Binary Search | 1 | 2 | O(1) compare | O(log n) |
+| Count Inversions | 2 | 2 | O(n) merge step | O(n log n) |
+| Closest Pair of Points | 2 | 2 | O(n) strip scan | O(n log n) |
+| Maximum Subarray | 2 | 2 | O(1) combine | O(n log n) |
+
+## Count Inversions (Merge Sort variant)
+
+An **inversion** is a pair `(i, j)` where `i < j` but `nums[i] > nums[j]`.
+
+```java
+long countInversions(int[] arr, int left, int right) {
+    if (left >= right) return 0;
+    int mid = left + (right - left) / 2;
+    long count = countInversions(arr, left, mid)
+               + countInversions(arr, mid+1, right);
+    count += mergeCount(arr, left, mid, right);
+    return count;
+}
+
+long mergeCount(int[] arr, int left, int mid, int right) {
+    // During merge: when right[j] < left[i], all elements left[i..mid] contribute
+    long inv = 0;
+    int i = left, j = mid + 1, k = 0;
+    int[] temp = new int[right - left + 1];
+    while (i <= mid && j <= right) {
+        if (arr[i] <= arr[j]) {
+            temp[k++] = arr[i++];
+        } else {
+            inv += (mid - i + 1); // all remaining left elements form inversions with arr[j]
+            temp[k++] = arr[j++];
+        }
+    }
+    while (i <= mid) temp[k++] = arr[i++];
+    while (j <= right) temp[k++] = arr[j++];
+    System.arraycopy(temp, 0, arr, left, temp.length);
+    return inv;
+}
+```

@@ -1,0 +1,108 @@
+---
+title: "Game of Life"
+description: "Simulate Conway's Game of Life — apply all cell transitions simultaneously in-place."
+date: "2026-04-08"
+tags: ["matrix-grid", "array", "simulation", "bit-manipulation"]
+category: "Matrix / Grid"
+difficulty: "medium"
+timeComplexity: "O(m · n)"
+spaceComplexity: "O(1)"
+companies: ["Amazon", "Google", "Facebook", "Snapchat"]
+leetcodeNumber: 289
+draft: false
+---
+
+## Problem Statement
+
+Given an `m x n` board of 0s (dead) and 1s (alive), apply the following rules simultaneously:
+1. Any live cell with fewer than 2 live neighbors dies (underpopulation).
+2. Any live cell with 2 or 3 live neighbors survives.
+3. Any live cell with more than 3 live neighbors dies (overpopulation).
+4. Any dead cell with exactly 3 live neighbors becomes alive (reproduction).
+
+Update the board **in-place** to represent the next state.
+
+```
+Input:  [[0,1,0],[0,0,1],[1,1,1],[0,0,0]]
+Output: [[0,0,0],[1,0,1],[0,1,1],[0,1,0]]
+```
+
+## Approach: Bit Encoding for O(1) Space — O(m·n)
+
+Store the next state in **bit 1** while bit 0 still holds the current state. After processing all cells, shift right by 1 to reveal the next state.
+
+```java
+public void gameOfLife(int[][] board) {
+    int rows = board.length, cols = board[0].length;
+    int[][] dirs = {{0,1},{0,-1},{1,0},{-1,0},{1,1},{1,-1},{-1,1},{-1,-1}};
+
+    for (int r = 0; r < rows; r++) {
+        for (int c = 0; c < cols; c++) {
+            int liveNeighbors = 0;
+
+            for (int[] d : dirs) {
+                int nr = r + d[0], nc = c + d[1];
+                if (nr >= 0 && nr < rows && nc >= 0 && nc < cols) {
+                    liveNeighbors += board[nr][nc] & 1; // bit 0 = current state
+                }
+            }
+
+            int curr = board[r][c] & 1;
+            int next;
+
+            if (curr == 1 && (liveNeighbors == 2 || liveNeighbors == 3)) {
+                next = 1; // survives
+            } else if (curr == 0 && liveNeighbors == 3) {
+                next = 1; // born
+            } else {
+                next = 0; // dies or stays dead
+            }
+
+            board[r][c] |= (next << 1); // store next state in bit 1
+        }
+    }
+
+    // Reveal next state: shift right by 1
+    for (int r = 0; r < rows; r++)
+        for (int c = 0; c < cols; c++)
+            board[r][c] >>= 1;
+}
+```
+
+**Why `board[nr][nc] & 1`?** During processing, some cells already have their next state encoded in bit 1. Masking with `& 1` isolates the original current state (bit 0), ensuring we use the original board state for all neighbor counts.
+
+## Alternative: Copy Board — O(m·n) space
+
+```java
+int[][] copy = new int[rows][cols];
+for (int[] row : board) System.arraycopy(row, 0, copy[i++], 0, cols);
+// Use copy for neighbor counts, update board directly
+```
+
+## Simplified Next-State Rule
+
+```java
+// Rules can be summarized:
+// Live cell (curr=1): survives if 2 or 3 live neighbors
+// Dead cell (curr=0): born if exactly 3 live neighbors
+// Combined: next = (liveNeighbors == 3) || (curr == 1 && liveNeighbors == 2) ? 1 : 0
+```
+
+## Complexity
+
+| | Time | Space |
+|---|---|---|
+| **Bit encoding** | **O(mn)** | **O(1)** |
+| Copy board | O(mn) | O(mn) |
+
+## Key Insight
+
+The "simultaneous update" constraint means you can't update cells one by one and read updated values for neighbors. The bit encoding trick stores two states in one integer: current state in bit 0, next state in bit 1. Reading `& 1` always gives the original state; writing `|= (next << 1)` doesn't corrupt it.
+
+This "encode future state in unused bits" pattern applies to any in-place state-machine simulation.
+
+## Edge Cases
+
+- **All dead**: stays dead forever
+- **Stable configurations** (e.g., 2×2 block): no change
+- **Border cells**: fewer than 8 neighbors — bounds check handles this

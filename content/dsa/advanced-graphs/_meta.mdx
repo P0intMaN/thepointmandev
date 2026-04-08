@@ -1,0 +1,117 @@
+---
+title: "Advanced Graph Algorithms"
+description: "Bridges and articulation points (Tarjan's DFS), Strongly Connected Components (Kosaraju's/Tarjan's), and Eulerian paths."
+signal: "Find critical edges/nodes. Strongly connected components. Reconstruct a path visiting all edges. Signal: 'which edges/nodes, if removed, disconnect the graph', 'find all SCCs', 'reconstruct itinerary'."
+gotchas: "Bridge detection: edge (u,v) is a bridge if low[v] > disc[u]. Articulation point: node u is an AP if (u is root with ≥2 children) OR (non-root and has child v where low[v] ≥ disc[u]). low[u] = min(disc[u], disc[w] for back edges, low[v] for tree edges). Eulerian circuit exists iff all vertices have even degree (undirected) or equal in/out-degree (directed). Use Hierholzer's algorithm for Eulerian path."
+color: "#f43f5e"
+colorDim: "#1a0008"
+colorBorder: "#e11d48"
+icon: "advanced-graphs"
+order: 35
+tier: 3
+draft: false
+---
+
+## Bridges (Critical Edges) — Tarjan's Algorithm
+
+An edge `(u, v)` is a **bridge** if removing it disconnects the graph. Use DFS with discovery time and low-link values.
+
+```java
+int[] disc, low;
+boolean[] visited;
+int timer = 0;
+List<int[]> bridges;
+
+void findBridges(List<Integer>[] graph, int n) {
+    disc = new int[n]; low = new int[n]; visited = new boolean[n];
+    bridges = new ArrayList<>();
+    for (int i = 0; i < n; i++) if (!visited[i]) dfs(graph, i, -1);
+}
+
+void dfs(List<Integer>[] graph, int u, int parent) {
+    visited[u] = true;
+    disc[u] = low[u] = timer++;
+
+    for (int v : graph[u]) {
+        if (!visited[v]) {
+            dfs(graph, v, u);
+            low[u] = Math.min(low[u], low[v]);
+            if (low[v] > disc[u]) bridges.add(new int[]{u, v}); // bridge!
+        } else if (v != parent) {
+            low[u] = Math.min(low[u], disc[v]); // back edge
+        }
+    }
+}
+```
+
+**`low[v] > disc[u]`**: the subtree rooted at `v` has no back edge reaching `u` or its ancestors → `(u,v)` is a bridge.
+
+## Articulation Points (Critical Nodes)
+
+A **node u** is an articulation point if removing it disconnects the graph.
+
+```java
+void dfs(List<Integer>[] graph, int u, int parent) {
+    visited[u] = true;
+    disc[u] = low[u] = timer++;
+    int childCount = 0;
+
+    for (int v : graph[u]) {
+        if (!visited[v]) {
+            childCount++;
+            dfs(graph, v, u);
+            low[u] = Math.min(low[u], low[v]);
+
+            // AP condition for non-root
+            if (parent != -1 && low[v] >= disc[u]) isAP[u] = true;
+        } else if (v != parent) {
+            low[u] = Math.min(low[u], disc[v]);
+        }
+    }
+    // AP condition for root
+    if (parent == -1 && childCount >= 2) isAP[u] = true;
+}
+```
+
+## Eulerian Path / Circuit — Hierholzer's Algorithm
+
+**Eulerian circuit**: exists iff all vertices have even degree (undirected) or equal in/out-degree (directed).
+**Eulerian path**: exists iff exactly 2 vertices have odd degree (one start, one end).
+
+```java
+// Directed graph: Hierholzer's O(E)
+Deque<Integer> path = new ArrayDeque<>();
+Deque<Integer> stack = new ArrayDeque<>();
+stack.push(start);
+
+while (!stack.isEmpty()) {
+    int u = stack.peek();
+    if (adj[u].isEmpty()) {
+        path.push(stack.pop()); // add to path when all edges exhausted
+    } else {
+        int v = adj[u].removeFirst(); // take next edge
+        stack.push(v);
+    }
+}
+// path in reverse order is the Eulerian path
+```
+
+## Strongly Connected Components (Kosaraju's)
+
+1. Run DFS, record finish times (push to stack in finish order)
+2. Transpose the graph (reverse all edges)
+3. DFS on transposed graph in reverse finish order → each DFS tree is an SCC
+
+```java
+// O(V + E) — two DFS passes
+```
+
+## When to Use Each
+
+| Problem | Algorithm |
+|---|---|
+| Critical connections/edges | Tarjan's bridge finding |
+| Critical nodes | Tarjan's articulation points |
+| SCCs | Kosaraju's or Tarjan's SCC |
+| Reconstruct itinerary | Hierholzer's Eulerian path |
+| All cities reachable | Tarjan's SCC + condensation |

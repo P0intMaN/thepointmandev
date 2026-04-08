@@ -1,0 +1,133 @@
+---
+title: "Arbitrage Detection"
+description: "Detect if currency exchange arbitrage is possible using Bellman-Ford on log-transformed rates."
+date: "2026-04-08"
+tags: ["bellman-ford", "graph", "math"]
+category: "Bellman-Ford"
+difficulty: "hard"
+timeComplexity: "O(V · E)"
+spaceComplexity: "O(V)"
+companies: ["Amazon", "Google", "Facebook", "Two Sigma", "Jane Street"]
+leetcodeNumber: 0
+draft: false
+---
+
+## Problem Statement
+
+Given a list of currencies and a table of exchange rates `rates[i][j]` (1 unit of currency `i` buys `rates[i][j]` units of currency `j`), determine if there is an arbitrage opportunity — a sequence of exchanges that starts and ends with the same currency with a profit.
+
+```
+Example:
+  Currencies: USD, EUR, GBP
+  rates[USD][EUR] = 1.21
+  rates[EUR][GBP] = 1.30
+  rates[GBP][USD] = 0.66
+
+  Cycle: USD → EUR → GBP → USD
+  Profit: 1.21 * 1.30 * 0.66 = 1.038... > 1.0 → ARBITRAGE!
+```
+
+## Key Transformation: Log Space
+
+Arbitrage exists if there is a cycle with **product > 1**:
+`r₁ × r₂ × ... × rₖ > 1`
+
+Take negative log of both sides:
+`-log(r₁) + (-log(r₂)) + ... + (-log(rₖ)) < 0`
+
+This is a **negative cycle** in the graph with edge weights `-log(rate)`.
+
+## Algorithm
+
+```java
+public boolean hasArbitrage(String[] currencies, double[][] rates) {
+    int n = currencies.length;
+
+    // dist[i] = min negative-log distance from virtual source to currency i
+    // Initialize all to 0 (virtual super-source connected to all with 0-weight)
+    double[] dist = new double[n];
+
+    // Run V-1 relaxation rounds
+    for (int round = 0; round < n - 1; round++) {
+        double[] newDist = dist.clone(); // snapshot for this round
+
+        for (int u = 0; u < n; u++) {
+            for (int v = 0; v < n; v++) {
+                if (rates[u][v] > 0) {
+                    double w = -Math.log(rates[u][v]);
+                    if (dist[u] + w < newDist[v]) {
+                        newDist[v] = dist[u] + w;
+                    }
+                }
+            }
+        }
+        dist = newDist;
+    }
+
+    // V-th round: if any distance improves, negative cycle exists
+    for (int u = 0; u < n; u++) {
+        for (int v = 0; v < n; v++) {
+            if (rates[u][v] > 0) {
+                double w = -Math.log(rates[u][v]);
+                if (dist[u] + w < dist[v] - 1e-9) {
+                    return true; // arbitrage!
+                }
+            }
+        }
+    }
+    return false;
+}
+```
+
+**Why initialize `dist` to all zeros?** This is equivalent to adding a virtual source node with 0-weight edges to all currency nodes. It allows detecting negative cycles reachable from any currency, not just from one starting point.
+
+**Floating point epsilon**: Use `< dist[v] - 1e-9` instead of strict `<` to avoid false positives from floating-point precision errors in `Math.log`.
+
+## With Edge List Format
+
+If the problem gives `transactions = [[from, to, rate], ...]`:
+
+```java
+public boolean hasArbitrage(int n, double[][] transactions) {
+    double[] dist = new double[n]; // all zeros
+
+    for (int round = 0; round < n - 1; round++) {
+        double[] temp = dist.clone();
+        for (double[] t : transactions) {
+            int u = (int) t[0], v = (int) t[1];
+            double w = -Math.log(t[2]);
+            if (dist[u] + w < temp[v]) temp[v] = dist[u] + w;
+        }
+        dist = temp;
+    }
+
+    // V-th round check
+    for (double[] t : transactions) {
+        int u = (int) t[0], v = (int) t[1];
+        double w = -Math.log(t[2]);
+        if (dist[u] + w < dist[v] - 1e-9) return true;
+    }
+    return false;
+}
+```
+
+## Complexity
+
+| | Time | Space |
+|---|---|---|
+| **Bellman-Ford** | **O(V · E)** | **O(V)** |
+| Floyd-Warshall (all pairs) | O(V³) | O(V²) |
+
+Bellman-Ford is preferred for detecting **any** negative cycle from any source.
+
+## Key Insight
+
+The log transformation converts a multiplicative problem (product > 1) into an additive one (sum < 0). Negative log turns "profitable cycle (product > 1)" into "negative cycle (sum < 0)" — exactly what Bellman-Ford's V-th round detects.
+
+This is a classic interview question combining graph theory, Bellman-Ford, and mathematical transformation.
+
+## Edge Cases
+
+- **Self-loops** `rates[i][i] > 1`: mathematically impossible (can't profit by exchanging a currency with itself)
+- **Zero rates**: skip edges where `rate == 0` (invalid exchange)
+- **Floating-point precision**: add epsilon in the comparison to avoid false positives

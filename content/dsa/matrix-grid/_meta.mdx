@@ -1,0 +1,87 @@
+---
+title: "Matrix / Grid Problems"
+description: "2D array traversal patterns: spiral order, in-place rotation, cellular automata, and island-style flood fill on grids."
+signal: "Traverse a 2D matrix in a specific order. In-place transformation. Grid simulation. Signal: 'rotate matrix', 'spiral order', 'simulate game', 'count islands' (if not covered in graph section)."
+gotchas: "In-place rotation: transpose then reverse rows. Spiral: use four boundary pointers (top/bottom/left/right). Layer-by-layer in-place rotation: save top, left←bottom, bottom←right, right←top. Use direction arrays for BFS/DFS on grids. Mark visited in-place (set to 0 or '#') to avoid visited array when possible."
+color: "#4ade80"
+colorDim: "#001a08"
+colorBorder: "#22c55e"
+icon: "matrix-grid"
+order: 30
+tier: 2
+draft: false
+---
+
+## Core Patterns
+
+### In-Place Matrix Rotation (90° clockwise)
+
+1. **Transpose**: swap `matrix[i][j]` with `matrix[j][i]`
+2. **Reverse each row**: reverse all columns
+
+```java
+void rotate90(int[][] matrix) {
+    int n = matrix.length;
+    // Step 1: Transpose
+    for (int i = 0; i < n; i++)
+        for (int j = i + 1; j < n; j++) {
+            int tmp = matrix[i][j];
+            matrix[i][j] = matrix[j][i];
+            matrix[j][i] = tmp;
+        }
+    // Step 2: Reverse each row
+    for (int[] row : matrix) {
+        int l = 0, r = n - 1;
+        while (l < r) { int t = row[l]; row[l] = row[r]; row[r] = t; l++; r--; }
+    }
+}
+```
+
+### Spiral Traversal
+
+Use four boundary pointers: `top`, `bottom`, `left`, `right`. Peel one layer at a time.
+
+```java
+List<Integer> spiral(int[][] matrix) {
+    List<Integer> result = new ArrayList<>();
+    int top = 0, bottom = matrix.length - 1;
+    int left = 0, right = matrix[0].length - 1;
+
+    while (top <= bottom && left <= right) {
+        for (int i = left;  i <= right;  i++) result.add(matrix[top][i]);    top++;
+        for (int i = top;   i <= bottom; i++) result.add(matrix[i][right]);  right--;
+        if (top <= bottom)
+            for (int i = right; i >= left;   i--) result.add(matrix[bottom][i]); bottom--;
+        if (left <= right)
+            for (int i = bottom; i >= top;   i--) result.add(matrix[i][left]);   left++;
+    }
+    return result;
+}
+```
+
+### Direction Arrays for BFS/DFS on Grids
+
+```java
+int[][] dirs = {{0,1},{0,-1},{1,0},{-1,0}}; // right, left, down, up
+// With diagonals:
+int[][] dirs8 = {{0,1},{0,-1},{1,0},{-1,0},{1,1},{1,-1},{-1,1},{-1,-1}};
+
+// Bounds check
+boolean valid(int r, int c, int rows, int cols) {
+    return r >= 0 && r < rows && c >= 0 && c < cols;
+}
+```
+
+### Cellular Automata (Game of Life style)
+
+Encode next state in unused bits to avoid a copy array:
+
+```java
+// State encoding: bit 0 = current, bit 1 = next
+// Use bit 1 to store next state while bit 0 still has current state
+board[r][c] |= (nextState << 1);
+// After processing all cells:
+for (int[] row : board)
+    for (int j = 0; j < row.length; j++)
+        row[j] >>= 1; // shift right to reveal next state
+```

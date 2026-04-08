@@ -1,0 +1,82 @@
+---
+title: "Advanced DP"
+description: "Interval DP (optimize on ranges), Tree DP (recursion on subtrees), and Bitmask DP (track subsets as integers)."
+signal: "Can't use 1D/2D DP directly. Need to optimize over intervals. DP on tree structure. State space is a subset of elements. Signal: 'optimal split of sequence', 'TSP variant', 'all subsets', 'at most k operations on ranges'."
+gotchas: "Interval DP: define dp[l][r] = answer for range [l,r]; iterate by increasing length. Tree DP: define state on subtree, return value to parent. Bitmask DP: state = (position, visited_set) as (i, mask); transition adds one unvisited node at a time. Bitmask DP space: O(n * 2^n) — only feasible for n ≤ 20."
+color: "#818cf8"
+colorDim: "#0f1040"
+colorBorder: "#6366f1"
+icon: "advanced-dp"
+order: 31
+tier: 3
+draft: false
+---
+
+## Types of Advanced DP
+
+### Interval DP
+
+DP over contiguous ranges `[l, r]`. Process by **increasing interval length**.
+
+**Template**:
+```java
+int[][] dp = new int[n][n];
+// base cases: single elements or adjacent pairs
+for (int len = 2; len <= n; len++) {           // interval length
+    for (int l = 0; l + len - 1 < n; l++) {   // left boundary
+        int r = l + len - 1;                   // right boundary
+        for (int k = l; k < r; k++) {          // split point
+            dp[l][r] = min/max(dp[l][r], dp[l][k] + dp[k+1][r] + cost(l,k,r));
+        }
+    }
+}
+return dp[0][n-1];
+```
+
+**Problems**: Burst Balloons, Matrix Chain Multiplication, Palindrome Partitioning II, Strange Printer.
+
+### Tree DP
+
+DP where each node's answer depends on its children's answers.
+
+**Template**:
+```java
+int[] dfs(TreeNode node) {
+    if (node == null) return new int[]{0, 0}; // base case
+
+    int[] left = dfs(node.left);
+    int[] right = dfs(node.right);
+
+    // Combine left and right to compute dp[node]
+    int include = node.val + left[EXCLUDE] + right[EXCLUDE];
+    int exclude = Math.max(left[INCLUDE], left[EXCLUDE])
+                + Math.max(right[INCLUDE], right[EXCLUDE]);
+
+    return new int[]{include, exclude};
+}
+```
+
+**Problems**: House Robber III, Binary Tree Cameras, Diameter of Binary Tree.
+
+### Bitmask DP
+
+DP where the state includes a bitmask representing a subset.
+
+**Template** (TSP-style):
+```java
+int[][] dp = new int[n][1 << n]; // dp[node][visited_set]
+// Initialize dp[0][1] = 0 (start at node 0, node 0 visited)
+// Transition: for each (node, mask), try visiting unvisited nodes
+for (int mask = 1; mask < (1 << n); mask++) {
+    for (int u = 0; u < n; u++) {
+        if ((mask & (1 << u)) == 0) continue; // u not in this mask
+        for (int v = 0; v < n; v++) {
+            if ((mask & (1 << v)) != 0) continue; // v already visited
+            int newMask = mask | (1 << v);
+            dp[v][newMask] = min(dp[v][newMask], dp[u][mask] + dist[u][v]);
+        }
+    }
+}
+```
+
+**Feasibility**: n ≤ 20 (2^20 = 1M states × n nodes = 20M total — manageable).

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect } from "react";
-import { cn } from "@/lib/utils";
 import { javaTopics, type Difficulty } from "@/app/roadmap/roadmapData";
 
 // ─── Section graph data ───────────────────────────────────────────────────────
@@ -182,10 +181,10 @@ function edgePathJ(src: SectionNode, tgt: SectionNode): string {
 
 interface Props {
   done: Set<string>;
-  onToggle: (id: string) => void;
+  onToggle?: (id: string) => void;
 }
 
-export function JavaFlowGraph({ done, onToggle }: Props) {
+export function JavaFlowGraph({ done }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(0.72);

@@ -1,0 +1,77 @@
+---
+title: "Greatest Common Divisor of Strings"
+description: "Find the largest string that divides both strings (similar to GCD for integers)."
+date: "2026-04-08"
+tags: ["math", "string"]
+category: "Math"
+difficulty: "easy"
+timeComplexity: "O(m + n)"
+spaceComplexity: "O(m + n)"
+companies: ["Amazon", "Google", "Facebook"]
+leetcodeNumber: 1071
+draft: false
+---
+
+## Problem Statement
+
+String `t` divides string `s` if `s = t + t + ... + t` (s is formed by some number of copies of t). Given two strings `str1` and `str2`, return the largest string `x` such that `x` divides both `str1` and `str2`.
+
+```
+Input:  str1 = "ABCABC", str2 = "ABC"
+Output: "ABC"
+
+Input:  str1 = "ABABAB", str2 = "ABAB"
+Output: "AB"
+
+Input:  str1 = "LEET", str2 = "CODE"
+Output: ""
+```
+
+## Key Insight: Euclid's Algorithm
+
+The string GCD has length = GCD of the two string lengths. This is analogous to integer GCD.
+
+**Claim**: if a GCD string exists, it must be `str1[0..gcd(len1, len2)-1]`.
+
+**Proof**: if `t` divides both strings, then both strings are formed by repeating `t`. So `str1 + str2 = str2 + str1` must hold (both equal some number of copies of `t`). If this equality holds, `t` must be the first `gcd(len1, len2)` characters of either string.
+
+## Approach: O(m + n)
+
+```java
+public String gcdOfStrings(String str1, String str2) {
+    // If a GCD exists, str1 + str2 must equal str2 + str1
+    if (!(str1 + str2).equals(str2 + str1)) return "";
+
+    // The GCD string is the prefix of length gcd(len1, len2)
+    int gcdLen = gcd(str1.length(), str2.length());
+    return str1.substring(0, gcdLen);
+}
+
+private int gcd(int a, int b) {
+    return b == 0 ? a : gcd(b, a % b);
+}
+```
+
+## Why `str1 + str2 == str2 + str1`?
+
+If `str1 = t × a` and `str2 = t × b`:
+- `str1 + str2 = t^(a+b)`
+- `str2 + str1 = t^(b+a) = t^(a+b)`
+
+Both equal. Conversely, if `str1 + str2 == str2 + str1`, a common divisor must exist (this follows from the theory of free monoids).
+
+## String Concatenation Complexity
+
+Java string concatenation `str1 + str2` creates a string of length `m + n`. The `equals` check is O(m + n). The GCD computation is O(log(min(m, n))).
+
+Total: **O(m + n)**.
+
+## Key Insight
+
+The check `str1 + str2 == str2 + str1` is the key — it verifies in O(m+n) whether a GCD string can exist, without having to find it first. Then `gcd(len1, len2)` gives the exact length. This translates Euclid's algorithm from numbers to strings.
+
+## Edge Cases
+
+- **Same strings**: GCD = the string itself. `gcd(n, n) = n`.
+- **No common divisor**: `str1 + str2 ≠ str2 + str1` → return `""`
+- **One is a multiple of the other**: `"ABAB"`, `"AB"` → GCD = `"AB"`

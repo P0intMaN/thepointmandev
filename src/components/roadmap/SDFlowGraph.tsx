@@ -172,10 +172,10 @@ function bezier(src: GraphNode, tgt: GraphNode): string {
 
 interface Props {
   done: Set<string>;
-  onToggle: (id: string) => void;
+  onToggle?: (id: string) => void;
 }
 
-export function SDFlowGraph({ done, onToggle }: Props) {
+export function SDFlowGraph({ done }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [pan,      setPan]      = useState({ x: 0, y: 0 });
   const [zoom,     setZoom]     = useState(0.72);

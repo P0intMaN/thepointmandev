@@ -1,0 +1,135 @@
+---
+title: "Longest Palindromic Substring"
+description: "Find the longest substring of s that is a palindrome."
+date: "2026-04-08"
+tags: ["string-algorithms", "dynamic-programming", "two-pointers"]
+category: "String Algorithms"
+difficulty: "medium"
+timeComplexity: "O(n²)"
+spaceComplexity: "O(1)"
+companies: ["Amazon", "Google", "Facebook", "Microsoft", "Bloomberg"]
+leetcodeNumber: 5
+draft: false
+---
+
+## Problem Statement
+
+Given a string `s`, return the longest palindromic substring.
+
+```
+Input:  s = "babad"
+Output: "bab"  (or "aba")
+
+Input:  s = "cbbd"
+Output: "bb"
+```
+
+## Approach 1: Expand Around Center — O(n²), O(1) space
+
+Every palindrome has a center (single character for odd-length, gap between two characters for even-length). Expand outward from each center.
+
+```java
+public String longestPalindrome(String s) {
+    int start = 0, maxLen = 1;
+
+    for (int i = 0; i < s.length(); i++) {
+        // Odd length: center at i
+        int len1 = expand(s, i, i);
+        // Even length: center between i and i+1
+        int len2 = expand(s, i, i + 1);
+
+        int len = Math.max(len1, len2);
+        if (len > maxLen) {
+            maxLen = len;
+            start = i - (len - 1) / 2;
+        }
+    }
+
+    return s.substring(start, start + maxLen);
+}
+
+private int expand(String s, int left, int right) {
+    while (left >= 0 && right < s.length() && s.charAt(left) == s.charAt(right)) {
+        left--;
+        right++;
+    }
+    return right - left - 1; // length of palindrome
+}
+```
+
+## Approach 2: Manacher's Algorithm — O(n), O(n) space
+
+Manacher's finds all palindromic substrings in O(n) using previously computed palindrome radii to skip redundant work.
+
+```java
+public String longestPalindrome(String s) {
+    // Transform: "abc" → "#a#b#c#" (handles even/odd uniformly)
+    StringBuilder t = new StringBuilder("#");
+    for (char c : s.toCharArray()) t.append(c).append('#');
+    String T = t.toString();
+    int n = T.length();
+
+    int[] p = new int[n]; // p[i] = radius of palindrome centered at i
+    int center = 0, right = 0; // rightmost palindrome boundary
+
+    for (int i = 0; i < n; i++) {
+        int mirror = 2 * center - i;
+
+        if (i < right) {
+            p[i] = Math.min(right - i, p[mirror]);
+        }
+
+        // Expand
+        while (i + p[i] + 1 < n && i - p[i] - 1 >= 0
+               && T.charAt(i + p[i] + 1) == T.charAt(i - p[i] - 1)) {
+            p[i]++;
+        }
+
+        // Update center/right
+        if (i + p[i] > right) {
+            center = i;
+            right = i + p[i];
+        }
+    }
+
+    // Find max
+    int maxLen = 0, centerIdx = 0;
+    for (int i = 0; i < n; i++) {
+        if (p[i] > maxLen) { maxLen = p[i]; centerIdx = i; }
+    }
+
+    int start = (centerIdx - maxLen) / 2;
+    return s.substring(start, start + maxLen);
+}
+```
+
+## Approach 3: DP — O(n²), O(n²) space
+
+`dp[i][j]` = true if `s[i..j]` is a palindrome. Rarely used in interviews (more space, same time as expand).
+
+```java
+// dp[i][j] = (s[i] == s[j]) && dp[i+1][j-1]
+// Fill by increasing length
+```
+
+## Complexity
+
+| Approach | Time | Space |
+|---|---|---|
+| Brute force | O(n³) | O(1) |
+| **Expand around center** | **O(n²)** | **O(1)** |
+| Manacher's | O(n) | O(n) |
+| DP | O(n²) | O(n²) |
+
+## Key Insight
+
+The expand-around-center approach is O(n²) but uses O(1) space and is the standard interview answer. Manacher's O(n) is impressive but complex — know the concept, not necessarily the full implementation.
+
+The key insight: there are `2n-1` palindrome centers (n single chars + n-1 gaps). Expanding from each is O(n) total center × O(n) worst per center = O(n²).
+
+## Edge Cases
+
+- **Single character**: it's a palindrome itself
+- **All same characters** `"aaaa"`: entire string is the longest palindrome
+- **No palindrome longer than 1**: return any single character
+- **Even-length palindrome** `"bb"`: expand from gap between 0 and 1

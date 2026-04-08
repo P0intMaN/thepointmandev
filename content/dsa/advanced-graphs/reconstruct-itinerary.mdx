@@ -1,0 +1,102 @@
+---
+title: "Reconstruct Itinerary"
+description: "Given a list of airline tickets, reconstruct the itinerary in lexical order using Hierholzer's Eulerian path algorithm."
+date: "2026-04-08"
+tags: ["advanced-graphs", "graph", "dfs", "eulerian-path"]
+category: "Advanced Graphs"
+difficulty: "hard"
+timeComplexity: "O(E log E)"
+spaceComplexity: "O(E)"
+companies: ["Amazon", "Google", "Facebook", "Airbnb"]
+leetcodeNumber: 332
+draft: false
+---
+
+## Problem Statement
+
+Given a list of airline tickets `[from, to]`, reconstruct the itinerary using all tickets. The itinerary must start from "JFK" and use all tickets exactly once. If multiple valid itineraries exist, return the one with the smallest lexical order.
+
+```
+Input:  tickets = [["MUC","LHR"],["JFK","MUC"],["SFO","SJC"],["LHR","SFO"]]
+Output: ["JFK","MUC","LHR","SFO","SJC"]
+
+Input:  tickets = [["JFK","SFO"],["JFK","ATL"],["SFO","ATL"],["ATL","JFK"],["ATL","SFO"]]
+Output: ["JFK","ATL","JFK","SFO","ATL","SFO"]
+```
+
+## Key Insight: Eulerian Path
+
+Each ticket is a directed edge. The problem asks for an **Eulerian path** (visit every edge exactly once) starting from JFK.
+
+Since the problem guarantees a solution exists, an Eulerian path must exist. Use **Hierholzer's algorithm**: greedily follow edges (in lexical order), and when stuck, backtrack — the stuck node goes to the end of the result.
+
+## Approach: Hierholzer's DFS — O(E log E)
+
+Sort each node's adjacency list lexically. Run Hierholzer's: post-order DFS appends nodes to the result, then reverse.
+
+```java
+public List<String> findItinerary(List<List<String>> tickets) {
+    // Build adjacency list with sorted destinations (PriorityQueue = min heap)
+    Map<String, PriorityQueue<String>> graph = new HashMap<>();
+    for (List<String> ticket : tickets) {
+        graph.computeIfAbsent(ticket.get(0), k -> new PriorityQueue<>())
+             .offer(ticket.get(1));
+    }
+
+    LinkedList<String> result = new LinkedList<>();
+    dfs("JFK", graph, result);
+    return result;
+}
+
+private void dfs(String airport, Map<String, PriorityQueue<String>> graph,
+                 LinkedList<String> result) {
+    PriorityQueue<String> neighbors = graph.get(airport);
+
+    while (neighbors != null && !neighbors.isEmpty()) {
+        String next = neighbors.poll(); // take lexically smallest
+        dfs(next, graph, result);
+    }
+
+    result.addFirst(airport); // post-order: add to front
+}
+```
+
+**Why `addFirst`?** Hierholzer's algorithm builds the path in reverse. A node that gets added when `neighbors` is empty is a "dead end" — it must come later in the itinerary. Adding to the front of a LinkedList builds the result in reverse post-order, which is the correct forward order.
+
+## Iterative Version
+
+```java
+private void dfs(String start, Map<String, PriorityQueue<String>> graph,
+                 LinkedList<String> result) {
+    Deque<String> stack = new ArrayDeque<>();
+    stack.push(start);
+
+    while (!stack.isEmpty()) {
+        PriorityQueue<String> neighbors = graph.get(stack.peek());
+        if (neighbors != null && !neighbors.isEmpty()) {
+            stack.push(neighbors.poll()); // follow next edge
+        } else {
+            result.addFirst(stack.pop()); // dead end → goes to result
+        }
+    }
+}
+```
+
+## Complexity
+
+- Building graph: O(E log E) — sorting adjacency lists via PriorityQueue
+- DFS: O(E) — each edge visited once
+
+Total: **O(E log E)**
+
+## Key Insight
+
+This is **Hierholzer's algorithm** for finding an Eulerian path. The key observation: when DFS gets "stuck" at a node (no more outgoing edges), that node must appear at the current position in the itinerary. We build the path in post-order and reverse.
+
+The PriorityQueue ensures lexical order — we always take the alphabetically smallest destination first.
+
+## Edge Cases
+
+- **Single ticket**: `[["JFK","ATL"]]` → `["JFK","ATL"]`
+- **Circular itinerary**: DFS returns to JFK; handled naturally by the algorithm
+- **Dead-end branches**: the stuck node gets inserted at the correct position by `addFirst`

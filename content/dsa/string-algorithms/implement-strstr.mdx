@@ -1,0 +1,131 @@
+---
+title: "Implement strStr() / Find the Index of the First Occurrence in a String"
+description: "Find the first occurrence of needle in haystack — implement substring search."
+date: "2026-04-08"
+tags: ["string-algorithms", "sliding-window", "kmp"]
+category: "String Algorithms"
+difficulty: "easy"
+timeComplexity: "O(n + m)"
+spaceComplexity: "O(m)"
+companies: ["Amazon", "Google", "Facebook", "Microsoft", "Apple"]
+leetcodeNumber: 28
+draft: false
+---
+
+## Problem Statement
+
+Given two strings `haystack` and `needle`, return the index of the first occurrence of `needle` in `haystack`, or `-1` if `needle` is not part of `haystack`.
+
+```
+Input:  haystack = "sadbutsad", needle = "sad"
+Output: 0
+
+Input:  haystack = "leetcode", needle = "leeto"
+Output: -1
+```
+
+## Approach 1: Built-in — O(n · m) worst case
+
+```java
+public int strStr(String haystack, String needle) {
+    return haystack.indexOf(needle); // Java built-in
+}
+```
+
+Java's `indexOf` uses a naïve algorithm internally — O(n · m) worst case. Fine for most interviews when the naive approach is acceptable.
+
+## Approach 2: KMP (Knuth-Morris-Pratt) — O(n + m)
+
+Build a **failure function** (LPS: Longest Proper Prefix which is also Suffix) for the needle, then scan the haystack without backtracking.
+
+```java
+public int strStr(String haystack, String needle) {
+    int n = haystack.length(), m = needle.length();
+    if (m == 0) return 0;
+    if (m > n) return -1;
+
+    int[] lps = buildLPS(needle);
+
+    int i = 0, j = 0; // i = haystack index, j = needle index
+    while (i < n) {
+        if (haystack.charAt(i) == needle.charAt(j)) {
+            i++; j++;
+            if (j == m) return i - m; // full match
+        } else if (j > 0) {
+            j = lps[j - 1]; // use failure function (don't move i)
+        } else {
+            i++; // j == 0, no match
+        }
+    }
+    return -1;
+}
+
+private int[] buildLPS(String pattern) {
+    int m = pattern.length();
+    int[] lps = new int[m];
+    int len = 0, i = 1;
+
+    while (i < m) {
+        if (pattern.charAt(i) == pattern.charAt(len)) {
+            lps[i++] = ++len;
+        } else if (len > 0) {
+            len = lps[len - 1]; // fall back
+        } else {
+            lps[i++] = 0;
+        }
+    }
+    return lps;
+}
+```
+
+**What is LPS?** `lps[i]` = length of the longest proper prefix of `needle[0..i]` that is also a suffix. Example: `needle = "ABAB"` → `lps = [0,0,1,2]`. When mismatch at `j`, skip to `lps[j-1]` instead of restarting from 0.
+
+## Approach 3: Rabin-Karp — O(n + m) average
+
+Rolling hash comparison. O(n·m) worst case with hash collisions.
+
+```java
+public int strStr(String haystack, String needle) {
+    int n = haystack.length(), m = needle.length();
+    if (m > n) return -1;
+
+    int base = 31, mod = 1_000_000_007;
+    long patHash = 0, winHash = 0, pow = 1;
+
+    for (int i = 0; i < m; i++) {
+        patHash = (patHash * base + (needle.charAt(i) - 'a' + 1)) % mod;
+        winHash = (winHash * base + (haystack.charAt(i) - 'a' + 1)) % mod;
+        if (i > 0) pow = pow * base % mod;
+    }
+
+    if (winHash == patHash && haystack.substring(0, m).equals(needle)) return 0;
+
+    for (int i = 1; i <= n - m; i++) {
+        winHash = (winHash - (haystack.charAt(i-1) - 'a' + 1) * pow % mod + mod) % mod;
+        winHash = (winHash * base + (haystack.charAt(i + m - 1) - 'a' + 1)) % mod;
+        if (winHash == patHash && haystack.substring(i, i+m).equals(needle)) return i;
+    }
+    return -1;
+}
+```
+
+## Complexity
+
+| Approach | Time | Space |
+|---|---|---|
+| Naïve | O(n · m) | O(1) |
+| Rabin-Karp (avg) | O(n + m) | O(1) |
+| **KMP** | **O(n + m)** | **O(m)** |
+
+## Key Insight
+
+KMP's key insight: when a mismatch occurs at position `j` in the needle, we don't need to start over. The LPS array tells us the longest prefix of the needle that matches a suffix of what we've already matched — we can restart from there, keeping the `i` pointer fixed.
+
+This is the canonical linear-time string matching algorithm.
+
+## Edge Cases
+
+- **Empty needle**: return 0 (always found at start)
+- **Needle longer than haystack**: return -1
+- **needle == haystack**: return 0
+- **Single character needle**: check each character, O(n)

@@ -1,0 +1,102 @@
+---
+title: "Repeated DNA Sequences"
+description: "Find all 10-letter-long sequences that occur more than once in a DNA string."
+date: "2026-04-08"
+tags: ["string-algorithms", "sliding-window", "hash-map", "bit-manipulation"]
+category: "String Algorithms"
+difficulty: "medium"
+timeComplexity: "O(n)"
+spaceComplexity: "O(n)"
+companies: ["Amazon", "Google", "Facebook", "LinkedIn"]
+leetcodeNumber: 187
+draft: false
+---
+
+## Problem Statement
+
+Given a DNA string `s` (consisting of 'A', 'C', 'G', 'T'), find all the 10-letter-long sequences (substrings) that occur more than once. Return the answer in any order.
+
+```
+Input:  s = "AAAAACCCCCAAAAACCCCCCAAAAAGGGTTT"
+Output: ["AAAAACCCCC","CCCCCAAAAA"]
+```
+
+## Approach 1: HashSet Sliding Window — O(n)
+
+Slide a window of size 10. Add each 10-char substring to a "seen" set. If already in "seen", add to result set.
+
+```java
+public List<String> findRepeatedDnaSequences(String s) {
+    Set<String> seen = new HashSet<>();
+    Set<String> result = new HashSet<>();
+
+    for (int i = 0; i + 10 <= s.length(); i++) {
+        String window = s.substring(i, i + 10);
+        if (!seen.add(window)) { // add() returns false if already present
+            result.add(window);
+        }
+    }
+
+    return new ArrayList<>(result);
+}
+```
+
+**`seen.add(window)` returns `false`** if the element was already in the set — clean idiom.
+
+**Why use a result `Set`?** The same sequence might appear 3+ times. Using a Set avoids duplicates in the output.
+
+## Approach 2: Rolling Hash (Rabin-Karp Style) — O(n)
+
+Avoid `O(10)` substring creation per window using a rolling hash. Encode `{A, C, G, T}` as `{0, 1, 2, 3}` (2 bits each). A 10-char window fits in 20 bits.
+
+```java
+public List<String> findRepeatedDnaSequences(String s) {
+    if (s.length() <= 10) return new ArrayList<>();
+
+    Map<Character, Integer> encode = Map.of('A',0,'C',1,'G',2,'T',3);
+    int mask = (1 << 20) - 1; // 20-bit mask
+
+    // Build initial hash for first 10 chars
+    int hash = 0;
+    for (int i = 0; i < 10; i++) {
+        hash = ((hash << 2) | encode.get(s.charAt(i)));
+    }
+    hash &= mask;
+
+    Set<Integer> seen = new HashSet<>();
+    Set<String> result = new HashSet<>();
+    seen.add(hash);
+
+    for (int i = 10; i < s.length(); i++) {
+        // Roll: remove leftmost char (2 bits), add new char
+        hash = ((hash << 2) | encode.get(s.charAt(i))) & mask;
+
+        if (!seen.add(hash)) {
+            result.add(s.substring(i - 9, i + 1));
+        }
+    }
+
+    return new ArrayList<>(result);
+}
+```
+
+The rolling hash shifts left by 2 and ORs the new character's 2-bit code. The mask (`mask = (1 << 20) - 1`) keeps only the last 20 bits — discarding the leftmost character automatically.
+
+## Complexity
+
+| Approach | Time | Space |
+|---|---|---|
+| **HashSet (substrings)** | **O(n · 10) = O(n)** | **O(n · 10) = O(n)** |
+| **Rolling hash** | **O(n)** | **O(n)** |
+
+The constant factor for rolling hash is smaller (integer operations vs string allocation).
+
+## Key Insight
+
+This is a sliding window + hashing problem. The fixed window size (10) makes it a textbook rolling hash application. For the fixed alphabet `{A, C, G, T}`, encoding in 2 bits per character perfectly fits a 10-character window into a 20-bit integer — no hash collision possible.
+
+## Edge Cases
+
+- **Length ≤ 10**: no window of size 10 possible → return empty
+- **All same character** `"AAAAAAAAAA..."`: the single repeated sequence is found
+- **No repetition**: result is empty

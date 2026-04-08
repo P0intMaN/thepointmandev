@@ -1,0 +1,114 @@
+---
+title: "Rotate Image"
+description: "Rotate an n×n matrix 90 degrees clockwise in-place."
+date: "2026-04-08"
+tags: ["matrix-grid", "array", "math"]
+category: "Matrix / Grid"
+difficulty: "medium"
+timeComplexity: "O(n²)"
+spaceComplexity: "O(1)"
+companies: ["Amazon", "Google", "Microsoft", "Facebook", "Apple"]
+leetcodeNumber: 48
+draft: false
+---
+
+## Problem Statement
+
+Given an `n x n` 2D matrix representing an image, rotate the image by **90 degrees clockwise** in-place.
+
+```
+Input:  [[1,2,3],[4,5,6],[7,8,9]]
+Output: [[7,4,1],[8,5,2],[9,6,3]]
+
+Input:  [[5,1,9,11],[2,4,8,10],[13,3,6,7],[15,14,12,16]]
+Output: [[15,13,2,5],[14,3,4,1],[12,6,8,9],[16,7,10,11]]
+```
+
+## Approach: Transpose + Reverse Rows — O(n²), O(1)
+
+**90° clockwise rotation = Transpose + Reverse each row**
+
+```java
+public void rotate(int[][] matrix) {
+    int n = matrix.length;
+
+    // Step 1: Transpose (reflect across main diagonal)
+    // matrix[i][j] ↔ matrix[j][i]
+    for (int i = 0; i < n; i++) {
+        for (int j = i + 1; j < n; j++) {
+            int tmp = matrix[i][j];
+            matrix[i][j] = matrix[j][i];
+            matrix[j][i] = tmp;
+        }
+    }
+
+    // Step 2: Reverse each row
+    for (int i = 0; i < n; i++) {
+        int left = 0, right = n - 1;
+        while (left < right) {
+            int tmp = matrix[i][left];
+            matrix[i][left] = matrix[i][right];
+            matrix[i][right] = tmp;
+            left++; right--;
+        }
+    }
+}
+```
+
+**Why does Transpose + Reverse = 90° CW?**
+
+For 90° CW rotation: element at `(i, j)` goes to `(j, n-1-i)`.
+
+After transpose: `(i, j) → (j, i)`. After row reverse: `(j, i) → (j, n-1-i)`. ✓
+
+## Alternative: Layer-by-Layer Four-Element Swap
+
+Rotate the matrix one ring at a time, performing a four-way swap per element:
+
+```java
+public void rotate(int[][] matrix) {
+    int n = matrix.length;
+
+    for (int layer = 0; layer < n / 2; layer++) {
+        int first = layer, last = n - 1 - layer;
+
+        for (int i = first; i < last; i++) {
+            int offset = i - first;
+
+            int top = matrix[first][i]; // save top
+
+            // left → top
+            matrix[first][i] = matrix[last - offset][first];
+            // bottom → left
+            matrix[last - offset][first] = matrix[last][last - offset];
+            // right → bottom
+            matrix[last][last - offset] = matrix[i][last];
+            // top → right
+            matrix[i][last] = top;
+        }
+    }
+}
+```
+
+## Other Rotations
+
+- **90° counter-clockwise**: Reverse each row first, then transpose
+- **180°**: Reverse each row + reverse the array of rows (or transpose twice)
+
+## Complexity
+
+| | Time | Space |
+|---|---|---|
+| **Transpose + reverse** | **O(n²)** | **O(1)** |
+| Layer-by-layer swap | O(n²) | O(1) |
+| Extra matrix copy | O(n²) | O(n²) |
+
+## Key Insight
+
+The "Transpose + Reverse" decomposition is elegant and easy to remember. Memorize: **clockwise = transpose then reverse rows**. Counter-clockwise = reverse rows then transpose (or transpose then reverse columns).
+
+## Edge Cases
+
+- **1×1 matrix**: no change needed (single element)
+- **2×2 matrix**: exactly one swap per layer
+- **Odd n**: the center element stays in place

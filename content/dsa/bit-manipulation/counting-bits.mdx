@@ -1,0 +1,99 @@
+---
+title: "Counting Bits"
+description: "For every number from 0 to n, count the number of 1 bits in its binary representation."
+date: "2026-04-08"
+tags: ["bit-manipulation", "dynamic-programming"]
+category: "Bit Manipulation"
+difficulty: "easy"
+timeComplexity: "O(n)"
+spaceComplexity: "O(n)"
+companies: ["Amazon", "Google", "Facebook", "Microsoft"]
+leetcodeNumber: 338
+draft: false
+---
+
+## Problem Statement
+
+Given an integer `n`, return an array `ans` of length `n + 1` such that for each `i` (0 ≤ i ≤ n), `ans[i]` is the number of 1s in the binary representation of `i`.
+
+```
+Input:  n = 2
+Output: [0,1,1]
+
+Input:  n = 5
+Output: [0,1,1,2,1,2]
+```
+
+## Approach 1: DP with Lowest Set Bit — O(n)
+
+`dp[i] = dp[i & (i-1)] + 1`
+
+`i & (i-1)` clears the lowest set bit of `i`, giving a smaller number whose bit count we already know.
+
+```java
+public int[] countBits(int n) {
+    int[] dp = new int[n + 1];
+    for (int i = 1; i <= n; i++) {
+        dp[i] = dp[i & (i - 1)] + 1;
+    }
+    return dp;
+}
+```
+
+**Example**: `i=6` (110), `i&(i-1)=100=4`, `dp[4]=1`, so `dp[6]=2`.
+
+## Approach 2: DP with Right Shift — O(n)
+
+`dp[i] = dp[i >> 1] + (i & 1)`
+
+Right shift removes the least significant bit. `(i & 1)` counts that bit.
+
+```java
+public int[] countBits(int n) {
+    int[] dp = new int[n + 1];
+    for (int i = 1; i <= n; i++) {
+        dp[i] = dp[i >> 1] + (i & 1);
+    }
+    return dp;
+}
+```
+
+**Example**: `i=7` (111), `i>>1=3` (11), `dp[3]=2`, `7&1=1`, so `dp[7]=3`.
+
+## Approach 3: DP with Highest Power of 2 — O(n)
+
+Numbers in `[2^k, 2^(k+1))` have bit counts = `dp[i - 2^k] + 1` (the extra set bit is the leading 1).
+
+```java
+public int[] countBits(int n) {
+    int[] dp = new int[n + 1];
+    int offset = 1; // highest power of 2 ≤ i
+    for (int i = 1; i <= n; i++) {
+        if (offset * 2 == i) offset = i; // next power of 2
+        dp[i] = dp[i - offset] + 1;
+    }
+    return dp;
+}
+```
+
+## Complexity
+
+| Approach | Time | Space |
+|---|---|---|
+| Brute force (Brian Kernighan per number) | O(n log n) | O(n) |
+| **DP (any variant)** | **O(n)** | **O(n)** |
+
+## Key Insight
+
+All three DP approaches exploit the fact that a number's bit count is related to a smaller number's bit count:
+1. Remove the lowest set bit: `i & (i-1)` → add 1
+2. Remove the lowest bit: `i >> 1` → add the removed bit
+3. Remove the leading bit: `i - highestPowerOf2` → add 1
+
+The DP builds the answer from smaller to larger, reusing previously computed results.
+
+## Edge Cases
+
+- **n = 0**: return `[0]`
+- **Powers of 2**: `2^k` always has exactly 1 set bit → `dp[2^k] = 1`
+- **2^k - 1**: all k bits set → `dp[2^k - 1] = k`

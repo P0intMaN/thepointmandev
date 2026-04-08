@@ -280,6 +280,85 @@ const icons: Record<string, React.ReactNode> = {
       <rect x="16" y="10" width="12" height="7" rx="3.5" fill="currentColor" opacity="0.3"/>
     </svg>
   ),
+  mst: (
+    <svg viewBox="0 0 48 48" fill="none" className="h-full w-full">
+      <circle cx="24" cy="8" r="4" fill="currentColor" opacity="0.9"/>
+      <circle cx="6" cy="36" r="4" fill="currentColor" opacity="0.7"/>
+      <circle cx="42" cy="36" r="4" fill="currentColor" opacity="0.7"/>
+      <circle cx="24" cy="36" r="4" fill="currentColor" opacity="0.6"/>
+      <path d="M24 12L6 32" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+      <path d="M24 12L42 32" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+      <path d="M24 12L24 32" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeDasharray="3 2" opacity="0.5"/>
+      <text x="10" y="26" fontSize="7" fill="currentColor" opacity="0.7" fontFamily="monospace">2</text>
+      <text x="34" y="26" fontSize="7" fill="currentColor" opacity="0.7" fontFamily="monospace">3</text>
+    </svg>
+  ),
+  "string-algorithms": (
+    <svg viewBox="0 0 48 48" fill="none" className="h-full w-full">
+      <text x="4" y="16" fontSize="9" fill="currentColor" opacity="0.9" fontFamily="monospace">ABAB</text>
+      <text x="4" y="30" fontSize="9" fill="currentColor" opacity="0.6" fontFamily="monospace">AB</text>
+      <rect x="4" y="32" width="14" height="3" rx="1" fill="currentColor" opacity="0.3"/>
+      <path d="M4 36h40" stroke="currentColor" strokeWidth="1" opacity="0.2"/>
+      <path d="M4 38 Q14 32 24 38 Q34 44 44 38" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" opacity="0.6"/>
+      <rect x="4" y="18" width="14" height="3" rx="1" fill="currentColor" opacity="0.5"/>
+      <rect x="18" y="18" width="14" height="3" rx="1" fill="currentColor" opacity="0.3"/>
+    </svg>
+  ),
+  "matrix-grid": (
+    <svg viewBox="0 0 48 48" fill="none" className="h-full w-full">
+      <rect x="4" y="4" width="40" height="40" rx="3" stroke="currentColor" strokeWidth="1.5" opacity="0.3"/>
+      <line x1="4" y1="17" x2="44" y2="17" stroke="currentColor" strokeWidth="1" opacity="0.4"/>
+      <line x1="4" y1="30" x2="44" y2="30" stroke="currentColor" strokeWidth="1" opacity="0.4"/>
+      <line x1="17" y1="4" x2="17" y2="44" stroke="currentColor" strokeWidth="1" opacity="0.4"/>
+      <line x1="30" y1="4" x2="30" y2="44" stroke="currentColor" strokeWidth="1" opacity="0.4"/>
+      <path d="M6 6 L15 6 L15 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity="0.7"/>
+      <path d="M32 6 L42 6 L42 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity="0.5"/>
+      <circle cx="10" cy="10" r="2" fill="currentColor" opacity="0.9"/>
+      <circle cx="37" cy="37" r="2" fill="currentColor" opacity="0.9"/>
+    </svg>
+  ),
+  sorting: (
+    <svg viewBox="0 0 48 48" fill="none" className="h-full w-full">
+      <rect x="4" y="38" width="8" height="6" rx="1" fill="currentColor" opacity="0.5"/>
+      <rect x="14" y="30" width="8" height="14" rx="1" fill="currentColor" opacity="0.65"/>
+      <rect x="24" y="22" width="8" height="22" rx="1" fill="currentColor" opacity="0.8"/>
+      <rect x="34" y="14" width="8" height="30" rx="1" fill="currentColor" opacity="0.9"/>
+      <path d="M6 22 L16 16 L26 10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.4" strokeDasharray="3 2"/>
+      <path d="M36 10l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.6"/>
+    </svg>
+  ),
+  "divide-conquer": (
+    <svg viewBox="0 0 48 48" fill="none" className="h-full w-full">
+      <rect x="16" y="4" width="16" height="8" rx="2" fill="currentColor" opacity="0.9"/>
+      <rect x="4" y="20" width="16" height="8" rx="2" fill="currentColor" opacity="0.7"/>
+      <rect x="28" y="20" width="16" height="8" rx="2" fill="currentColor" opacity="0.7"/>
+      <path d="M24 12L12 20M24 12L36 20" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+      <path d="M12 36 Q24 30 36 36" stroke="currentColor" strokeWidth="2" strokeLinecap="round" opacity="0.5"/>
+      <path d="M20 28L24 36L28 28" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.7"/>
+    </svg>
+  ),
+  "advanced-dp": (
+    <svg viewBox="0 0 48 48" fill="none" className="h-full w-full">
+      <rect x="4" y="4" width="18" height="18" rx="2" fill="currentColor" opacity="0.3"/>
+      <rect x="26" y="4" width="18" height="18" rx="2" fill="currentColor" opacity="0.5"/>
+      <rect x="4" y="26" width="18" height="18" rx="2" fill="currentColor" opacity="0.5"/>
+      <rect x="26" y="26" width="18" height="18" rx="2" fill="currentColor" opacity="0.9"/>
+      <path d="M22 13L26 13M13 22L13 26" stroke="currentColor" strokeWidth="2" strokeLinecap="round" opacity="0.5"/>
+      <path d="M22 35L26 35M35 22L35 26" stroke="currentColor" strokeWidth="2" strokeLinecap="round" opacity="0.7"/>
+      <circle cx="35" cy="35" r="4" fill="currentColor" opacity="0.9"/>
+    </svg>
+  ),
+  "advanced-graphs": (
+    <svg viewBox="0 0 48 48" fill="none" className="h-full w-full">
+      <circle cx="8" cy="24" r="4" fill="currentColor" opacity="0.9"/>
+      <circle cx="24" cy="8" r="4" fill="currentColor" opacity="0.7"/>
+      <circle cx="40" cy="24" r="4" fill="currentColor" opacity="0.7"/>
+      <circle cx="24" cy="40" r="4" fill="currentColor" opacity="0.6"/>
+      <circle cx="24" cy="24" r="4" fill="currentColor" opacity="0.5"/>
+      <path d="M12 24L20 24M28 24L36 24M24 12L24 20M24 28L24 36M11 21L21 11M37 21L27 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" opacity="0.6"/>
+      <path d="M36 21L37 21" stroke="currentColor" strokeWidth="3" strokeLinecap="round" opacity="0.9"/>
+    </svg>
+  ),
 };
 
 const tierLabel: Record<number, string> = {
