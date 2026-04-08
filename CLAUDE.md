@@ -302,6 +302,7 @@ for row in ws.rows:
 - **Card text sizes** — metadata/labels: `text-sm`, descriptions/excerpts: `text-base`, tags: `text-sm`. Do not go below `text-sm` for any user-readable card content.
 - **Graph scroll** — wheel events on pan/zoom graphs use native `addEventListener("wheel", handler, { passive: false })` in `useEffect`. React's `onWheel` prop is passive and cannot call `preventDefault()`.
 - **Nested buttons** — avoid `<button>` inside `<button>`. Use `<div role="button" tabIndex={0} onKeyDown={...}>` for the outer wrapper when a clickable `<button>` must live inside.
+- **MDX safe text** — in MDX body text (outside code blocks), these cause parse errors: `{...}` (JS expression), `<word` (JSX tag), `<<` (double left-angle), `<digit` or `<-` (invalid JSX). Wrap comparisons and bitwise ops in backticks or code blocks.
 
 ## Preferences
 
