@@ -99,18 +99,20 @@ export function SpotifyPlayer() {
               </button>
             </div>
 
-            {/* Spotify embed */}
+            {/* YouTube embed — responsive 16:9 */}
             <div className="p-2">
-              <iframe
-                style={{ borderRadius: "8px", display: "block" }}
-                src="https://open.spotify.com/embed/playlist/6VIVjcLU2PwaTTf4ISWtHU?utm_source=generator"
-                width="100%"
-                height="152"
-                frameBorder="0"
-                allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-                loading="lazy"
-                title="Spotify playlist"
-              />
+              <div style={{ position: "relative", paddingBottom: "56.25%", height: 0, borderRadius: "8px", overflow: "hidden" }}>
+                <iframe
+                  src="https://www.youtube.com/embed/videoseries?si=8AJQ6KK4aHudCwnl&list=PLrkzbaHCPxSTjf7yytLq_hO0VVSgjbNv3"
+                  title="YouTube video player"
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  referrerPolicy="strict-origin-when-cross-origin"
+                  allowFullScreen
+                  loading="lazy"
+                  style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%" }}
+                />
+              </div>
             </div>
           </div>
         </div>
