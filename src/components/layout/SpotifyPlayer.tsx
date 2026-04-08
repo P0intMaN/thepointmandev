@@ -162,7 +162,7 @@ export function SpotifyPlayer() {
             </svg>
 
             <span>
-              {open ? "close player" : "drop incoming ↯"}
+              {open ? "close player" : "Pure Trance. Hit play"}
             </span>
 
             {/* Chevron */}
