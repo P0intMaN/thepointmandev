@@ -1,0 +1,162 @@
+---
+title: "Network Delay Time"
+description: "Find the minimum time for all nodes to receive a signal sent from a given source node using the Bellman-Ford algorithm."
+date: "2026-04-08"
+tags: ["bellman-ford", "graph", "shortest-path", "negative-cycle"]
+category: "Bellman-Ford"
+difficulty: "medium"
+timeComplexity: "O(V · E)"
+spaceComplexity: "O(V)"
+companies: ["Google", "Amazon", "Facebook", "Microsoft"]
+leetcodeNumber: 743
+draft: false
+---
+
+## Problem Statement
+
+You are given a network of `n` nodes, labeled from `1` to `n`. You are also given `times`, a list of travel times as directed edges `times[i] = [u, v, w]`, where `u` is the source node, `v` is the target node, and `w` is the time it takes for a signal to travel from source to target.
+
+We will send a signal from a given node `k`. Return the **minimum time** it takes for all the `n` nodes to receive the signal. If it is impossible for all the `n` nodes to receive the signal, return `-1`.
+
+```
+Input: times = [[2,1,1],[2,3,1],[3,4,1]], n = 4, k = 2
+Output: 2
+
+Input: times = [[1,2,1]], n = 2, k = 1
+Output: 1
+
+Input: times = [[1,2,1]], n = 2, k = 2
+Output: -1
+```
+
+## Approach 1: Standard Bellman-Ford — O(V · E)
+
+While Dijkstra's algorithm is typically faster for graphs with non-negative weights, **Bellman-Ford** is more robust as it naturally handles negative edge weights. It works by relaxing all edges up to `V - 1` times.
+
+In each iteration, we check if we can improve the shortest path to a destination node `v` by going through its source node `u`.
+
+```java
+class Solution {
+    public int networkDelayTime(int[][] times, int n, int k) {
+        int[] dist = new int[n + 1];
+        Arrays.fill(dist, Integer.MAX_VALUE / 2); // Prevent overflow during addition
+        dist[k] = 0;
+        
+        // Relax all edges up to V - 1 times
+        for (int i = 1; i < n; i++) {
+            boolean improved = false;
+            for (int[] edge : times) {
+                int u = edge[0];
+                int v = edge[1];
+                int w = edge[2];
+                
+                if (dist[u] + w < dist[v]) {
+                    dist[v] = dist[u] + w;
+                    improved = true;
+                }
+            }
+            // Early termination: if no distances improved, we are done
+            if (!improved) break;
+        }
+        
+        // Find the maximum distance needed to reach any node
+        int maxDist = 0;
+        for (int i = 1; i <= n; i++) {
+            if (dist[i] == Integer.MAX_VALUE / 2) {
+                return -1; // Unreachable node
+            }
+            maxDist = Math.max(maxDist, dist[i]);
+        }
+        
+        return maxDist;
+    }
+}
+```
+
+## Approach 2: SPFA (Shortest Path Faster Algorithm)
+
+The standard Bellman-Ford algorithm blindly relaxes all edges in every iteration. We can optimize this by observing that an edge `u -> v` only needs to be relaxed if the shortest path to `u` was updated recently.
+
+**SPFA** uses a queue to keep track of nodes whose distances have just been updated. This brings the average time complexity closer to `O(E)`, though the worst-case remains `O(V · E)`.
+
+```java
+class Solution {
+    public int networkDelayTime(int[][] times, int n, int k) {
+        // Build adjacency list
+        List<List<int[]>> graph = new ArrayList<>();
+        for (int i = 0; i <= n; i++) graph.add(new ArrayList<>());
+        for (int[] edge : times) {
+            graph.get(edge[0]).add(new int[]{edge[1], edge[2]});
+        }
+        
+        int[] dist = new int[n + 1];
+        Arrays.fill(dist, Integer.MAX_VALUE / 2);
+        dist[k] = 0;
+        
+        Queue<Integer> queue = new LinkedList<>();
+        queue.offer(k);
+        
+        boolean[] inQueue = new boolean[n + 1];
+        inQueue[k] = true;
+        
+        while (!queue.isEmpty()) {
+            int u = queue.poll();
+            inQueue[u] = false;
+            
+            for (int[] neighbor : graph.get(u)) {
+                int v = neighbor[0];
+                int w = neighbor[1];
+                
+                if (dist[u] + w < dist[v]) {
+                    dist[v] = dist[u] + w;
+                    // Only add to queue if it's not already there
+                    if (!inQueue[v]) {
+                        queue.offer(v);
+                        inQueue[v] = true;
+                    }
+                }
+            }
+        }
+        
+        int maxDist = 0;
+        for (int i = 1; i <= n; i++) {
+            if (dist[i] == Integer.MAX_VALUE / 2) return -1;
+            maxDist = Math.max(maxDist, dist[i]);
+        }
+        
+        return maxDist;
+    }
+}
+```
+
+## Complexity Analysis
+
+| Approach | Time Complexity | Space Complexity |
+| :--- | :--- | :--- |
+| Standard Bellman-Ford | `O(V · E)` | `O(V)` |
+| SPFA | `O(V · E)` worst, `O(E)` average | `O(V + E)` |
+
+*Where `V` is the number of nodes (n) and `E` is the number of edges (times.length).*
+
+## Key Insight: Negative Cycle Detection
+
+Although Network Delay Time only has non-negative weights, **Bellman-Ford is famous for its ability to detect negative-weight cycles.**
+
+If a graph contains a cycle where the total edge weight is negative, shortest paths are technically undefined (you can loop infinitely to keep reducing the cost). 
+
+To detect this, simply run one extra (`V-th`) relaxation loop after the `V - 1` iterations. If any distance still improves, the graph contains a negative cycle.
+
+```java
+// V-th round: if any improvement, a negative cycle exists!
+for (int[] edge : times) {
+    if (dist[edge[0]] + edge[2] < dist[edge[1]]) {
+        return true; // Negative cycle detected
+    }
+}
+```
+
+## Edge Cases
+
+- **Node cannot be reached**: Disconnected graph or isolated source. Caught when checking `dist[i] == Integer.MAX_VALUE / 2`.
+- **Multiple edges between same nodes**: Handled gracefully.
+- **1-Indexed Nodes**: Always initialize the distance array to `n + 1` and ignore index `0`.
