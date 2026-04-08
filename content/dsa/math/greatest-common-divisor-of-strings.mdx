@@ -1,0 +1,120 @@
+---
+title: "Greatest Common Divisor of Strings"
+description: "Find the largest string that divides both given strings."
+date: "2026-04-08"
+tags: ["math", "string", "gcd"]
+category: "Math"
+difficulty: "easy"
+timeComplexity: "O(m + n)"
+spaceComplexity: "O(m + n)"
+companies: ["Amazon", "Apple", "Google"]
+leetcodeNumber: 1071
+draft: false
+---
+
+## Problem Statement
+
+For two strings `s` and `t`, we say "`t` divides `s`" if and only if `s = t + t + ... + t + t` (i.e., `t` is concatenated with itself one or more times).
+
+Given two strings `str1` and `str2`, return the largest string `x` such that `x` divides both `str1` and `str2`.
+
+```
+Input: str1 = "ABCABC", str2 = "ABC"
+Output: "ABC"
+
+Input: str1 = "ABABAB", str2 = "ABAB"
+Output: "AB"
+
+Input: str1 = "LEET", str2 = "CODE"
+Output: ""
+```
+
+## Approach 1: Brute Force (Check all prefixes)
+
+We can iterate through all possible prefix lengths of `str1` (from shortest to longest, or longest to shortest). For each prefix length, check if it divides both `str1` and `str2`.
+
+To divide both strings, the length of the prefix must perfectly divide the lengths of both `str1` and `str2`.
+
+```java
+class Solution {
+    public String gcdOfStrings(String str1, String str2) {
+        int len1 = str1.length(), len2 = str2.length();
+        for (int i = Math.min(len1, len2); i > 0; i--) {
+            if (len1 % i == 0 && len2 % i == 0) {
+                String prefix = str1.substring(0, i);
+                if (check(str1, prefix) && check(str2, prefix)) {
+                    return prefix;
+                }
+            }
+        }
+        return "";
+    }
+    
+    private boolean check(String s, String prefix) {
+        int times = s.length() / prefix.length();
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < times; i++) {
+            sb.append(prefix);
+        }
+        return sb.toString().equals(s);
+    }
+}
+```
+
+## Approach 2: Optimal (Math + GCD)
+
+If there is a common string `x` that divides both `str1` and `str2`, then both strings are made up of multiple copies of `x`. Let's say `str1 = m * x` and `str2 = n * x`.
+
+If we concatenate them, `str1 + str2 = (m + n) * x` and `str2 + str1 = (n + m) * x`.
+Therefore, if `str1 + str2` is exactly equal to `str2 + str1`, a common divisor string *must* exist.
+
+The length of this longest common divisor string will simply be the Greatest Common Divisor (GCD) of their lengths.
+
+```java
+class Solution {
+    public String gcdOfStrings(String str1, String str2) {
+        // If str1 + str2 != str2 + str1, they don't share a common divisor
+        if (!(str1 + str2).equals(str2 + str1)) {
+            return "";
+        }
+        
+        // The length of the GCD string is the GCD of their lengths
+        int gcdLength = gcd(str1.length(), str2.length());
+        
+        // Return the prefix of that length
+        return str1.substring(0, gcdLength);
+    }
+    
+    private int gcd(int a, int b) {
+        if (b == 0) {
+            return a;
+        }
+        return gcd(b, a % b);
+    }
+}
+```
+
+## Complexity Analysis
+
+| Approach | Time Complexity | Space Complexity |
+| :--- | :--- | :--- |
+| Brute Force | `O(min(m,n) * (m+n))` | `O(m+n)` |
+| Math + GCD | `O(m + n)` | `O(m + n)` |
+
+*Where `m` and `n` are the lengths of `str1` and `str2` respectively.*
+
+In the optimal approach:
+- `(str1 + str2).equals(str2 + str1)` takes `O(m + n)` time and `O(m + n)` extra space for the string concatenation.
+- The `gcd` function takes `O(log(min(m, n)))` time.
+- `substring(0, gcdLength)` takes `O(gcdLength)` time and space.
+- Overall Time Complexity is dominated by the string concatenation and comparison: `O(m + n)`.
+
+## Key Insight
+
+When dealing with patterns that repeat to form strings, the concatenated order doesn't matter if they share the same base building block. The equivalence `str1 + str2 == str2 + str1` acts as a perfect **signal** that a valid common divisor string exists. From there, it's a pure math problem on the lengths!
+
+## Edge Cases
+
+- **No common divisor:** `str1 = "LEET", str2 = "CODE"` — concatenation check immediately fails.
+- **One string is a multiple of the other:** `str1 = "ABCABC", str2 = "ABC"` — gracefully handled.
+- **Single character repeating:** `str1 = "AAAA", str2 = "AA"` — GCD of lengths directly yields the correct block size.
