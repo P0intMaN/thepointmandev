@@ -1,0 +1,92 @@
+---
+title: "Maximum Depth of Binary Tree"
+description: "Find the maximum depth (number of nodes along the longest path from root to leaf) of a binary tree."
+date: "2026-04-08"
+tags: ["tree", "dfs", "bfs", "recursion"]
+category: "Trees"
+difficulty: "easy"
+timeComplexity: "O(n)"
+spaceComplexity: "O(h)"
+companies: ["Amazon", "Google", "Apple", "LinkedIn"]
+leetcodeNumber: 104
+draft: false
+---
+
+## Problem Statement
+
+Given the `root` of a binary tree, return its **maximum depth** — the number of nodes along the longest path from the root node down to the farthest leaf node.
+
+```
+Input:  root = [3,9,20,null,null,15,7]
+Output: 3
+
+Input:  root = [1,null,2]
+Output: 2
+```
+
+## Approach 1: DFS Recursion — O(n) time, O(h) space ✅
+
+The depth of a tree is `1 + max(depth of left subtree, depth of right subtree)`. Base case: null node has depth 0.
+
+```java
+public int maxDepth(TreeNode root) {
+    if (root == null) return 0;
+    int left  = maxDepth(root.left);
+    int right = maxDepth(root.right);
+    return 1 + Math.max(left, right);
+}
+```
+
+This is post-order DFS — compute children first, then combine.
+
+## Approach 2: BFS — O(n) time, O(n) space
+
+Count levels as you traverse. The depth equals the number of levels.
+
+```java
+public int maxDepth(TreeNode root) {
+    if (root == null) return 0;
+
+    Queue<TreeNode> queue = new LinkedList<>();
+    queue.offer(root);
+    int depth = 0;
+
+    while (!queue.isEmpty()) {
+        int levelSize = queue.size();
+        depth++;
+        for (int i = 0; i < levelSize; i++) {
+            TreeNode node = queue.poll();
+            if (node.left  != null) queue.offer(node.left);
+            if (node.right != null) queue.offer(node.right);
+        }
+    }
+
+    return depth;
+}
+```
+
+BFS is slightly less common for this problem but useful if you also need per-level information.
+
+## Complexity
+
+| | Time | Space |
+|---|---|---|
+| DFS | O(n) | O(h) — O(log n) balanced, O(n) skewed |
+| BFS | O(n) | O(n) — queue width |
+
+DFS is preferred here — lower constant, less memory for balanced trees.
+
+## Key Insight
+
+`1 + max(left, right)` is the fundamental tree height recurrence. It appears in dozens of tree problems:
+
+- **#111 Minimum Depth** — `1 + min(left, right)`, with a special case: if one child is null, don't count that side (it's not a leaf path)
+- **#543 Diameter of Binary Tree** — the diameter through a node is `left + right`; height is `1 + max(left, right)`
+- **#110 Balanced Binary Tree** — a tree is balanced if `|left - right| <= 1` at every node
+
+## Edge Cases
+
+- **Null root**: return 0.
+- **Single node**: both subtrees are null → return `1 + max(0, 0) = 1`.
+- **All left children** (skewed): recursion depth O(n), returns n.
+- **Minimum depth special case** (not this problem, but common): if you want minimum depth to a *leaf*, a node with one null child is NOT a leaf — you must avoid that null branch.

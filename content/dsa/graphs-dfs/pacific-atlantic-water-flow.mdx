@@ -1,0 +1,94 @@
+---
+title: "Pacific Atlantic Water Flow"
+description: "Find all cells from which water can flow to both the Pacific and Atlantic oceans."
+date: "2026-04-08"
+tags: ["graph", "dfs", "bfs", "grid"]
+category: "Graphs — DFS"
+difficulty: "medium"
+timeComplexity: "O(m · n)"
+spaceComplexity: "O(m · n)"
+companies: ["Amazon", "Google", "Facebook", "Goldman Sachs"]
+leetcodeNumber: 417
+draft: false
+---
+
+## Problem Statement
+
+There is an `m x n` rectangular island bordered by the Pacific Ocean (top and left edges) and Atlantic Ocean (right and bottom edges). Rain water flows to adjacent cells (4-directional) with equal or lower height, and eventually to the ocean.
+
+Return a list of grid coordinates where water can flow to **both** the Pacific and Atlantic oceans.
+
+```
+Input:  heights = [[1,2,2,3,5],[3,2,3,4,4],[2,4,5,3,1],[6,7,1,4,5],[5,1,1,2,4]]
+Output: [[0,4],[1,3],[1,4],[2,2],[3,0],[3,1],[4,0]]
+```
+
+## The Insight: Reverse the Flow
+
+Checking every cell for forward flow is expensive — you'd need DFS from every cell. Instead, **reverse the problem**: flow water backwards from the oceans, moving from lower to higher (or equal) cells. Cells reachable from the Pacific form a set; cells reachable from the Atlantic form another. The intersection is the answer.
+
+```java
+public List<List<Integer>> pacificAtlantic(int[][] heights) {
+    int rows = heights.length, cols = heights[0].length;
+    boolean[][] pacific  = new boolean[rows][cols];
+    boolean[][] atlantic = new boolean[rows][cols];
+
+    // Pacific: top row and left column
+    for (int c = 0; c < cols; c++) dfs(heights, 0,        c, pacific,  rows, cols);
+    for (int r = 0; r < rows; r++) dfs(heights, r,        0, pacific,  rows, cols);
+
+    // Atlantic: bottom row and right column
+    for (int c = 0; c < cols; c++) dfs(heights, rows-1,   c, atlantic, rows, cols);
+    for (int r = 0; r < rows; r++) dfs(heights, r,        cols-1, atlantic, rows, cols);
+
+    List<List<Integer>> result = new ArrayList<>();
+    for (int r = 0; r < rows; r++) {
+        for (int c = 0; c < cols; c++) {
+            if (pacific[r][c] && atlantic[r][c]) {
+                result.add(Arrays.asList(r, c));
+            }
+        }
+    }
+    return result;
+}
+
+private int[][] dirs = {{0,1},{0,-1},{1,0},{-1,0}};
+
+private void dfs(int[][] heights, int r, int c, boolean[][] visited, int rows, int cols) {
+    visited[r][c] = true;
+    for (int[] d : dirs) {
+        int nr = r + d[0], nc = c + d[1];
+        if (nr >= 0 && nr < rows && nc >= 0 && nc < cols
+                && !visited[nr][nc]
+                && heights[nr][nc] >= heights[r][c]) { // ← reversed: go uphill
+            dfs(heights, nr, nc, visited, rows, cols);
+        }
+    }
+}
+```
+
+## Complexity
+
+| | Time | Space |
+|---|---|---|
+| DFS | O(m·n) | O(m·n) |
+
+Two full DFS sweeps, each O(m·n). Visited arrays are O(m·n).
+
+## Key Insight
+
+**Reverse the direction of flow** when searching from multiple sources. Instead of asking "where does water from cell (r,c) end up?", ask "which cells can send water to the ocean border?" — and travel uphill from the border.
+
+This reversal trick converts a hard multi-target problem into a simple multi-source DFS:
+- Run DFS from Pacific borders, moving to **equal or higher** neighbors.
+- Run DFS from Atlantic borders, same.
+- Intersect the two reached sets.
+
+The reversal condition `heights[nr][nc] >= heights[r][c]` is the key — in forward flow, water moves to lower-or-equal. In reverse, we move to higher-or-equal.
+
+## Edge Cases
+
+- **Single cell**: it borders both oceans (corner), always in the result.
+- **Flat grid** (all same height): all cells can reach both oceans.
+- **Strictly increasing away from Pacific**: only border cells of Pacific can reach it.
+- **BFS alternative**: replace DFS calls with BFS — same logic, different traversal order, same result.

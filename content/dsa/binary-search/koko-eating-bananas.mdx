@@ -1,0 +1,152 @@
+---
+title: "Koko Eating Bananas"
+description: "Find the minimum eating speed k such that Koko can finish all banana piles within h hours."
+date: "2026-04-08"
+tags: ["array", "binary-search"]
+category: "Binary Search"
+difficulty: "medium"
+timeComplexity: "O(n log m)"
+spaceComplexity: "O(1)"
+companies: ["Amazon", "Google", "Facebook", "Airbnb"]
+leetcodeNumber: 875
+draft: false
+---
+
+## Problem Statement
+
+Koko loves to eat bananas. There are `n` piles of bananas; the `i`-th pile has `piles[i]` bananas. The guards will return in `h` hours.
+
+Koko can eat at most `k` bananas per hour. If a pile has fewer than `k` bananas, she eats all of them and waits for the next hour. Find the **minimum** integer `k` such that she can eat all bananas within `h` hours.
+
+```
+Input:  piles = [3,6,7,11], h = 8
+Output: 4
+
+Input:  piles = [30,11,23,4,20], h = 5
+Output: 30
+
+Input:  piles = [30,11,23,4,20], h = 6
+Output: 23
+```
+
+## The Key Observation
+
+The question is: *what is the minimum feasible speed?*
+
+For any speed `k`:
+- If `k` is fast enough to finish in `h` hours → any speed `k' > k` is also fast enough.
+- If `k` is too slow → any speed `k' < k` is also too slow.
+
+This monotonic property means we can binary search over speeds. The search space is `[1, max(piles)]`:
+- **Lower bound 1**: Koko eats at least 1 banana/hour.
+- **Upper bound max(piles)**: At this speed, every pile takes exactly 1 hour — the fastest possible.
+
+We want the **leftmost** speed where `feasible(k)` is true — Template 2.
+
+---
+
+## The `feasible` Check
+
+```java
+private boolean feasible(int[] piles, int k, int h) {
+    int hours = 0;
+    for (int pile : piles) {
+        hours += (pile + k - 1) / k; // ceiling division: ceil(pile / k)
+    }
+    return hours <= h;
+}
+```
+
+`ceil(pile / k)` = number of hours to eat one pile at speed `k`. Integer ceiling division: `(pile + k - 1) / k`.
+
+This runs in O(n) — one pass through piles.
+
+---
+
+## Algorithm — O(n log m) where m = max(piles)
+
+```java
+public int minEatingSpeed(int[] piles, int h) {
+    int lo = 1, hi = Arrays.stream(piles).max().getAsInt();
+
+    while (lo < hi) {
+        int mid = lo + (hi - lo) / 2;
+        if (feasible(piles, mid, h)) {
+            hi = mid;     // mid works, try slower
+        } else {
+            lo = mid + 1; // mid too slow, must go faster
+        }
+    }
+
+    return lo;
+}
+
+private boolean feasible(int[] piles, int k, int h) {
+    int hours = 0;
+    for (int pile : piles) {
+        hours += (pile + k - 1) / k;
+    }
+    return hours <= h;
+}
+```
+
+## Tracing the Example
+
+`piles = [3, 6, 7, 11]`, `h = 8`
+
+`max(piles) = 11`, search space `[1, 11]`
+
+| lo | hi | mid | hours at mid | feasible? | decision  |
+|----|-----|-----|--------------|-----------|-----------|
+| 1  | 11  | 6   | ⌈3/6⌉+⌈6/6⌉+⌈7/6⌉+⌈11/6⌉ = 1+1+2+2 = **6** | ✓ | hi = 6 |
+| 1  | 6   | 3   | ⌈3/3⌉+⌈6/3⌉+⌈7/3⌉+⌈11/3⌉ = 1+2+3+4 = **10** | ✗ | lo = 4 |
+| 4  | 6   | 5   | ⌈3/5⌉+⌈6/5⌉+⌈7/5⌉+⌈11/5⌉ = 1+2+2+3 = **8** | ✓ | hi = 5 |
+| 4  | 5   | 4   | ⌈3/4⌉+⌈6/4⌉+⌈7/4⌉+⌈11/4⌉ = 1+2+2+3 = **8** | ✓ | hi = 4 |
+| lo == hi == 4 → **return 4** |
+
+---
+
+## Complexity
+
+| | Time | Space |
+|---|---|---|
+| Brute force (try each k) | O(n · max) | O(1) |
+| Binary search on answer | O(n log max) | O(1) |
+
+For `piles` of length 10^4 and max pile 10^9: brute force does 10^13 operations. Binary search does ~10^4 × 30 = 300,000.
+
+---
+
+## Key Insight
+
+This is the canonical **binary search on the answer space** problem. You are not searching an array for a value — you are searching a *range of possible answers* for the minimum one that satisfies a condition.
+
+The template is always the same:
+1. Define the answer space `[lo, hi]`.
+2. Write `feasible(candidate)` — O(n) check of whether `candidate` works.
+3. Binary search for the **leftmost feasible candidate** using Template 2.
+
+Once you see this pattern, dozens of problems reduce to it:
+
+| Problem | Answer space | feasible(k) check |
+|---|---|---|
+| Koko Eating Bananas #875 | [1, max(piles)] | total hours ≤ h |
+| Capacity to Ship Packages #1011 | [max(weights), sum(weights)] | days needed ≤ days |
+| Split Array Largest Sum #410 | [max(nums), sum(nums)] | subarrays needed ≤ m |
+| Minimum Days to Make m Bouquets #1482 | [1, max(bloomDay)] | bouquets possible ≥ m |
+| Magnetic Force Between Two Balls #1552 | [1, (max-min)/(m-1)] | balls placeable ≥ m |
+
+The problems look different on the surface but share the identical binary search skeleton.
+
+---
+
+## Edge Cases
+
+- **Single pile** `piles = [10], h = 1` → minimum speed is 10 (must eat the whole pile in 1 hour).
+- **h == n** (exactly one hour per pile) → minimum speed is `max(piles)`.
+- **h >> n** (many hours) → minimum speed can be 1; binary search converges to it.
+- **All piles size 1** → any speed ≥ 1 works; returns 1.
+- **Integer overflow in hours sum** — with 10^4 piles each up to 10^9 and speed 1, `hours` can reach 10^13. Use `long` for the accumulator:
+  ```java
+  long hours = 0; // not int
+  ```

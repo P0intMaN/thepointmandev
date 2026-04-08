@@ -1,0 +1,113 @@
+---
+title: "Find All Anagrams in a String"
+description: "Find all starting indices where an anagram of pattern p exists in string s."
+date: "2026-04-08"
+tags: ["string-algorithms", "sliding-window", "hash-map"]
+category: "String Algorithms"
+difficulty: "medium"
+timeComplexity: "O(n)"
+spaceComplexity: "O(1)"
+companies: ["Amazon", "Google", "Facebook", "Bloomberg"]
+leetcodeNumber: 438
+draft: false
+---
+
+## Problem Statement
+
+Given two strings `s` and `p`, return an array of all the start indices of `p`'s anagrams in `s`. An anagram of `p` is a permutation of `p`.
+
+```
+Input:  s = "cbaebabacd", p = "abc"
+Output: [0, 6]
+Explanation: s[0..2] = "cba" is an anagram of "abc". s[6..8] = "bac" is an anagram.
+
+Input:  s = "abab", p = "ab"
+Output: [0, 1, 2]
+```
+
+## Approach: Sliding Window with Frequency Array — O(n)
+
+Maintain a window of size `p.length()`. Compare frequency arrays as the window slides.
+
+```java
+public List<Integer> findAnagrams(String s, String p) {
+    List<Integer> result = new ArrayList<>();
+    if (s.length() < p.length()) return result;
+
+    int[] pFreq = new int[26];
+    int[] windowFreq = new int[26];
+
+    // Build frequency for p and first window
+    for (int i = 0; i < p.length(); i++) {
+        pFreq[p.charAt(i) - 'a']++;
+        windowFreq[s.charAt(i) - 'a']++;
+    }
+
+    if (Arrays.equals(pFreq, windowFreq)) result.add(0);
+
+    // Slide the window
+    for (int i = p.length(); i < s.length(); i++) {
+        windowFreq[s.charAt(i) - 'a']++;                         // add right
+        windowFreq[s.charAt(i - p.length()) - 'a']--;            // remove left
+        if (Arrays.equals(pFreq, windowFreq)) result.add(i - p.length() + 1);
+    }
+
+    return result;
+}
+```
+
+**`Arrays.equals` on int[26]** is O(26) = O(1) — constant for fixed-size alphabet.
+
+## Optimization: Track Difference Count
+
+Instead of comparing full arrays each step, maintain a `diff` counter:
+
+```java
+public List<Integer> findAnagrams(String s, String p) {
+    List<Integer> result = new ArrayList<>();
+    int[] freq = new int[26];
+
+    // pFreq[c] > 0: need more of c in window
+    // pFreq[c] < 0: too many of c in window
+    for (char c : p.toCharArray()) freq[c - 'a']++;
+
+    int diff = p.length(); // number of chars not yet matched
+
+    // Initialize window
+    for (int i = 0; i < p.length(); i++) {
+        if (freq[s.charAt(i) - 'a']-- > 0) diff--;
+    }
+    if (diff == 0) result.add(0);
+
+    for (int i = p.length(); i < s.length(); i++) {
+        // Add right character
+        if (freq[s.charAt(i) - 'a']-- > 0) diff--;
+
+        // Remove left character
+        if (freq[s.charAt(i - p.length()) - 'a']++ >= 0) diff++;
+
+        if (diff == 0) result.add(i - p.length() + 1);
+    }
+
+    return result;
+}
+```
+
+This is O(1) per step — no full array comparison.
+
+## Complexity
+
+| Approach | Time | Space |
+|---|---|---|
+| **Sliding window + freq array** | **O(n)** | **O(1)** |
+| Brute force (check each window) | O(n · m log m) | O(m) |
+
+## Key Insight
+
+An anagram check reduces to frequency equality. The sliding window maintains the frequency array incrementally in O(1) per step. The `diff` counter optimization avoids the O(26) `Arrays.equals` call per step, giving a truly O(1) per-step comparison.
+
+## Edge Cases
+
+- **`p` longer than `s`**: no anagrams possible → return empty
+- **`p` same length as `s`**: only one window to check
+- **All same characters**: `p = "aaa"`, `s = "aaaa"` → windows [0..2], [1..3]

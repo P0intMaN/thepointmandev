@@ -1,0 +1,106 @@
+---
+title: "Number of 1 Bits"
+description: "Count the number of set bits (1s) in an integer's binary representation."
+date: "2026-04-08"
+tags: ["bit-manipulation"]
+category: "Bit Manipulation"
+difficulty: "easy"
+timeComplexity: "O(1)"
+spaceComplexity: "O(1)"
+companies: ["Amazon", "Google", "Microsoft", "Apple"]
+leetcodeNumber: 191
+draft: false
+---
+
+## Problem Statement
+
+Write a function that takes an unsigned integer and returns the number of '1' bits it has (also known as the **Hamming weight**).
+
+```
+Input:  n = 00000000000000000000000000001011
+Output: 3 (three 1 bits)
+
+Input:  n = 11111111111111111111111111111101
+Output: 31
+```
+
+## Approach 1: Brian Kernighan's — O(set bits)
+
+`n & (n-1)` clears the **lowest set bit** of `n`. Repeat until `n = 0`. Number of iterations = number of set bits.
+
+```java
+public int hammingWeight(int n) {
+    int count = 0;
+    while (n != 0) {
+        n = n & (n - 1); // clear lowest set bit
+        count++;
+    }
+    return count;
+}
+```
+
+**Why `n & (n-1)` clears the lowest set bit:**
+- `n =     ...1010000` (some bits, then a 1 followed by 0s)
+- `n-1 =   ...1001111` (that 1 becomes 0, trailing 0s become 1s)
+- `n & (n-1) = ...1000000` (lowest set bit cleared)
+
+## Approach 2: Check Each Bit — O(32) = O(1)
+
+```java
+public int hammingWeight(int n) {
+    int count = 0;
+    for (int i = 0; i < 32; i++) {
+        if ((n & 1) == 1) count++;
+        n >>>= 1; // unsigned right shift (>>> not >> to avoid sign extension)
+    }
+    return count;
+}
+```
+
+Use `>>>` (unsigned right shift) not `>>` (arithmetic right shift) to avoid infinite loop with negative numbers.
+
+## Java Built-in
+
+```java
+Integer.bitCount(n); // O(1), uses population count instruction
+```
+
+## Related: Counting Bits (LeetCode #338)
+
+For all numbers from 0 to n, count set bits using DP:
+
+```java
+public int[] countBits(int n) {
+    int[] dp = new int[n + 1];
+    for (int i = 1; i <= n; i++) {
+        dp[i] = dp[i >> 1] + (i & 1); // dp[i/2] + (last bit)
+    }
+    return dp;
+}
+```
+
+`dp[i] = dp[i >> 1] + (i & 1)`: right-shift removes the last bit (already counted in `dp[i/2]`), and `i & 1` counts the last bit itself.
+
+## Related: Reverse Bits (LeetCode #190)
+
+```java
+public int reverseBits(int n) {
+    int result = 0;
+    for (int i = 0; i < 32; i++) {
+        result = (result << 1) | (n & 1);
+        n >>>= 1;
+    }
+    return result;
+}
+```
+
+## Key Insight
+
+`n & (n-1)` is the canonical bit manipulation trick — it clears the lowest set bit in O(1). This makes Brian Kernighan's algorithm O(set bits) rather than O(32), which matters when the number of set bits is small.
+
+## Edge Cases
+
+- **n = 0**: 0 set bits → return 0
+- **n = -1** (all 1s in 32-bit): 32 set bits
+- **n = Integer.MAX_VALUE** (01111...1): 31 set bits
+- **n = Integer.MIN_VALUE** (10000...0): 1 set bit

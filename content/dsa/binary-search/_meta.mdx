@@ -1,0 +1,126 @@
+---
+title: "Binary Search"
+description: "Eliminate half the search space at every step to find values, boundaries, or optimal answers in O(log n)."
+signal: "Sorted input, O(log n) required, answer lies in a range. Signal: 'sorted array', 'minimum/maximum possible value', 'find target'."
+gotchas: "mid = lo + (hi - lo) / 2 to prevent overflow. Loop condition lo < hi vs lo <= hi changes final state. Know when to use lo = mid+1 vs lo = mid. Off-by-one is the classic bug."
+color: "#f87171"
+colorDim: "#1f0a0a"
+colorBorder: "#dc2626"
+icon: "binary-search"
+order: 6
+tier: 1
+draft: false
+---
+
+## How to Spot This Pattern
+
+Binary search applies whenever you can **eliminate half the remaining candidates** based on a single comparison. The signal phrases are:
+
+- *"Sorted array"* — the classic case
+- *"Find minimum/maximum value satisfying a condition"* — binary search on answer space
+- *"O(log n) time required"* — the constraint tells you directly
+- *"Search space can be halved"* — any monotonic property works
+
+If you can write a function `feasible(x)` that returns true/false and the answers are monotonic (all trues then all falses, or vice versa), binary search works on `x`.
+
+## Two Templates
+
+**Template 1: Exact value search** — find a specific target, return index or -1.
+
+```java
+int lo = 0, hi = nums.length - 1;
+while (lo <= hi) {
+    int mid = lo + (hi - lo) / 2;
+    if (nums[mid] == target) return mid;
+    else if (nums[mid] < target) lo = mid + 1;
+    else hi = mid - 1;
+}
+return -1; // not found
+```
+
+Loop runs while `lo <= hi`. Exits when no elements remain. Use when you want an exact match.
+
+**Template 2: Boundary / leftmost search** — find the first index satisfying a condition.
+
+```java
+int lo = 0, hi = nums.length; // hi is exclusive
+while (lo < hi) {
+    int mid = lo + (hi - lo) / 2;
+    if (condition(mid)) hi = mid;  // mid could be the answer, keep it
+    else lo = mid + 1;             // mid is definitely not the answer
+}
+return lo; // first index where condition is true
+```
+
+Loop runs while `lo < hi`. Exits when `lo == hi` — the answer. Use for "find first/last position", "minimum satisfying value", "leftmost true".
+
+## Binary Search on the Answer Space
+
+The most powerful application — don't binary search an *array*, binary search the *answer itself*.
+
+```java
+// "Find the minimum capacity k such that feasible(k) is true"
+int lo = minPossibleAnswer, hi = maxPossibleAnswer;
+while (lo < hi) {
+    int mid = lo + (hi - lo) / 2;
+    if (feasible(mid)) hi = mid;
+    else lo = mid + 1;
+}
+return lo;
+```
+
+`feasible(mid)` typically costs O(n) — so the total complexity is O(n log(answerRange)). This pattern solves Koko Eating Bananas, Capacity To Ship Packages, Split Array Largest Sum, and many more.
+
+## Binary Search on Floating Point
+
+When precision matters (square roots, ratios), binary search on a floating-point range until the interval is small enough:
+
+```java
+double lo = 0, hi = x;
+while (hi - lo > 1e-9) {          // precision threshold
+    double mid = lo + (hi - lo) / 2;
+    if (mid * mid <= x) lo = mid;  // mid is feasible, try larger
+    else hi = mid;
+}
+return lo;
+```
+
+No off-by-one issues — just run until the interval collapses to the required precision. Typically 50–100 iterations covers double precision.
+
+## Binary Search on a 2D Matrix
+
+A matrix where each row is sorted and the first element of each row is greater than the last element of the previous row can be treated as a single flattened sorted array:
+
+```java
+int rows = matrix.length, cols = matrix[0].length;
+int lo = 0, hi = rows * cols - 1;
+while (lo <= hi) {
+    int mid = lo + (hi - lo) / 2;
+    int val = matrix[mid / cols][mid % cols]; // unflatten
+    if (val == target) return true;
+    else if (val < target) lo = mid + 1;
+    else hi = mid - 1;
+}
+return false;
+```
+
+`mid / cols` gives the row, `mid % cols` gives the column.
+
+## The Overflow Bug
+
+```java
+// ❌ Can overflow when lo and hi are both large
+int mid = (lo + hi) / 2;
+
+// ✅ Safe — computes the same value without overflow
+int mid = lo + (hi - lo) / 2;
+```
+
+With `int` values up to `Integer.MAX_VALUE ≈ 2.1 × 10^9`, `lo + hi` can overflow. The safe form is muscle memory.
+
+## Common Gotchas
+
+- **`lo <= hi` vs `lo < hi`** — template 1 uses `<=` (exact match); template 2 uses `<` (boundary). Mixing them causes infinite loops or missed answers.
+- **`hi = mid` vs `hi = mid - 1`** — template 2 uses `hi = mid` (mid might be the answer); template 1 uses `mid - 1` (mid was checked and is wrong).
+- **Initial `hi` value** — template 1: `nums.length - 1` (inclusive); template 2: `nums.length` (exclusive boundary).
+- **Integer division rounds down** — `mid` always rounds toward `lo`. For upper boundary search, you may need `mid = lo + (hi - lo + 1) / 2` to avoid infinite loops when `lo + 1 == hi`.

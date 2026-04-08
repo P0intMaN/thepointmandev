@@ -1,0 +1,49 @@
+---
+title: "Arrays & Hashing"
+description: "Frequency counting, duplicate detection, and O(n) lookups with hash maps and sets."
+signal: "Frequency count, duplicate detection, two-sum type problems, anagram grouping. Signal: 'find pair', 'count occurrences', O(n) needed."
+gotchas: "HashMap get() returns null for missing key — use getOrDefault(). Modifying array while iterating. Off-by-one in slices [i, j) vs [i, j]."
+color: "#4ade80"
+colorDim: "#052e16"
+colorBorder: "#16a34a"
+icon: "hash"
+order: 1
+tier: 1
+draft: false
+---
+
+## How to Spot This Pattern
+
+Reach for Arrays & Hashing when the problem asks you to track **what you've seen before** or **how often something appears**. The signal phrases are:
+
+- *"Find a pair that..."* — you need O(1) lookup of complements
+- *"Count occurrences of..."* — frequency map
+- *"Are there any duplicates?"* — HashSet membership test
+- *"Group these by some property"* — HashMap bucketing
+- *"O(n) time required"* — hashing is almost always the path to linear time
+
+If the brute force would nest two loops to compare every pair, a hash map probably eliminates one of them.
+
+## The Core Trade-off
+
+Hashing trades **space for time**. You spend O(n) extra memory to turn O(n) repeated lookups into O(1) each. For most interview problems this is the right call — unless the problem explicitly asks for O(1) space (in which case sorting or two pointers is usually the answer).
+
+## Key Tools in Java
+
+```java
+Map<Integer, Integer> freq = new HashMap<>();
+freq.getOrDefault(key, 0);          // safe get — never returns null
+freq.merge(key, 1, Integer::sum);   // cleaner frequency counting
+freq.computeIfAbsent(key, k -> new ArrayList<>()).add(val); // bucketing
+
+Set<Integer> seen = new HashSet<>();
+seen.add(x);  // returns false if already present — use this!
+```
+
+## Common Gotchas
+
+- **`get()` returns `null`** for missing keys, not 0 — always use `getOrDefault` or check `containsKey` first.
+- **Modifying a collection while iterating** throws `ConcurrentModificationException` — collect changes separately.
+- **Off-by-one on slices** — `[i, j)` is exclusive of `j` in Java's `Arrays.copyOfRange` and `substring`.
+- **Integer overflow** — when summing frequencies or indices, consider casting to `long`.
+- **`Arrays.asList()` is fixed-size** — you can't add/remove from it. Use `new ArrayList<>(Arrays.asList(...))`.

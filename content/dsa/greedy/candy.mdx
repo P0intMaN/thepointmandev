@@ -1,0 +1,102 @@
+---
+title: "Candy"
+description: "Distribute minimum candies to children such that higher-rated children get more than their neighbors."
+date: "2026-04-08"
+tags: ["greedy", "array"]
+category: "Greedy"
+difficulty: "hard"
+timeComplexity: "O(n)"
+spaceComplexity: "O(n)"
+companies: ["Amazon", "Google", "Apple"]
+leetcodeNumber: 135
+draft: false
+---
+
+## Problem Statement
+
+There are `n` children standing in a line. Each child has a rating. Distribute candy with two rules:
+1. Every child must have **at least 1** candy.
+2. Children with a **higher rating than their neighbor** must get **more candy** than that neighbor.
+
+Return the minimum total candies required.
+
+```
+Input:  ratings = [1,0,2]
+Output: 5   (candies = [2,1,2])
+
+Input:  ratings = [1,2,2]
+Output: 4   (candies = [1,2,1])
+```
+
+## Approach: Two-Pass Greedy — O(n)
+
+**Left pass**: ensure the right-neighbor constraint is satisfied.
+**Right pass**: ensure the left-neighbor constraint is satisfied.
+Take the max at each position.
+
+```java
+public int candy(int[] ratings) {
+    int n = ratings.length;
+    int[] candies = new int[n];
+    Arrays.fill(candies, 1); // everyone starts with 1
+
+    // Left to right: if rating[i] > rating[i-1], give more than left neighbor
+    for (int i = 1; i < n; i++) {
+        if (ratings[i] > ratings[i-1]) {
+            candies[i] = candies[i-1] + 1;
+        }
+    }
+
+    // Right to left: if rating[i] > rating[i+1], ensure more than right neighbor
+    for (int i = n-2; i >= 0; i--) {
+        if (ratings[i] > ratings[i+1]) {
+            candies[i] = Math.max(candies[i], candies[i+1] + 1);
+        }
+    }
+
+    int total = 0;
+    for (int c : candies) total += c;
+    return total;
+}
+```
+
+**Walkthrough** `[1,0,2]`:
+- After left pass: `[1,1,2]` (index 2 > index 1, so 2)
+- After right pass: `[2,1,2]` (index 0 > index 1? No. Index 1 > index 2? No.)
+- Total = 5 ✓
+
+**Walkthrough** `[1,3,2,2,1]`:
+- After left pass: `[1,2,1,1,1]` (3>1 → 2; 2<3 → stays 1; 2=2 → stays 1; 1<2 → stays 1)
+- After right pass: i=3: 2>1? Yes, max(1, 1+1)=2. i=2: 2>2? No. i=1: 3>2? Yes, max(2, 1+1)=2. i=0: 1>3? No.
+- Result: `[1,2,1,2,1]`, total = 7
+
+## Alternative: O(1) Space (Slope Counting)
+
+Count "up-slope" length and "down-slope" length. Peak belongs to whichever slope is longer. More complex to implement but eliminates the auxiliary array.
+
+```java
+// Key idea: for a mountain of up=3, down=2: candies needed = 1+2+3 + 2+1 - 3 (peak counted once)
+// Generalized as: sum(1..up) + sum(1..down) - min(up,down)
+// This avoids storing the array
+```
+
+## Complexity
+
+| Approach | Time | Space |
+|---|---|---|
+| **Two-pass greedy** | **O(n)** | **O(n)** |
+| Slope counting | O(n) | O(1) |
+
+## Key Insight
+
+Two independent constraints (left neighbor, right neighbor) can each be satisfied independently in one direction. Taking `max` at each position satisfies both simultaneously. This is the classic "two-pass greedy" pattern — handle one dimension at a time.
+
+The `max` in the right pass is critical: the left pass may have already given a child more candy (due to a long increasing sequence). The right pass can only increase, never decrease, the candy count.
+
+## Edge Cases
+
+- **All same ratings**: everyone gets 1 candy → total = n
+- **Strictly increasing**: `[1,2,3,...,n]` → candies = `[1,2,3,...,n]`
+- **Strictly decreasing**: `[n,...,2,1]` → candies = `[n,...,2,1]`
+- **Flat then spike**: equal ratings → no constraint between equal neighbors
+- **Valley**: `[5,1,5]` → `[2,1,2]` = 5

@@ -1,0 +1,142 @@
+---
+title: "Min Stack"
+description: "Design a stack that supports push, pop, top, and retrieving the minimum element — all in O(1)."
+date: "2026-03-17"
+tags: ["stack", "design"]
+category: "Stack"
+difficulty: "medium"
+timeComplexity: "O(1) all operations"
+spaceComplexity: "O(n)"
+companies: ["Amazon", "Google", "Bloomberg", "Microsoft", "Adobe"]
+leetcodeNumber: 155
+draft: false
+---
+
+## Problem Statement
+
+Design a stack that supports the following operations, all in **O(1) time**:
+
+- `push(val)` — push element onto the stack
+- `pop()` — remove the top element
+- `top()` — get the top element
+- `getMin()` — retrieve the minimum element in the stack
+
+```
+Input:
+["MinStack","push","push","push","getMin","pop","top","getMin"]
+[[],[-2],[0],[-3],[],[],[],[]]
+
+Output: [null,null,null,null,-3,null,0,-2]
+
+Explanation:
+MinStack minStack = new MinStack();
+minStack.push(-2);   stack: [-2]
+minStack.push(0);    stack: [-2, 0]
+minStack.push(-3);   stack: [-2, 0, -3]
+minStack.getMin();   → -3
+minStack.pop();      stack: [-2, 0]
+minStack.top();      → 0
+minStack.getMin();   → -2  ← minimum correctly restored after pop
+```
+
+## The Challenge
+
+`push`, `pop`, and `top` are trivially O(1) with a normal stack. The hard part is `getMin()` — a running global minimum is easy to maintain on push, but what happens when you **pop the current minimum**? The next minimum needs to be restored instantly.
+
+---
+
+## Approach 1: Auxiliary Min Stack ✅ Classic
+
+Maintain a second stack that tracks the **current minimum at each level**. Every time you push, also push the new minimum onto the min stack. Every time you pop, pop both stacks together.
+
+```java
+class MinStack {
+    private Deque<Integer> stack    = new ArrayDeque<>();
+    private Deque<Integer> minStack = new ArrayDeque<>();
+
+    public void push(int val) {
+        stack.push(val);
+        int currentMin = minStack.isEmpty() ? val : Math.min(val, minStack.peek());
+        minStack.push(currentMin);
+    }
+
+    public void pop() {
+        stack.pop();
+        minStack.pop();
+    }
+
+    public int top() {
+        return stack.peek();
+    }
+
+    public int getMin() {
+        return minStack.peek();
+    }
+}
+```
+
+`minStack.peek()` always holds the minimum of all elements currently in the main stack. When you pop, the minimum for the remaining stack is automatically restored — it's just the new top of `minStack`.
+
+## Tracing the Example
+
+| operation  | stack          | minStack       |
+|------------|----------------|----------------|
+| push(-2)   | [-2]           | [-2]           |
+| push(0)    | [-2, 0]        | [-2, -2]       |
+| push(-3)   | [-2, 0, -3]    | [-2, -2, -3]   |
+| getMin()   | —              | peek → **-3**  |
+| pop()      | [-2, 0]        | [-2, -2]       |
+| top()      | peek → **0**   | —              |
+| getMin()   | —              | peek → **-2**  |
+
+After popping `-3`, the min stack reveals `-2` as the correct minimum — no recomputation needed.
+
+---
+
+## Approach 2: Single Stack with Pairs — O(1) space overhead per element
+
+Store `(value, minAtThisLevel)` as a pair in a single stack. Avoids a second data structure at the cost of slightly more complex push logic.
+
+```java
+class MinStack {
+    private Deque<int[]> stack = new ArrayDeque<>(); // [value, minSoFar]
+
+    public void push(int val) {
+        int currentMin = stack.isEmpty() ? val : Math.min(val, stack.peek()[1]);
+        stack.push(new int[]{val, currentMin});
+    }
+
+    public void pop()     { stack.pop(); }
+    public int top()      { return stack.peek()[0]; }
+    public int getMin()   { return stack.peek()[1]; }
+}
+```
+
+Same idea — each node carries its own minimum snapshot. Space-wise identical to the two-stack approach; just bundled differently.
+
+## Complexity
+
+| Operation | Time | Space |
+|-----------|------|-------|
+| push      | O(1) | O(n)  |
+| pop       | O(1) | —     |
+| top       | O(1) | —     |
+| getMin    | O(1) | —     |
+
+Both approaches use O(n) total space — one extra value stored per element.
+
+## Key Insight
+
+The trick is **snapshotting the minimum at every stack level** rather than maintaining a single global minimum. A global minimum is fine for pushes but breaks on pops — you'd need to rescan the stack to find the new minimum, costing O(n).
+
+By storing the minimum *at the time of each push*, you make it free to restore when that element is popped. This "carry state with each node" pattern reappears in:
+
+- **LRU Cache** — each node carries prev/next pointers
+- **Queue using Two Stacks** — amortised O(1) by carrying state across stacks
+- **Maximum Frequency Stack** (#895) — each element carries its frequency snapshot
+
+## Edge Cases
+
+- **All same elements** `push(3), push(3), push(3)` → `minStack = [3, 3, 3]`. After two pops, `getMin()` still returns 3. Correct.
+- **Increasing sequence** `push(1), push(2), push(3)` → `minStack = [1, 1, 1]`. Min never changes regardless of pops.
+- **Decreasing sequence** `push(3), push(2), push(1)` → `minStack = [3, 2, 1]`. Each pop correctly restores the previous minimum.

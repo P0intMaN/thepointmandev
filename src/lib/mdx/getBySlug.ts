@@ -2,7 +2,7 @@ import fs from "fs";
 import path from "path";
 import { parseFrontmatter } from "./parseFrontmatter";
 import { BlogFrontmatterSchema, type BlogFrontmatter } from "@/types/blog";
-import { DSAFrontmatterSchema, type DSAFrontmatter } from "@/types/dsa";
+import { DSAFrontmatterSchema, DSAPatternFrontmatterSchema, type DSAFrontmatter, type DSAPatternFrontmatter } from "@/types/dsa";
 import { LessonFrontmatterSchema, type LessonFrontmatter } from "@/types/course";
 import { estimateReadingTime } from "@/lib/readingTime";
 import { extractToc, type TocItem } from "@/lib/toc";
@@ -37,6 +37,19 @@ export function getBlogPostBySlug(slug: string): BlogSlugResult | null {
   return null;
 }
 
+export interface DSAPatternResult {
+  frontmatter: DSAPatternFrontmatter;
+  content: string;
+}
+
+export function getDSAPatternBySlug(patternSlug: string): DSAPatternResult | null {
+  const metaPath = path.join(CONTENT_ROOT, "dsa", patternSlug, "_meta.mdx");
+  if (!fs.existsSync(metaPath)) return null;
+  const source = fs.readFileSync(metaPath, "utf-8");
+  const { data: frontmatter, content } = parseFrontmatter(source, DSAPatternFrontmatterSchema, metaPath);
+  return { frontmatter, content };
+}
+
 export interface DSASlugResult {
   frontmatter: DSAFrontmatter;
   content: string;
@@ -44,27 +57,9 @@ export interface DSASlugResult {
   toc: TocItem[];
 }
 
-export function getDSAProblemBySlug(slug: string): DSASlugResult | null {
-  const dsaDir = path.join(CONTENT_ROOT, "dsa");
-
-  function findFile(dir: string): string | null {
-    const entries = fs.readdirSync(dir);
-    for (const entry of entries) {
-      const entryPath = path.join(dir, entry);
-      const stat = fs.statSync(entryPath);
-      if (stat.isDirectory()) {
-        const found = findFile(entryPath);
-        if (found) return found;
-      } else if (entry === `${slug}.mdx`) {
-        return entryPath;
-      }
-    }
-    return null;
-  }
-
-  const filePath = findFile(dsaDir);
-  if (!filePath) return null;
-
+export function getDSAProblemBySlug(patternSlug: string, slug: string): DSASlugResult | null {
+  const filePath = path.join(CONTENT_ROOT, "dsa", patternSlug, `${slug}.mdx`);
+  if (!fs.existsSync(filePath)) return null;
   const source = fs.readFileSync(filePath, "utf-8");
   const { data: frontmatter, content } = parseFrontmatter(source, DSAFrontmatterSchema, filePath);
   return {

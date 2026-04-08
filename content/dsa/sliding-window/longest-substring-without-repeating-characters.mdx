@@ -1,0 +1,117 @@
+---
+title: "Longest Substring Without Repeating Characters"
+description: "Find the length of the longest substring that contains no duplicate characters."
+date: "2026-03-17"
+tags: ["string", "sliding-window", "hash-map"]
+category: "Sliding Window"
+difficulty: "medium"
+timeComplexity: "O(n)"
+spaceComplexity: "O(k)"
+companies: ["Amazon", "Google", "Meta", "Microsoft", "Bloomberg"]
+leetcodeNumber: 3
+draft: false
+---
+
+## Problem Statement
+
+Given a string `s`, find the length of the **longest substring without repeating characters**.
+
+```
+Input:  s = "abcabcbb"
+Output: 3
+Explanation: "abc" is the longest substring without repeating characters
+
+Input:  s = "bbbbb"
+Output: 1
+Explanation: "b" — every character repeats immediately
+
+Input:  s = "pwwkew"
+Output: 3
+Explanation: "wke" — note "pwwkew" itself contains repeats
+```
+
+## The Insight
+
+A brute force checks every possible substring — O(n²) substrings, O(n) check each = O(n³). We can do O(n) with a sliding window: maintain a window `[left, right]` that always contains unique characters. Expand `right` freely; the moment a duplicate appears, shrink `left` until it's gone.
+
+---
+
+## Approach 1: Sliding Window + HashSet — O(n)
+
+Use a `HashSet` to track characters currently in the window. When `s[right]` is already in the set, remove from the left until it's clear.
+
+```java
+public int lengthOfLongestSubstring(String s) {
+    Set<Character> window = new HashSet<>();
+    int left = 0, maxLen = 0;
+
+    for (int right = 0; right < s.length(); right++) {
+        // Shrink from left until no duplicate
+        while (window.contains(s.charAt(right))) {
+            window.remove(s.charAt(left));
+            left++;
+        }
+        window.add(s.charAt(right));
+        maxLen = Math.max(maxLen, right - left + 1);
+    }
+
+    return maxLen;
+}
+```
+
+Clean and intuitive. Each character is added and removed from the set at most once — O(n) total.
+
+---
+
+## Approach 2: Sliding Window + HashMap (Optimal Jump) — O(n)
+
+Instead of inching `left` forward one step at a time, store the **last seen index** of each character. When a duplicate is found, jump `left` directly past its previous occurrence.
+
+```java
+public int lengthOfLongestSubstring(String s) {
+    Map<Character, Integer> lastSeen = new HashMap<>();
+    int left = 0, maxLen = 0;
+
+    for (int right = 0; right < s.length(); right++) {
+        char c = s.charAt(right);
+
+        if (lastSeen.containsKey(c) && lastSeen.get(c) >= left) {
+            // Jump left past the previous occurrence
+            left = lastSeen.get(c) + 1;
+        }
+
+        lastSeen.put(c, right);
+        maxLen = Math.max(maxLen, right - left + 1);
+    }
+
+    return maxLen;
+}
+```
+
+The guard `lastSeen.get(c) >= left` is critical — the previous occurrence must still be **inside** the current window. If it's to the left of `left`, it's already been evicted; ignore it and don't move `left` backward.
+
+## Complexity
+
+|                        | Time | Space |
+|------------------------|------|-------|
+| HashSet (shrink loop)  | O(n) | O(k)  |
+| HashMap (index jump)   | O(n) | O(k)  |
+
+`k` = size of the character set (26 for lowercase, 128 for ASCII, 65536 for Unicode). Both are O(n) time — the HashMap approach simply skips unnecessary left-pointer increments.
+
+## Which to Use in an Interview?
+
+Start with the **HashSet approach** — it's easier to explain and maps directly onto the sliding window template. If asked to optimize, present the HashMap jump as a follow-up. Both are O(n); the jump version has a smaller constant factor.
+
+## Key Insight
+
+This is the **canonical variable sliding window problem**. The window invariant is: `s[left..right]` contains only unique characters. Every sliding window problem has an invariant like this — identifying it clearly is half the battle.
+
+The `lastSeen.get(c) >= left` guard shows up in many index-jump variants. Whenever you store indices in a map and jump a pointer, always verify the stored index is still within your active window before acting on it.
+
+## Edge Cases
+
+- **Empty string** `""` → `right` never enters the loop, returns `0`.
+- **All unique** `"abcdef"` → window grows to full length, left never moves, returns `n`.
+- **All same** `"aaaa"` → left jumps to `right` on every step, window size stays `1`, returns `1`.
+- **Spaces and symbols** `"ab c"` → spaces are valid characters, treated like any other.

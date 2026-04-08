@@ -1,0 +1,98 @@
+---
+title: "Replace Words"
+description: "Replace words in a sentence with their shortest root from a dictionary using a Trie."
+date: "2026-04-08"
+tags: ["trie", "string", "hash-map"]
+category: "Trie"
+difficulty: "medium"
+timeComplexity: "O(N · L)"
+spaceComplexity: "O(R · L)"
+companies: ["Amazon", "Google", "Bloomberg"]
+leetcodeNumber: 648
+draft: false
+---
+
+## Problem Statement
+
+In English, we have a concept called **root** which can be followed by some other word to form another longer word — let's call this word **successor**. Given a dictionary of roots and a sentence, replace all successors in the sentence with the root. If a successor can be replaced by more than one root, use the **shortest** root.
+
+```
+Input:  dictionary = ["cat","bat","rat"], sentence = "the cattle was rattled by the battery"
+Output: "the cat was rat by the bat"
+```
+
+## Algorithm — Trie for Prefix Matching
+
+Build a Trie from all root words. For each word in the sentence, traverse the Trie character by character — the moment you hit an `isEndOfWord` node, that's the shortest root. Replace the word with that prefix.
+
+```java
+public String replaceWords(List<String> dictionary, String sentence) {
+    // Build Trie
+    TrieNode root = new TrieNode();
+    for (String word : dictionary) {
+        TrieNode node = root;
+        for (char c : word.toCharArray()) {
+            int idx = c - 'a';
+            if (node.children[idx] == null) node.children[idx] = new TrieNode();
+            node = node.children[idx];
+        }
+        node.isEnd = true;
+    }
+
+    // Replace each word in sentence
+    String[] words = sentence.split(" ");
+    StringBuilder sb = new StringBuilder();
+
+    for (String word : words) {
+        if (sb.length() > 0) sb.append(' ');
+        sb.append(findRoot(root, word));
+    }
+
+    return sb.toString();
+}
+
+private String findRoot(TrieNode root, String word) {
+    TrieNode node = root;
+    for (int i = 0; i < word.length(); i++) {
+        int idx = word.charAt(i) - 'a';
+        if (node.children[idx] == null) break; // no prefix match
+        node = node.children[idx];
+        if (node.isEnd) return word.substring(0, i + 1); // shortest root found
+    }
+    return word; // no root found, keep original
+}
+
+static class TrieNode {
+    TrieNode[] children = new TrieNode[26];
+    boolean isEnd = false;
+}
+```
+
+## Why Trie Over HashSet?
+
+**HashSet approach**: for each word, check all prefixes of length 1, 2, 3, ... until a root is found. O(L²) per word.
+
+**Trie approach**: traverse the Trie character by character — O(L) per word. No need to generate and look up all prefixes separately.
+
+## Complexity
+
+R = number of roots, L = max root length, N = number of words in sentence.
+
+| | Time | Space |
+|---|---|---|
+| Build Trie | O(R · L) | O(R · L) |
+| Replace all words | O(N · L) | O(1) |
+| Total | O((R + N) · L) | O(R · L) |
+
+## Key Insight
+
+Replace Words is the purest expression of the Trie's strength: **early termination on prefix match**. The moment you hit an `isEnd` node in the Trie, you have the shortest root — stop immediately. This is O(L) rather than the O(L²) of checking all prefix lengths.
+
+The Trie shines whenever the question is "does any dictionary word start the same as my query?" — autocomplete, spell-check suggestions, IP routing (longest prefix match in networking).
+
+## Edge Cases
+
+- **Word has no root in dictionary**: `findRoot` traversal exits when path doesn't exist or reaches end of word without hitting `isEnd` → return original word.
+- **Root equals the word**: `isEnd` hit at the last character → return the word itself.
+- **Multiple roots that are prefixes of each other** (e.g., "ca" and "cat"): the Trie will hit `isEnd` for "ca" first (shorter) — returns "ca". Correctness guaranteed by early return.
+- **Empty dictionary**: Trie has no nodes → all words returned unchanged.

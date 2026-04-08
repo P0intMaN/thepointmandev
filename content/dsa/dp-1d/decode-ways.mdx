@@ -1,0 +1,108 @@
+---
+title: "Decode Ways"
+description: "Count the number of ways to decode a string of digits into letters (A=1, Z=26)."
+date: "2026-04-08"
+tags: ["dp-1d", "string"]
+category: "DP 1D"
+difficulty: "medium"
+timeComplexity: "O(n)"
+spaceComplexity: "O(1)"
+companies: ["Amazon", "Google", "Facebook", "Microsoft"]
+leetcodeNumber: 91
+draft: false
+---
+
+## Problem Statement
+
+A message containing letters `A-Z` can be encoded as numbers `1-26`. Given a string `s` of digits, return the number of ways to decode it.
+
+```
+Input:  s = "12"
+Output: 2   ("AB" or "L")
+
+Input:  s = "226"
+Output: 3   ("BZ", "VF", "BBF")
+
+Input:  s = "06"
+Output: 0   (06 doesn't decode to anything — leading zero)
+```
+
+## Approach: DP — O(n), O(1) space
+
+`dp[i]` = number of ways to decode `s[0..i-1]`.
+
+```java
+public int numDecodings(String s) {
+    int n = s.length();
+    if (n == 0 || s.charAt(0) == '0') return 0;
+
+    int prev2 = 1; // dp[i-2]: ways to decode s[0..i-3]
+    int prev1 = 1; // dp[i-1]: ways to decode s[0..i-2]
+
+    for (int i = 2; i <= n; i++) {
+        int curr = 0;
+
+        // Single digit decode: s[i-1] (1-9 valid, '0' invalid)
+        int oneDigit = Integer.parseInt(s.substring(i-1, i));
+        if (oneDigit >= 1) curr += prev1;
+
+        // Two digit decode: s[i-2..i-1] (10-26 valid)
+        int twoDigit = Integer.parseInt(s.substring(i-2, i));
+        if (twoDigit >= 10 && twoDigit <= 26) curr += prev2;
+
+        prev2 = prev1;
+        prev1 = curr;
+    }
+    return prev1;
+}
+```
+
+**Base cases**:
+- `dp[0] = 1`: empty string — one way (do nothing)
+- `dp[1] = 1` if first char != '0', else 0
+
+**Transition**:
+- One-char decode: s[i-1] in [1-9] → `dp[i] += dp[i-1]`
+- Two-char decode: s[i-2..i-1] in [10-26] → `dp[i] += dp[i-2]`
+
+## Trace: `s = "226"`
+
+- i=1: prev1=1 (s[0]='2' ≠ '0')
+- i=2: oneDigit=2 (valid) → curr=prev1=1. twoDigit=22 (10-26) → curr+=prev2=1. curr=2. prev2=1, prev1=2.
+- i=3: oneDigit=6 (valid) → curr=prev1=2. twoDigit=26 (10-26) → curr+=prev2=1. curr=3. Return 3 ✓
+
+## Key Cases
+
+```java
+// '0' handling
+"10" → only "J" (1-decode of '1', 2-decode of "10"): output 1
+"20" → only "T" (2-decode of "20"): output 1
+"100" → '0' appears mid-string, only 2-decode "10" then "0" alone fails → 0
+"30" → "30" > 26, not valid 2-decode. '0' alone invalid. → 0
+```
+
+## Why Not Use `s.charAt(i-1) - '0'`?
+
+`Integer.parseInt(s.substring(...))` handles the conversion cleanly. Alternatively:
+```java
+int oneDigit = s.charAt(i-1) - '0';
+int twoDigit = (s.charAt(i-2) - '0') * 10 + (s.charAt(i-1) - '0');
+```
+
+## Complexity
+
+| | Time | Space |
+|---|---|---|
+| **O(1) space DP** | **O(n)** | **O(1)** |
+| Full DP array | O(n) | O(n) |
+
+## Key Insight
+
+This is a variation of the Fibonacci recurrence but with conditional transitions. At each position, you can either decode one digit (valid if not '0') or two digits (valid if in range 10-26). The zero cases are the most important edge cases to handle.
+
+## Edge Cases
+
+- **Leading zero** `"06"`: single digit '0' is invalid → 0
+- **All zeros** `"000"`: no valid decode → 0
+- **"10"**: only decode as "J" → 1
+- **"27"**: 2-digit 27 > 26 invalid, one-digit each "B"+"G" → 1

@@ -1,0 +1,115 @@
+---
+title: "Merge Two Sorted Lists"
+description: "Merge two sorted linked lists into one sorted linked list and return it."
+date: "2026-04-08"
+tags: ["linked-list", "recursion"]
+category: "Linked List"
+difficulty: "easy"
+timeComplexity: "O(m + n)"
+spaceComplexity: "O(1)"
+companies: ["Amazon", "Google", "Microsoft", "Apple", "Facebook"]
+leetcodeNumber: 21
+draft: false
+---
+
+## Problem Statement
+
+You are given the heads of two sorted linked lists `list1` and `list2`. Merge the two lists into one **sorted** list. The list should be made by splicing together the nodes of the first two lists. Return the head of the merged linked list.
+
+```
+Input:  list1 = [1,2,4], list2 = [1,3,4]
+Output: [1,1,2,3,4,4]
+
+Input:  list1 = [], list2 = []
+Output: []
+
+Input:  list1 = [], list2 = [0]
+Output: [0]
+```
+
+## Approach 1: Iterative with Dummy Node — O(m + n)
+
+Use a dummy node to avoid special-casing the head of the result. Walk both lists simultaneously, always attaching the smaller node.
+
+```java
+public ListNode mergeTwoLists(ListNode list1, ListNode list2) {
+    ListNode dummy = new ListNode(0);
+    ListNode curr = dummy;
+
+    while (list1 != null && list2 != null) {
+        if (list1.val <= list2.val) {
+            curr.next = list1;
+            list1 = list1.next;
+        } else {
+            curr.next = list2;
+            list2 = list2.next;
+        }
+        curr = curr.next;
+    }
+
+    // One list is exhausted — attach the rest of the other
+    curr.next = (list1 != null) ? list1 : list2;
+
+    return dummy.next;
+}
+```
+
+**Why dummy node?** Without it, you'd need to separately determine which node becomes the new head before the loop. The dummy gives `curr` a starting point and `dummy.next` is always the real answer.
+
+**Why `curr.next = list1 != null ? list1 : list2` after the loop?** At most one list has remaining nodes after the loop. They're already sorted, so just attach the tail — no need to traverse them.
+
+## Approach 2: Recursive — O(m + n) time, O(m + n) space
+
+```java
+public ListNode mergeTwoLists(ListNode list1, ListNode list2) {
+    if (list1 == null) return list2;
+    if (list2 == null) return list1;
+
+    if (list1.val <= list2.val) {
+        list1.next = mergeTwoLists(list1.next, list2);
+        return list1;
+    } else {
+        list2.next = mergeTwoLists(list1, list2.next);
+        return list2;
+    }
+}
+```
+
+Elegant and matches the natural recursive structure. The smaller-headed node becomes the head of the merged list, and its tail is the merge of the rest.
+
+**Space caveat:** recursion depth is O(m + n) — stack frames for each node. For very long lists this can cause a StackOverflowError. Prefer iterative in production.
+
+## Tracing the Example
+
+`list1 = 1 → 2 → 4`, `list2 = 1 → 3 → 4`
+
+| step | list1 | list2 | attached | result so far |
+|------|-------|-------|----------|---------------|
+| 1    | 1     | 1     | list1(1) | dummy → 1     |
+| 2    | 2     | 1     | list2(1) | → 1 → 1       |
+| 3    | 2     | 3     | list1(2) | → 1 → 1 → 2  |
+| 4    | 4     | 3     | list2(3) | → 2 → 3       |
+| 5    | 4     | 4     | list1(4) | → 3 → 4       |
+| 6    | null  | 4     | list2(4) tail | → 4 → 4  |
+
+Result: `1 → 1 → 2 → 3 → 4 → 4` ✓
+
+## Complexity
+
+|            | Time       | Space  |
+|------------|------------|--------|
+| Iterative  | O(m + n)   | O(1)   |
+| Recursive  | O(m + n)   | O(m+n) |
+
+## Key Insight
+
+The dummy node is the canonical linked list trick for any operation that builds a new list incrementally. It eliminates the "what's the head?" question and keeps the loop uniform — you never need an if-else to handle the first node differently from any other.
+
+This exact same pattern (dummy + merge loop) is the core of **Merge K Sorted Lists** (#23) and the merge step in **Merge Sort**.
+
+## Edge Cases
+
+- **Both empty**: both conditions `list1 == null` and `list2 == null` immediately hit the tail-attachment line; `dummy.next` is null.
+- **One empty**: the while loop is skipped; `curr.next = list2 (or list1)` returns the non-empty list.
+- **All elements equal**: `<=` comparison means `list1` nodes are always preferred — stable merge.
+- **Very different lengths**: the shorter list exhausts first; the remaining tail of the longer list is attached in O(1).

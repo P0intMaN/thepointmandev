@@ -1,0 +1,145 @@
+---
+title: "Sqrt(x)"
+description: "Compute the integer square root of a non-negative integer x without using built-in exponent functions."
+date: "2026-04-08"
+tags: ["binary-search", "math"]
+category: "Binary Search"
+difficulty: "easy"
+timeComplexity: "O(log x)"
+spaceComplexity: "O(1)"
+companies: ["Amazon", "Google", "Apple", "Bloomberg"]
+leetcodeNumber: 69
+draft: false
+---
+
+## Problem Statement
+
+Given a non-negative integer `x`, return the **integer square root** of `x`.
+
+The integer square root is the largest integer `k` such that `k² ≤ x`. Do not use any built-in exponent function or operator.
+
+```
+Input:  x = 4
+Output: 2
+
+Input:  x = 8
+Output: 2
+Explanation: √8 ≈ 2.828... → floor is 2
+
+Input:  x = 0
+Output: 0
+```
+
+## Why Binary Search?
+
+We need to find the largest integer `k` where `k² ≤ x`. The search space `[0, x]` is sorted, and the predicate `k² ≤ x` is monotonic — it's true for all values up to some boundary, then false beyond it. That's exactly the boundary-search template.
+
+---
+
+## Approach 1: Integer Binary Search — O(log x)
+
+Use Template 2 (boundary search): find the **last** value where `k² ≤ x`.
+
+```java
+public int mySqrt(int x) {
+    if (x < 2) return x; // 0 → 0, 1 → 1
+
+    int lo = 1, hi = x / 2; // sqrt(x) ≤ x/2 for x ≥ 4
+
+    while (lo < hi) {
+        int mid = lo + (hi - lo + 1) / 2; // upper mid to avoid infinite loop
+        if ((long) mid * mid <= x) {
+            lo = mid; // mid is feasible, try larger
+        } else {
+            hi = mid - 1; // mid is too large
+        }
+    }
+
+    return lo;
+}
+```
+
+**Why `hi = x / 2`?** For any `x ≥ 4`, `√x ≤ x / 2`. This halves the initial search space with no loss of correctness. (Special case `x < 2` is handled upfront.)
+
+**Why upper mid `lo + (hi - lo + 1) / 2`?** When `lo + 1 == hi`, lower mid would equal `lo`, and `lo = mid` would leave `lo` unchanged — infinite loop. Upper mid ensures `lo` advances.
+
+**Why `(long) mid * mid`?** `mid` can be up to ~46,340 (√Integer.MAX_VALUE ≈ 46,340.95). `mid * mid` can overflow `int` — cast to `long` before squaring.
+
+## Tracing the Example
+
+`x = 8`
+
+| lo | hi | mid | mid² | decision         |
+|----|-----|-----|------|------------------|
+| 1  | 4   | 3   | 9    | 9 > 8 → hi = 2   |
+| 1  | 2   | 2   | 4    | 4 ≤ 8 → lo = 2   |
+| lo == hi → **return 2** |
+
+`x = 26`
+
+| lo | hi | mid | mid² | decision         |
+|----|----|-----|------|------------------|
+| 1  | 13 | 7   | 49   | 49 > 26 → hi = 6 |
+| 1  | 6  | 4   | 16   | 16 ≤ 26 → lo = 4 |
+| 4  | 6  | 5   | 25   | 25 ≤ 26 → lo = 5 |
+| 5  | 6  | 6   | 36   | 36 > 26 → hi = 5 |
+| lo == hi → **return 5** (5² = 25 ≤ 26 < 36 = 6²) |
+
+---
+
+## Approach 2: Floating-Point Binary Search
+
+When the problem asks for a **precise decimal answer** (e.g., "return √x to 5 decimal places"), switch to floating-point binary search — no off-by-one issues, just run until the interval is narrow enough.
+
+```java
+public double mySqrtPrecise(double x) {
+    if (x < 0) throw new IllegalArgumentException();
+    if (x == 0) return 0;
+
+    double lo = 0, hi = Math.max(1, x); // hi = max(1, x) handles x < 1
+
+    while (hi - lo > 1e-9) {            // precision threshold
+        double mid = lo + (hi - lo) / 2;
+        if (mid * mid <= x) lo = mid;   // feasible, try larger
+        else hi = mid;
+    }
+
+    return lo;
+}
+```
+
+The loop halves the interval each iteration. Starting range ≤ `x`, after 50 iterations the interval is `x / 2^50 ≈ x × 10^{-15}` — well inside double precision. In practice, `1e-9` threshold means ~30–60 iterations for any reasonable input.
+
+**Why `hi = Math.max(1, x)`?** If `x = 0.25`, then `√x = 0.5 > x`. Setting `hi = x` would cut off the answer. `max(1, x)` handles both cases: for `x ≥ 1`, √x ≤ x; for `x < 1`, √x < 1.
+
+---
+
+## Complexity
+
+|                        | Time       | Space |
+|------------------------|------------|-------|
+| Brute force (linear)   | O(√x)      | O(1)  |
+| Integer binary search  | O(log x)   | O(1)  |
+| Float binary search    | O(log(x/ε))| O(1)  |
+
+For `x = 10^18`, integer binary search needs ~60 iterations. Float binary search to `1e-9` needs ~60 iterations regardless of input magnitude.
+
+---
+
+## Key Insight
+
+This problem is the textbook example of **binary search on the answer space**. You're not searching an array — you're searching the range of possible answers `[0, x]`.
+
+The predicate `k² ≤ x` is monotonic: once false, always false. That monotonicity is all binary search needs.
+
+The float variant removes off-by-one concerns entirely — instead of tracking whether to include or exclude a boundary, you just shrink the interval until it's small enough. This is the go-to approach for problems asking for real-valued answers: distances, ratios, percentages.
+
+---
+
+## Edge Cases
+
+- **`x = 0`** → return 0 (handled upfront).
+- **`x = 1`** → return 1 (handled upfront).
+- **`x = 2147483647` (Integer.MAX_VALUE)** → `hi = x / 2 = 1073741823`. `mid` can reach ~46,340. Without the `(long)` cast, `mid * mid` overflows. Always cast before squaring.
+- **`x < 1` (float variant)** → √x > x. `hi = max(1, x)` ensures the answer is in range.
+- **Perfect square** `x = 25` → loop terminates with `lo = 5` exactly.

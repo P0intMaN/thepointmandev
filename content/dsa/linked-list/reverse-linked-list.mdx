@@ -1,0 +1,120 @@
+---
+title: "Reverse Linked List"
+description: "Reverse a singly linked list in-place and return the new head."
+date: "2026-04-08"
+tags: ["linked-list", "recursion"]
+category: "Linked List"
+difficulty: "easy"
+timeComplexity: "O(n)"
+spaceComplexity: "O(1)"
+companies: ["Amazon", "Google", "Microsoft", "Apple", "Adobe"]
+leetcodeNumber: 206
+draft: false
+---
+
+## Problem Statement
+
+Given the `head` of a singly linked list, reverse the list, and return the reversed list.
+
+```
+Input:  head = [1,2,3,4,5]
+Output: [5,4,3,2,1]
+
+Input:  head = [1,2]
+Output: [2,1]
+
+Input:  head = []
+Output: []
+```
+
+## Approach 1: Iterative — O(n) time, O(1) space ✅ Optimal
+
+Maintain three pointers: `prev`, `curr`, and `next`. Walk forward, reversing one link at a time.
+
+```java
+public ListNode reverseList(ListNode head) {
+    ListNode prev = null;
+    ListNode curr = head;
+
+    while (curr != null) {
+        ListNode next = curr.next; // 1. save next before breaking the link
+        curr.next = prev;          // 2. reverse the link
+        prev = curr;               // 3. advance prev
+        curr = next;               // 4. advance curr
+    }
+
+    return prev; // prev is the new head
+}
+```
+
+**Why save `next` first?** Once you execute `curr.next = prev`, you've severed the forward link. Without saving `next = curr.next` first, you lose your path forward through the list.
+
+**Why return `prev`?** When the loop ends, `curr` is null and `prev` points to the last node — which is now the new head of the reversed list.
+
+## Tracing the Example
+
+`head = 1 → 2 → 3 → 4 → 5`
+
+| step | prev | curr | next | action |
+|------|------|------|------|--------|
+| init | null | 1 | — | — |
+| 1 | null | 1 | 2 | 1.next = null |
+| 2 | 1 | 2 | 3 | 2.next = 1 |
+| 3 | 2 | 3 | 4 | 3.next = 2 |
+| 4 | 3 | 4 | 5 | 4.next = 3 |
+| 5 | 4 | 5 | null | 5.next = 4 |
+| end | 5 | null | — | return prev = **5** |
+
+Result: `5 → 4 → 3 → 2 → 1` ✓
+
+---
+
+## Approach 2: Recursive — O(n) time, O(n) space
+
+```java
+public ListNode reverseList(ListNode head) {
+    if (head == null || head.next == null) return head;
+
+    ListNode newHead = reverseList(head.next); // recurse to end
+    head.next.next = head; // reverse the link on the way back
+    head.next = null;      // sever the old forward link
+    return newHead;        // new head propagates back up
+}
+```
+
+**How it works:**
+1. Recurse until the last node — that becomes `newHead`.
+2. On the way back up: `head.next` is the node after `head` in the original list. Set `head.next.next = head` to point back at `head`. Then `head.next = null` to break the old forward link.
+3. `newHead` (the original last node) propagates all the way back to the caller.
+
+**Space caveat:** O(n) stack frames — one per recursive call. Can cause StackOverflowError on very long lists.
+
+---
+
+## Complexity
+
+|            | Time  | Space |
+|------------|-------|-------|
+| Iterative  | O(n)  | O(1)  |
+| Recursive  | O(n)  | O(n)  |
+
+---
+
+## Key Insight
+
+Pointer reversal is the foundation of most in-place linked list restructuring. The three-pointer iterative pattern — `prev`, `curr`, `next` — appears verbatim or with slight variations in:
+
+- **#92 Reverse Linked List II** — reverse only the nodes between positions `left` and `right`
+- **#25 Reverse Nodes in K-Group** — reverse every group of `k` nodes
+- **#234 Palindrome Linked List** — reverse the second half, compare to first half
+- **#143 Reorder List** — split at midpoint, reverse second half, interleave
+
+Mastering the three-pointer reversal makes all of these straightforward to assemble.
+
+---
+
+## Edge Cases
+
+- **Empty list** `head = null` → `curr` is null, loop never runs, return `prev = null`.
+- **Single node** `[1]` → `next = null`, `curr.next = null` (same), `prev = 1`, return 1.
+- **Two nodes** `[1, 2]` → one iteration: `1.next = null`, `prev = 1`, `curr = 2`; second iteration: `2.next = 1`, `prev = 2`, `curr = null`. Return 2 → 1.

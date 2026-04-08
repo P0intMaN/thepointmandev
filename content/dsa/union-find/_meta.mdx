@@ -1,0 +1,116 @@
+---
+title: "Union-Find (Disjoint Sets)"
+description: "Track and merge connected components dynamically with near-O(1) amortized operations using path compression and union by rank."
+signal: "Connected components that merge over time, cycle detection in undirected graph, Kruskal's MST. Signal: 'merge groups', 'are X and Y connected?', 'number of components after unions'."
+gotchas: "Two optimizations are required for near-O(1): Union by Rank (keep trees shallow) + Path Compression (flatten the tree on find). Without both, worst case is O(n). find() with path compression modifies the tree — always go through find() to compare roots."
+color: "#fb923c"
+colorDim: "#1c0a00"
+colorBorder: "#f97316"
+icon: "union-find"
+order: 17
+tier: 3
+draft: false
+---
+
+## How to Spot This Pattern
+
+Union-Find (also called Disjoint Set Union, DSU) solves problems involving **dynamic connectivity**:
+- *"Are nodes X and Y connected?"*
+- *"Merge groups X and Y"*
+- *"Count connected components after a series of unions"*
+- *"Detect cycle in an undirected graph"*
+- *"Kruskal's minimum spanning tree"*
+
+The key: components **merge but never split** — Union-Find handles only unions, not splits.
+
+## Implementation
+
+```java
+class UnionFind {
+    private int[] parent, rank;
+    private int components;
+
+    public UnionFind(int n) {
+        parent = new int[n];
+        rank   = new int[n];
+        components = n;
+        for (int i = 0; i < n; i++) parent[i] = i; // each node is its own root
+    }
+
+    // Find root with path compression
+    public int find(int x) {
+        if (parent[x] != x) {
+            parent[x] = find(parent[x]); // flatten: point directly to root
+        }
+        return parent[x];
+    }
+
+    // Union by rank — attach smaller tree under larger
+    public boolean union(int x, int y) {
+        int px = find(x), py = find(y);
+        if (px == py) return false; // already connected
+
+        if      (rank[px] < rank[py]) parent[px] = py;
+        else if (rank[px] > rank[py]) parent[py] = px;
+        else { parent[py] = px; rank[px]++; }
+
+        components--;
+        return true;
+    }
+
+    public boolean connected(int x, int y) {
+        return find(x) == find(y);
+    }
+
+    public int count() { return components; }
+}
+```
+
+## The Two Optimizations
+
+**Path Compression** (`find`): after finding the root, make every node on the path point directly to the root. Future `find` calls on these nodes are O(1).
+
+**Union by Rank** (`union`): always attach the shorter tree under the taller one. This keeps the tree height O(log n) without compression.
+
+**Together**: the amortized cost per operation is O(α(n)) — the inverse Ackermann function. For any practical input, α(n) ≤ 4. Essentially O(1).
+
+## Cycle Detection in Undirected Graph
+
+```java
+UnionFind uf = new UnionFind(n);
+for (int[] edge : edges) {
+    if (!uf.union(edge[0], edge[1])) {
+        return true; // union returned false = already connected = cycle
+    }
+}
+return false;
+```
+
+If `union` returns false (the two nodes are already in the same component), adding this edge creates a cycle.
+
+## Kruskal's MST
+
+```java
+// Sort edges by weight
+Arrays.sort(edges, (a, b) -> a[2] - b[2]); // [u, v, weight]
+
+UnionFind uf = new UnionFind(n);
+int mstWeight = 0, edgesUsed = 0;
+
+for (int[] edge : edges) {
+    if (uf.union(edge[0], edge[1])) { // only add edge if it connects two components
+        mstWeight += edge[2];
+        edgesUsed++;
+        if (edgesUsed == n - 1) break; // MST complete
+    }
+}
+```
+
+An MST has `n-1` edges. Each `union` that returns true adds a non-redundant edge.
+
+## Common Gotchas
+
+- **Always compare roots**: use `find(x) == find(y)`, not `parent[x] == parent[y]` — the parent may not be the root.
+- **Path compression modifies tree**: `find` has a side effect. This is intentional and correct.
+- **Union-Find can't split**: once merged, components stay merged. If you need to split, use a different structure.
+- **1D array for 2D grid**: map `(r, c)` to `r * cols + c` to use Union-Find on grids.

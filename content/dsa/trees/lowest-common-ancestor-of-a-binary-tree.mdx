@@ -1,0 +1,106 @@
+---
+title: "Lowest Common Ancestor of a Binary Tree"
+description: "Find the lowest common ancestor of two nodes in a binary tree."
+date: "2026-04-08"
+tags: ["tree", "dfs", "recursion"]
+category: "Trees"
+difficulty: "medium"
+timeComplexity: "O(n)"
+spaceComplexity: "O(h)"
+companies: ["Amazon", "Google", "Facebook", "Microsoft", "LinkedIn"]
+leetcodeNumber: 236
+draft: false
+---
+
+## Problem Statement
+
+Given a binary tree, find the **lowest common ancestor (LCA)** of two given nodes `p` and `q`.
+
+The LCA is defined as the lowest node in the tree that has both `p` and `q` as descendants (a node can be a descendant of itself).
+
+```
+Input:  root = [3,5,1,6,2,0,8,null,null,7,4], p = 5, q = 1
+Output: 3
+
+Input:  root = [3,5,1,6,2,0,8,null,null,7,4], p = 5, q = 4
+Output: 5
+Explanation: 5 is an ancestor of 4, and the LCA is 5 itself.
+```
+
+## The Core Insight
+
+Use post-order DFS. The key observation:
+
+- If the current node is `p` or `q` → return it (found one target, no need to go deeper)
+- Recurse into left and right subtrees
+- If **both** left and right return non-null → current node is the LCA (each target is in a different subtree)
+- If **only one** returns non-null → propagate that result upward
+
+```java
+public TreeNode lowestCommonAncestor(TreeNode root, TreeNode p, TreeNode q) {
+    // Base: null or found a target
+    if (root == null || root == p || root == q) return root;
+
+    TreeNode left  = lowestCommonAncestor(root.left,  p, q);
+    TreeNode right = lowestCommonAncestor(root.right, p, q);
+
+    // Both subtrees found a target → current node is LCA
+    if (left != null && right != null) return root;
+
+    // One side found something → propagate it up
+    return left != null ? left : right;
+}
+```
+
+## Why This Works
+
+There are exactly two cases for where `p` and `q` can be:
+
+**Case 1: They are in different subtrees.** The first node where `left != null && right != null` is the LCA — it's the "split point" where the paths to `p` and `q` diverge.
+
+**Case 2: One is an ancestor of the other** (e.g., `p = 5`, `q = 4` where 4 is in 5's subtree). When the DFS reaches node 5 (`== p`), it returns 5 immediately without recursing further. Node 4 is never explicitly found — but that's fine, because 5 *is* the LCA (the problem guarantees both nodes exist in the tree).
+
+## Tracing the Example
+
+`root = [3,5,1,...]`, `p = 5`, `q = 4`
+
+```
+dfs(3)
+  dfs(5)   → root == p → return 5
+  dfs(1)
+    dfs(0) → null (no p or q found)
+    dfs(8) → null
+    → both null → return null
+  left = 5, right = null → return left = 5
+return 5  ✓
+```
+
+`p = 5`, `q = 1`:
+
+```
+dfs(3)
+  dfs(5)  → root == p → return 5
+  dfs(1)  → root == q → return 1
+  left = 5, right = 1 → both non-null → return root = 3  ✓
+```
+
+## Complexity
+
+| | Time | Space |
+|---|---|---|
+| Post-order DFS | O(n) | O(h) |
+
+Worst case visits every node (when targets are in the deepest leaves of different subtrees).
+
+## Key Insight
+
+The elegance of this algorithm is in what it *doesn't* do: it doesn't search for `q` inside `p`'s subtree, nor does it build full paths. The post-order propagation handles both "split at a common ancestor" and "one is an ancestor of the other" with a single unified logic.
+
+Contrast with **#235 LCA of Binary Search Tree** — when the tree is a BST, you exploit ordering: if both `p.val` and `q.val` are less than `root.val`, go left; if both are greater, go right; else current is LCA. O(h) time without visiting every node.
+
+## Edge Cases
+
+- **One node is the LCA of itself**: handled by `root == p || root == q` returning immediately.
+- **p and q are the same node**: the first time it's found, it's returned; there's no second occurrence (problem guarantees distinct nodes). Returns that node.
+- **p or q is the root**: root is returned immediately — it's the LCA of everything.
+- **Skewed tree**: O(n) time, O(n) space (recursion depth).

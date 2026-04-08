@@ -1,0 +1,102 @@
+---
+title: "Reorder List"
+description: "Reorder a linked list to interleave the first and second halves."
+date: "2026-04-08"
+tags: ["linked-list", "two-pointers"]
+category: "Linked List"
+difficulty: "medium"
+timeComplexity: "O(n)"
+spaceComplexity: "O(1)"
+companies: ["Amazon", "Google", "Facebook", "Bloomberg"]
+leetcodeNumber: 143
+draft: false
+---
+
+## Problem Statement
+
+Given the head of a singly linked list `L0→L1→…→Ln`, reorder it to: `L0→Ln→L1→Ln-1→L2→Ln-2→…`. Do this in-place without altering the values.
+
+```
+Input:  1→2→3→4
+Output: 1→4→2→3
+
+Input:  1→2→3→4→5
+Output: 1→5→2→4→3
+```
+
+## Approach: Find Middle + Reverse + Merge — O(n)
+
+Three steps:
+1. **Find middle**: slow/fast pointers
+2. **Reverse second half**: in-place reversal
+3. **Merge two halves**: interleave
+
+```java
+public void reorderList(ListNode head) {
+    if (head == null || head.next == null) return;
+
+    // Step 1: Find middle (end of first half)
+    ListNode slow = head, fast = head;
+    while (fast.next != null && fast.next.next != null) {
+        slow = slow.next;
+        fast = fast.next.next;
+    }
+    // slow is now the end of the first half
+
+    // Step 2: Reverse second half
+    ListNode secondHalf = slow.next;
+    slow.next = null; // disconnect first and second half
+    secondHalf = reverse(secondHalf);
+
+    // Step 3: Merge
+    ListNode first = head, second = secondHalf;
+    while (second != null) {
+        ListNode tmp1 = first.next;
+        ListNode tmp2 = second.next;
+        first.next = second;
+        second.next = tmp1;
+        first = tmp1;
+        second = tmp2;
+    }
+}
+
+private ListNode reverse(ListNode head) {
+    ListNode prev = null, curr = head;
+    while (curr != null) {
+        ListNode next = curr.next;
+        curr.next = prev;
+        prev = curr;
+        curr = next;
+    }
+    return prev;
+}
+```
+
+**Trace** `1→2→3→4→5`:
+- Step 1: slow=3, split: first=`1→2→3`, second=`4→5`
+- Step 2: reverse second → `5→4`
+- Step 3: merge `1→2→3` and `5→4`:
+  - 1.next=5, 5.next=2 → `1→5→2→3`
+  - 2.next=4, 4.next=3 → `1→5→2→4→3` ✓
+
+## Why Disconnect the Two Halves?
+
+Without disconnecting (`slow.next = null`), the merged list would still have a stale pointer from the end of the first half into the original second half, creating a cycle or incorrect structure.
+
+## Complexity
+
+| | Time | Space |
+|---|---|---|
+| **Three-step approach** | **O(n)** | **O(1)** |
+| Store in array then rebuild | O(n) | O(n) |
+
+## Key Insight
+
+Reorder List combines three fundamental linked list operations: slow/fast pointer (find middle), reversal, and merging. None of these requires extra space. The key is recognizing that the desired order is first-half interleaved with reversed second-half.
+
+## Edge Cases
+
+- **Even length** `1→2→3→4`: first half = `1→2`, second = `4→3` → merge to `1→4→2→3`
+- **Odd length** `1→2→3→4→5`: first half = `1→2→3`, second = `5→4` → `1→5→2→4→3`
+- **Two elements**: `1→2` → `1→2` (no change)
+- **Single element**: return immediately

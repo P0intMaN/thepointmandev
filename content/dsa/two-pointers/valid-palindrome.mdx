@@ -1,0 +1,113 @@
+---
+title: "Valid Palindrome"
+description: "Determine if a string is a palindrome considering only alphanumeric characters, ignoring case."
+date: "2026-03-16"
+tags: ["string", "two-pointer"]
+category: "Two Pointers"
+difficulty: "easy"
+timeComplexity: "O(n)"
+spaceComplexity: "O(1)"
+companies: ["Facebook", "Microsoft", "Apple", "Amazon"]
+leetcodeNumber: 125
+draft: false
+---
+
+## Problem Statement
+
+A phrase is a **palindrome** if, after converting all uppercase letters to lowercase and removing all non-alphanumeric characters, it reads the same forward and backward.
+
+Given a string `s`, return `true` if it is a palindrome, or `false` otherwise.
+
+```
+Input:  s = "A man, a plan, a canal: Panama"
+Output: true
+Explanation: "amanaplanacanalpanama" is a palindrome
+
+Input:  s = "race a car"
+Output: false
+Explanation: "raceacar" is not a palindrome
+
+Input:  s = " "
+Output: true
+Explanation: Empty string after filtering — empty string is a palindrome
+```
+
+## Approach 1: Clean Then Check — O(n) time, O(n) space
+
+The straightforward read: strip the string down to only lowercase alphanumerics, then check if it equals its reverse.
+
+```java
+public boolean isPalindrome(String s) {
+    StringBuilder cleaned = new StringBuilder();
+    for (char c : s.toCharArray()) {
+        if (Character.isLetterOrDigit(c)) {
+            cleaned.append(Character.toLowerCase(c));
+        }
+    }
+    String forward = cleaned.toString();
+    String backward = cleaned.reverse().toString();
+    return forward.equals(backward);
+}
+```
+
+Clean, readable, and correct — but allocates extra space for the cleaned string. Most interviewers will follow up with "can you do it in O(1) space?"
+
+---
+
+## Approach 2: Two Pointers In-Place — O(n) time, O(1) space ✅ Optimal
+
+Skip the cleaning step entirely. Use a **left** pointer starting at the front and a **right** pointer starting at the back. Advance each pointer past any non-alphanumeric characters, then compare what they land on.
+
+```java
+public boolean isPalindrome(String s) {
+    int left = 0, right = s.length() - 1;
+
+    while (left < right) {
+        // Skip non-alphanumeric from the left
+        while (left < right && !Character.isLetterOrDigit(s.charAt(left))) {
+            left++;
+        }
+        // Skip non-alphanumeric from the right
+        while (left < right && !Character.isLetterOrDigit(s.charAt(right))) {
+            right--;
+        }
+
+        if (Character.toLowerCase(s.charAt(left)) != Character.toLowerCase(s.charAt(right))) {
+            return false;
+        }
+
+        left++;
+        right--;
+    }
+
+    return true;
+}
+```
+
+No extra string, no reverse — just two indices walking toward each other. The moment they find a mismatch, return `false`. If they cross without a mismatch, it's a palindrome.
+
+## Complexity
+
+|              | Time  | Space |
+|--------------|-------|-------|
+| Clean + Check| O(n)  | O(n)  |
+| Two Pointers | O(n)  | O(1)  |
+
+## Key Insight
+
+This is the **canonical two-pointer template**. Two pointers work here because:
+
+1. The problem has a natural symmetry — palindrome means left mirrors right
+2. We can make a decision at each step (match or mismatch) and confidently move both pointers inward
+3. The pointers converge, so we only ever do O(n) total work
+
+Any time you see "check symmetry", "verify from both ends", or "compare mirror positions", reach for two pointers before anything else.
+
+`Character.isLetterOrDigit()` and `Character.toLowerCase()` are your tools for alphanumeric normalization — memorize them, they appear constantly in string problems.
+
+## Edge Cases
+
+- **All non-alphanumeric** `"!@#$"` → both pointers skip past everything, `left >= right` immediately, returns `true` (empty string is a palindrome).
+- **Single character** `"a"` → `left == right` on entry, loop doesn't execute, returns `true`.
+- **Digits** `"0P0"` → `'0'` and `'0'` match, `'P'` is the middle, returns `true`. Digits count as valid characters.
+- **Mixed case** `"AbBa"` → lowercase comparison handles this — `'A'` vs `'a'` match after `toLowerCase`.

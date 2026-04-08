@@ -1,0 +1,83 @@
+---
+title: "Prefix Sum"
+description: "Precompute cumulative sums to answer range queries and subarray sum problems in O(1)."
+signal: "Range sum queries, subarray sum equals k. Signal: 'sum of range [i,j]', 'subarray sum = target', 'number of subarrays with sum'."
+gotchas: "prefix[0] = 0 (empty prefix — always include this). For subarray sum = K use HashMap storing prefix[i] → count. For 2D add the inclusion-exclusion formula."
+color: "#a78bfa"
+colorDim: "#1e1b4b"
+colorBorder: "#7c3aed"
+icon: "prefix-sum"
+order: 4
+tier: 1
+draft: false
+---
+
+## How to Spot This Pattern
+
+Reach for prefix sums when the problem involves **sums over a contiguous range** and you need to answer many queries or scan for a condition. The signal phrases are:
+
+- *"Sum of subarray/range [i, j]"*
+- *"Number of subarrays with sum equal to k"*
+- *"Find a subarray with sum divisible by k"*
+- *"Running total"* or *"cumulative count"*
+
+If you find yourself computing the same partial sums repeatedly inside a loop, a prefix array eliminates the redundancy.
+
+## The Core Formula
+
+Build a prefix array where `prefix[i]` = sum of `nums[0..i-1]` (1-indexed, with a sentinel zero at index 0):
+
+```java
+int[] prefix = new int[nums.length + 1];
+prefix[0] = 0;  // sentinel — the sum of zero elements
+for (int i = 0; i < nums.length; i++) {
+    prefix[i + 1] = prefix[i] + nums[i];
+}
+```
+
+Then any range sum `nums[i..j]` (0-indexed, inclusive) is:
+
+```
+sum(i, j) = prefix[j + 1] - prefix[i]
+```
+
+O(n) to build, O(1) per query.
+
+## The HashMap Extension
+
+For "number of subarrays with sum = k", a plain prefix array isn't enough — you'd still need O(n) to scan for each target. The trick: store `prefix[i] → count` in a HashMap. For each new prefix sum, check if `prefix[i] - k` has been seen before:
+
+```java
+Map<Integer, Integer> seen = new HashMap<>();
+seen.put(0, 1);  // empty prefix — critical base case
+int sum = 0, count = 0;
+
+for (int num : nums) {
+    sum += num;
+    count += seen.getOrDefault(sum - k, 0);
+    seen.merge(sum, 1, Integer::sum);
+}
+```
+
+`seen.put(0, 1)` is the base case: if the running sum itself equals `k`, `sum - k = 0` must already be in the map.
+
+## 2D Prefix Sum
+
+For grid problems, the prefix formula extends to two dimensions using inclusion-exclusion:
+
+```
+prefix[i][j] = prefix[i-1][j] + prefix[i][j-1] - prefix[i-1][j-1] + grid[i][j]
+```
+
+Query for rectangle `(r1,c1)` to `(r2,c2)`:
+```
+sum = prefix[r2][c2] - prefix[r1-1][c2] - prefix[r2][c1-1] + prefix[r1-1][c1-1]
+```
+
+## Common Gotchas
+
+- **Missing the sentinel `prefix[0] = 0`** — without it, subarrays starting from index 0 are missed.
+- **Off-by-one on indices** — `prefix[j+1] - prefix[i]` gives `nums[i..j]` inclusive. Draw it out if unsure.
+- **Integer overflow** — if values are large, use `long[]` for the prefix array.
+- **Modular arithmetic** — for "divisible by k", store `prefix[i] % k` in the map, not the raw sum.
+- **Negative numbers** — prefix sums work correctly with negatives; sliding window does not.

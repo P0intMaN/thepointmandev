@@ -1,0 +1,97 @@
+---
+title: "Burst Balloons"
+description: "Maximize coins by bursting balloons strategically — an interval DP problem."
+date: "2026-04-08"
+tags: ["dp-2d", "interval-dp", "divide-and-conquer"]
+category: "DP 2D"
+difficulty: "hard"
+timeComplexity: "O(n³)"
+spaceComplexity: "O(n²)"
+companies: ["Amazon", "Google", "Facebook"]
+leetcodeNumber: 312
+draft: false
+---
+
+## Problem Statement
+
+Given `n` balloons with values in array `nums`, if you burst balloon `i` you get `nums[i-1] * nums[i] * nums[i+1]` coins. Return the maximum coins you can collect by bursting all balloons.
+
+```
+Input:  nums = [3,1,5,8]
+Output: 167
+Explanation: burst 1→ 3×1×5=15, burst 5→ 3×5×8=120, burst 3→ 1×3×8=24, burst 8→ 1×8×1=8
+Alternatively: optimal order gives 3+15+40+24+0+... = 167
+```
+
+## Key Insight: Reverse Thinking
+
+Instead of thinking about which balloon to burst **first**, think about which balloon to burst **last** in a range `[l, r]`.
+
+If balloon `k` is the **last** to be burst in range `[l, r]`:
+- All other balloons in `[l+1..k-1]` and `[k+1..r-1]` are already gone
+- Coins = `nums[l-1] * nums[k] * nums[r+1]` (boundary balloons still exist!)
+- Plus coins from optimally bursting left sub-range `[l..k-1]` and right `[k+1..r]`
+
+This avoids the dependency problem: if we thought about which to burst first, the neighbors change. But the **last** balloon's neighbors are always the boundaries.
+
+## Implementation: Interval DP
+
+Pad `nums` with 1s at both ends (`[1, ...nums, 1]`).
+
+```java
+public int maxCoins(int[] nums) {
+    int n = nums.length;
+    int[] balls = new int[n + 2];
+    balls[0] = balls[n + 1] = 1;
+    for (int i = 0; i < n; i++) balls[i + 1] = nums[i];
+    int m = n + 2; // padded length
+
+    // dp[l][r] = max coins from bursting all balloons in (l, r) exclusive
+    int[][] dp = new int[m][m];
+
+    // Process by interval length
+    for (int len = 2; len < m; len++) {       // interval length
+        for (int l = 0; l < m - len; l++) {   // left boundary
+            int r = l + len;                   // right boundary
+
+            // Try each k as the last balloon burst in (l, r)
+            for (int k = l + 1; k < r; k++) {
+                int coins = balls[l] * balls[k] * balls[r]
+                          + dp[l][k] + dp[k][r];
+                dp[l][r] = Math.max(dp[l][r], coins);
+            }
+        }
+    }
+
+    return dp[0][m - 1];
+}
+```
+
+**`dp[l][r]`** represents the max coins from bursting all balloons **strictly inside** `(l, r)` — balloons `l` and `r` are "virtual boundaries" and are not themselves burst in this sub-problem.
+
+## Walkthrough: `[3,1,5,8]` → padded `[1,3,1,5,8,1]`
+
+- len=2: dp[l][l+2] = balls[l]*balls[l+1]*balls[l+2] for each l (k=l+1 is the only balloon)
+- len=3 and higher: try each k as last burst, combine with sub-results
+- dp[0][5] = answer = 167
+
+## Complexity
+
+| | Time | Space |
+|---|---|---|
+| **Interval DP** | **O(n³)** | **O(n²)** |
+| Naive recursion | O(n!) | O(n) |
+| Memoized recursion | O(n³) | O(n²) |
+
+## Key Insight
+
+The "last burst" perspective is the critical realization. When `k` is last to burst in `[l,r]`:
+1. Its neighbors are always `l` and `r` (no dependency on burst order within sub-ranges)
+2. Sub-problems `[l,k]` and `[k,r]` are independent
+
+This transforms an intractable ordering problem into clean O(n³) interval DP.
+
+## Edge Cases
+
+- **Single balloon**: `nums = [5]` → 1×5×1 = 5
+- **All same value**: try each k, result equals the optimal interval DP

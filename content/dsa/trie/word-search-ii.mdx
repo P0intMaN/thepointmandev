@@ -1,0 +1,126 @@
+---
+title: "Word Search II"
+description: "Find all words from a dictionary that exist in a 2D board using Trie + DFS."
+date: "2026-04-08"
+tags: ["trie", "backtracking", "dfs", "grid"]
+category: "Trie"
+difficulty: "hard"
+timeComplexity: "O(M · N · 4^L)"
+spaceComplexity: "O(W · L)"
+companies: ["Amazon", "Google", "Microsoft", "Facebook", "Apple"]
+leetcodeNumber: 212
+draft: false
+---
+
+## Problem Statement
+
+Given an `m x n` board of characters and a list of strings `words`, return all words on the board. Words may be constructed from sequentially adjacent cells (horizontally/vertically), and the same cell may not be used more than once in a word.
+
+```
+Input:  board = [["o","a","a","n"],["e","t","a","e"],["i","h","k","r"],["i","f","l","v"]],
+        words = ["oath","pea","eat","rain"]
+Output: ["eat","oath"]
+```
+
+## Why Trie?
+
+**Naive approach**: run Word Search (#79) once per word — O(W · M · N · 4^L). For large dictionaries, this is too slow because each word starts from scratch.
+
+**Trie approach**: build a Trie of all words. Run a single DFS pass over the board. At each cell, follow the Trie — if the current path isn't a prefix of any word, prune immediately. This shares prefix exploration across all words.
+
+## Implementation
+
+```java
+class Solution {
+    int[][] dirs = {{0,1},{0,-1},{1,0},{-1,0}};
+
+    public List<String> findWords(char[][] board, String[] words) {
+        // Build Trie
+        TrieNode root = new TrieNode();
+        for (String word : words) insert(root, word);
+
+        List<String> result = new ArrayList<>();
+        int rows = board.length, cols = board[0].length;
+
+        for (int r = 0; r < rows; r++) {
+            for (int c = 0; c < cols; c++) {
+                dfs(board, r, c, root, result, rows, cols);
+            }
+        }
+        return result;
+    }
+
+    private void dfs(char[][] board, int r, int c, TrieNode node,
+                     List<String> result, int rows, int cols) {
+        if (r < 0 || r >= rows || c < 0 || c >= cols) return;
+        char ch = board[r][c];
+        if (ch == '#' || node.children[ch - 'a'] == null) return;
+
+        TrieNode next = node.children[ch - 'a'];
+
+        if (next.word != null) {
+            result.add(next.word);
+            next.word = null; // ← deduplication: don't add same word twice
+        }
+
+        board[r][c] = '#'; // mark visited
+        for (int[] d : dirs) dfs(board, r+d[0], c+d[1], next, result, rows, cols);
+        board[r][c] = ch;  // restore
+
+        // Pruning: remove exhausted leaf nodes from Trie
+        if (next.word == null && isLeaf(next)) {
+            node.children[ch - 'a'] = null;
+        }
+    }
+
+    private boolean isLeaf(TrieNode node) {
+        for (TrieNode child : node.children) if (child != null) return false;
+        return true;
+    }
+
+    private void insert(TrieNode root, String word) {
+        TrieNode node = root;
+        for (char c : word.toCharArray()) {
+            int idx = c - 'a';
+            if (node.children[idx] == null) node.children[idx] = new TrieNode();
+            node = node.children[idx];
+        }
+        node.word = word; // store word at terminal node
+    }
+
+    static class TrieNode {
+        TrieNode[] children = new TrieNode[26];
+        String word = null; // non-null = end of a word
+    }
+}
+```
+
+## Key Optimizations
+
+**1. Store word at terminal node**: instead of reconstructing the word by backtracking, store `word` directly in the Trie node. O(1) word retrieval.
+
+**2. Null out `next.word` after finding**: prevents adding the same word multiple times when it appears in multiple positions on the board.
+
+**3. Prune exhausted Trie branches**: after finding all occurrences of a word under a subtree, remove leaf nodes. This dramatically reduces future DFS exploration.
+
+## Complexity
+
+M × N = board cells, L = max word length, W = number of words.
+
+- Building Trie: O(W · L)
+- DFS: O(M · N · 4^L) — each starting cell, up to 4^L paths, bounded by Trie pruning
+
+In practice, Trie pruning makes this much faster than the worst case.
+
+## Key Insight
+
+Word Search II is Word Search I generalized to multiple words using a Trie as a shared prefix filter. The Trie converts "check if this path matches any word" from O(W · L) (linear scan of all words) to O(L) (traverse one Trie path).
+
+The leaf-pruning optimization is what makes this competitive for large word lists — words already found are removed from the Trie, reducing future work.
+
+## Edge Cases
+
+- **Word not on board**: DFS never finds it, not added to result.
+- **Duplicate words in input**: after first find, `next.word = null` prevents second addition.
+- **Board cell used twice**: the `'#'` marking prevents revisiting.
+- **Single-character word**: found immediately at any matching cell.

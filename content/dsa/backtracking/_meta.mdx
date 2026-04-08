@@ -1,0 +1,104 @@
+---
+title: "Backtracking"
+description: "Systematically explore all possibilities by building candidates incrementally and abandoning paths that violate constraints."
+signal: "Generate all combinations/permutations/subsets, constraint satisfaction. Signal: 'all possible', 'generate', 'find all paths', 'N-Queens', 'Sudoku'. Template: choose → recurse → unchoose."
+gotchas: "Always undo the choice (backtrack). Add pruning conditions early to reduce search space. Avoid duplicate solutions: sort input and skip duplicate elements. For combinations: start index from current (avoid repeating). Permutations: use visited boolean array or swap."
+color: "#fcd34d"
+colorDim: "#1c1203"
+colorBorder: "#f59e0b"
+icon: "backtracking"
+order: 14
+tier: 2
+draft: false
+---
+
+## How to Spot This Pattern
+
+Backtracking solves problems where you need to:
+- **Generate all** combinations, permutations, subsets, or partitions
+- **Find all paths** satisfying a constraint
+- **Solve constraint satisfaction** problems (Sudoku, N-Queens)
+
+Signal phrases: *"all possible"*, *"generate"*, *"find all"*, *"count all ways"*.
+
+If you only need to know *whether* a solution exists (not all solutions), DFS with early return is sufficient and faster.
+
+## The Universal Template
+
+```java
+void backtrack(/* problem state */, List<Integer> current, List<List<Integer>> result) {
+    // Base case: valid complete solution
+    if (isComplete(current)) {
+        result.add(new ArrayList<>(current)); // ← copy, not reference!
+        return;
+    }
+
+    for (/* each candidate choice */) {
+        if (isValid(choice)) {
+            current.add(choice);         // 1. Choose
+            backtrack(nextState, current, result); // 2. Explore
+            current.remove(current.size() - 1);   // 3. Unchoose (backtrack)
+        }
+    }
+}
+```
+
+The three steps — **choose, explore, unchoose** — appear in every backtracking solution.
+
+**Always copy when adding to results**: `result.add(new ArrayList<>(current))` not `result.add(current)`. The same list object continues to be modified — adding the reference would give you a list of pointers to the same (empty) list.
+
+## Subsets vs Combinations vs Permutations
+
+| Problem type | Avoid revisiting? | Order matters? | Technique |
+|---|---|---|---|
+| **Subsets** (include/exclude each element) | Yes | No | `start` index, advance each recursive call |
+| **Combinations** (choose k from n) | Yes | No | `start` index |
+| **Permutations** (all orderings) | Yes | Yes | `boolean[] used` array |
+| **Combinations with replacement** | No | No | `start` index, but don't advance it |
+
+## Pruning
+
+Always add pruning conditions before recursing to eliminate invalid branches early:
+
+```java
+// Combination sum example: prune if remaining becomes negative
+for (int i = start; i < candidates.length; i++) {
+    if (candidates[i] > remaining) break; // ← sorted array + pruning
+    current.add(candidates[i]);
+    backtrack(i, remaining - candidates[i], current, result);
+    current.remove(current.size() - 1);
+}
+```
+
+## Handling Duplicates
+
+When the input has duplicate elements and you want distinct results:
+1. **Sort the input** first.
+2. **Skip duplicates at the same recursion level**: if `candidates[i] == candidates[i-1]` and `i > start`, skip.
+
+```java
+Arrays.sort(candidates);
+for (int i = start; i < candidates.length; i++) {
+    if (i > start && candidates[i] == candidates[i-1]) continue; // skip duplicate
+    // ...
+}
+```
+
+## Backtracking vs DP
+
+| | Backtracking | Dynamic Programming |
+|---|---|---|
+| **Goal** | Find/generate all solutions | Find one optimal solution or count |
+| **Approach** | Explore decision tree, prune bad branches | Memoize overlapping subproblems |
+| **When** | Must enumerate all valid states | Many states overlap, optimization needed |
+| **Output** | All valid solutions | Count, max, min, or yes/no |
+
+If you're asked to *count* solutions (not list them), check if DP applies — it's usually faster.
+
+## Common Gotchas
+
+- **Copy when adding to result** — `new ArrayList<>(current)`, not `current` itself.
+- **Sort before deduplication** — skip duplicates only works after sorting.
+- **Start index for combinations** — pass `i+1` (no reuse) or `i` (with reuse) to the next call.
+- **Visited array for permutations** — ensures each element is used at most once per permutation.
+- **Path constraint** — add the validity check before recursing, not inside the for loop.

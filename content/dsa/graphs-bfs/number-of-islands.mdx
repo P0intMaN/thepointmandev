@@ -1,0 +1,134 @@
+---
+title: "Number of Islands"
+description: "Count the number of islands (groups of connected '1's) in a 2D grid."
+date: "2026-04-08"
+tags: ["graph", "bfs", "dfs", "grid"]
+category: "Graphs — BFS"
+difficulty: "medium"
+timeComplexity: "O(m · n)"
+spaceComplexity: "O(m · n)"
+companies: ["Amazon", "Google", "Facebook", "Microsoft", "Bloomberg"]
+leetcodeNumber: 200
+draft: false
+---
+
+## Problem Statement
+
+Given an `m x n` 2D binary grid of `'1'`s (land) and `'0'`s (water), return the number of islands. An island is surrounded by water and is formed by connecting adjacent lands horizontally or vertically.
+
+```
+Input:
+11110
+11010
+11000
+00000
+Output: 1
+
+Input:
+11000
+11000
+00100
+00011
+Output: 3
+```
+
+## Approach 1: BFS — O(m·n)
+
+Iterate every cell. When an unvisited `'1'` is found, run BFS to mark all connected land as visited, and increment the island count.
+
+```java
+public int numIslands(char[][] grid) {
+    int rows = grid.length, cols = grid[0].length;
+    int islands = 0;
+
+    for (int r = 0; r < rows; r++) {
+        for (int c = 0; c < cols; c++) {
+            if (grid[r][c] == '1') {
+                islands++;
+                bfs(grid, r, c, rows, cols);
+            }
+        }
+    }
+    return islands;
+}
+
+private void bfs(char[][] grid, int r, int c, int rows, int cols) {
+    int[][] dirs = {{0,1},{0,-1},{1,0},{-1,0}};
+    Queue<int[]> queue = new LinkedList<>();
+
+    queue.offer(new int[]{r, c});
+    grid[r][c] = '0'; // mark visited by sinking the land
+
+    while (!queue.isEmpty()) {
+        int[] cell = queue.poll();
+        for (int[] d : dirs) {
+            int nr = cell[0] + d[0], nc = cell[1] + d[1];
+            if (nr >= 0 && nr < rows && nc >= 0 && nc < cols && grid[nr][nc] == '1') {
+                grid[nr][nc] = '0'; // mark before enqueuing
+                queue.offer(new int[]{nr, nc});
+            }
+        }
+    }
+}
+```
+
+**Visited tracking trick**: set `grid[r][c] = '0'` instead of using a separate boolean array. This modifies the input — if that's unacceptable, use a `boolean[][] visited` array.
+
+## Approach 2: DFS — O(m·n)
+
+Same logic, recursive flood fill instead of BFS.
+
+```java
+public int numIslands(char[][] grid) {
+    int rows = grid.length, cols = grid[0].length, islands = 0;
+    for (int r = 0; r < rows; r++) {
+        for (int c = 0; c < cols; c++) {
+            if (grid[r][c] == '1') {
+                islands++;
+                dfs(grid, r, c, rows, cols);
+            }
+        }
+    }
+    return islands;
+}
+
+private void dfs(char[][] grid, int r, int c, int rows, int cols) {
+    if (r < 0 || r >= rows || c < 0 || c >= cols || grid[r][c] != '1') return;
+    grid[r][c] = '0';
+    dfs(grid, r+1, c, rows, cols);
+    dfs(grid, r-1, c, rows, cols);
+    dfs(grid, r, c+1, rows, cols);
+    dfs(grid, r, c-1, rows, cols);
+}
+```
+
+DFS is simpler to write but risks StackOverflowError on very large grids. BFS is safer for production.
+
+## Complexity
+
+| | Time | Space |
+|---|---|---|
+| BFS | O(m·n) | O(min(m,n)) — queue at most spans the shorter dimension |
+| DFS | O(m·n) | O(m·n) — recursion depth |
+
+## Key Insight
+
+Number of Islands is the canonical **connected components on a grid** problem. The pattern is always:
+1. Outer double loop — find an unvisited node
+2. BFS/DFS — mark all connected nodes as visited
+3. Increment component counter
+
+Every cell is visited exactly once across all BFS/DFS calls → O(m·n) total.
+
+Variations:
+- **#695 Max Area of Island** — return the size of the largest island (count cells during BFS)
+- **#130 Surrounded Regions** — flip regions not touching the border (BFS from border `O`s)
+- **#994 Rotting Oranges** — multi-source BFS from all rotten oranges simultaneously
+- **#286 Walls and Gates** — multi-source BFS from all gates
+
+## Edge Cases
+
+- **All water**: no `'1'` found, return 0.
+- **All land**: one BFS covers everything, return 1.
+- **Single cell**: if `'1'`, return 1; if `'0'`, return 0.
+- **Grid modification acceptable?** If not, use `boolean[][] visited` instead of sinking cells.

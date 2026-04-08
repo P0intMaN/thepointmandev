@@ -1,0 +1,85 @@
+---
+title: "Gas Station"
+description: "Find the starting gas station from which you can complete the circular route."
+date: "2026-04-08"
+tags: ["greedy", "array"]
+category: "Greedy"
+difficulty: "medium"
+timeComplexity: "O(n)"
+spaceComplexity: "O(1)"
+companies: ["Amazon", "Google", "Facebook", "Bloomberg"]
+leetcodeNumber: 134
+draft: false
+---
+
+## Problem Statement
+
+There are `n` gas stations in a circle. Station `i` has `gas[i]` litres of gas. Traveling from station `i` to `i+1` costs `cost[i]` litres. Starting with an empty tank at some station, find the **starting station index** from which you can complete the circuit. If not possible, return `-1`. The answer is guaranteed to be unique.
+
+```
+Input:  gas  = [1,2,3,4,5]
+        cost = [3,4,5,1,2]
+Output: 3
+Explanation: Start at station 3 (gas=4). 4-1=3 → 4, 3+5-2=6 → 5, 6+1-3=4 → 6, 4+2-4=2 → 7, 2+3-5=0 → back to 3. ✓
+
+Input:  gas  = [2,3,4]
+        cost = [3,4,3]
+Output: -1
+```
+
+## Key Observation
+
+Let `diff[i] = gas[i] - cost[i]` (net gain at station `i`).
+- If `sum(diff) < 0`: no solution exists — insufficient total gas.
+- If `sum(diff) >= 0`: a solution **always exists**.
+
+**Why?** If total gas ≥ total cost, at least one valid starting point must exist. The greedy algorithm finds it in one pass.
+
+## Approach: Greedy — O(n)
+
+```java
+public int canCompleteCircuit(int[] gas, int[] cost) {
+    int totalGas = 0, currentGas = 0;
+    int startStation = 0;
+
+    for (int i = 0; i < gas.length; i++) {
+        int diff = gas[i] - cost[i];
+        totalGas += diff;
+        currentGas += diff;
+
+        // Can't reach station i+1 from startStation
+        if (currentGas < 0) {
+            startStation = i + 1; // reset: try next station as start
+            currentGas = 0;
+        }
+    }
+
+    return totalGas >= 0 ? startStation : -1;
+}
+```
+
+**Why `startStation = i + 1` is correct**:
+- If we start at `startStation` and run out of gas at station `i`, then any station between `startStation` and `i` also fails as a starting point.
+- Why? Starting at any intermediate station `j` (where `startStation < j <= i`) means we *skipped* the net gains from `startStation` to `j-1`. Since `currentGas` was already ≥ 0 for those stations, any intermediate start would arrive at station `i` with even less gas.
+- So skip the entire range and try `i + 1`.
+
+## Verification
+
+After the loop, if `totalGas >= 0`, we are guaranteed that `startStation` is valid. No need to simulate the full circuit again.
+
+## Complexity
+
+| Approach | Time | Space |
+|---|---|---|
+| Brute force (try each start) | O(n²) | O(1) |
+| **Greedy (single pass)** | **O(n)** | **O(1)** |
+
+## Key Insight
+
+The greedy insight is: if you can't reach station `i+1` from your current start, discard all stations up to and including `i` as potential starts. The valid start (if it exists) must be to the right of `i`. This gives an O(n) single-pass solution — no simulation needed.
+
+## Edge Cases
+
+- **Single station**: `gas[0] >= cost[0]` → return 0, else -1
+- **All negative diff**: `totalGas < 0` → return -1
+- **Start at last station**: algorithm may set `startStation = n-1` or `startStation = n` (which wraps to 0); check `totalGas >= 0`

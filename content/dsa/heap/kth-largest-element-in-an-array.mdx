@@ -1,0 +1,118 @@
+---
+title: "Kth Largest Element in an Array"
+description: "Find the kth largest element in an unsorted array in better than O(n log n) time."
+date: "2026-04-08"
+tags: ["array", "heap", "quickselect", "sorting"]
+category: "Heap / Priority Queue"
+difficulty: "medium"
+timeComplexity: "O(n log k)"
+spaceComplexity: "O(k)"
+companies: ["Amazon", "Google", "Facebook", "Microsoft", "Apple"]
+leetcodeNumber: 215
+draft: false
+---
+
+## Problem Statement
+
+Given an integer array `nums` and an integer `k`, return the **kth largest** element in the array. Note that it is the kth largest element in sorted order, not the kth distinct element.
+
+You must solve it in O(n log n) time or better.
+
+```
+Input:  nums = [3,2,1,5,6,4], k = 2
+Output: 5
+
+Input:  nums = [3,2,3,1,2,4,5,5,6], k = 4
+Output: 4
+```
+
+## Approach 1: Min Heap of Size K — O(n log k)
+
+Maintain a min heap of size exactly K. After processing all elements, the top of the heap is the Kth largest.
+
+```java
+public int findKthLargest(int[] nums, int k) {
+    PriorityQueue<Integer> minHeap = new PriorityQueue<>();
+
+    for (int num : nums) {
+        minHeap.offer(num);
+        if (minHeap.size() > k) {
+            minHeap.poll(); // evict the smallest
+        }
+    }
+
+    return minHeap.peek(); // top of min heap = Kth largest
+}
+```
+
+**Why min heap for Kth largest?** The heap holds the K largest elements seen so far. When it exceeds K, we evict the minimum — which is smaller than all K elements we're keeping. After all elements are processed, the minimum of our K elements is the Kth largest overall.
+
+## Approach 2: QuickSelect — O(n) average, O(n²) worst
+
+QuickSelect is the partition step of QuickSort applied to find the Kth element without fully sorting.
+
+```java
+public int findKthLargest(int[] nums, int k) {
+    return quickSelect(nums, 0, nums.length - 1, nums.length - k);
+    // kth largest = (n-k)th smallest (0-indexed)
+}
+
+private int quickSelect(int[] nums, int lo, int hi, int target) {
+    int pivot = nums[hi];
+    int p = lo;
+
+    for (int i = lo; i < hi; i++) {
+        if (nums[i] <= pivot) {
+            swap(nums, i, p++);
+        }
+    }
+    swap(nums, p, hi); // pivot is now at index p
+
+    if (p == target) return nums[p];
+    if (p < target)  return quickSelect(nums, p + 1, hi, target);
+    else             return quickSelect(nums, lo, p - 1, target);
+}
+
+private void swap(int[] nums, int i, int j) {
+    int tmp = nums[i]; nums[i] = nums[j]; nums[j] = tmp;
+}
+```
+
+Average O(n): each partition eliminates roughly half the elements. Worst case O(n²): sorted input with bad pivot selection. Use random pivot selection to avoid worst case.
+
+## Approach 3: Sort — O(n log n)
+
+```java
+public int findKthLargest(int[] nums, int k) {
+    Arrays.sort(nums);
+    return nums[nums.length - k];
+}
+```
+
+Simplest to write, but slowest asymptotically.
+
+## Complexity Comparison
+
+| Approach | Time | Space |
+|---|---|---|
+| Sort | O(n log n) | O(1) |
+| Min heap size K | O(n log k) | O(k) |
+| QuickSelect | O(n) avg / O(n²) worst | O(1) |
+
+**Which to use in an interview?** Min heap is the most interview-friendly — clear motivation, easy to explain, O(n log k) is better than sorting. QuickSelect is impressive if you can implement it correctly and discuss the randomized variant.
+
+## Key Insight
+
+**Min heap for K largest** is counter-intuitive but elegant: you keep the K largest by throwing away the smallest. The heap minimum is always the "entry ticket" — any new element below it doesn't make the cut.
+
+This same "min heap of size K" pattern solves:
+- **#347 Top K Frequent Elements** — heap on `(frequency, element)` pairs
+- **#973 K Closest Points to Origin** — heap on distance
+- **#692 Top K Frequent Words** — heap with custom comparator (frequency desc, lexicographic asc)
+
+## Edge Cases
+
+- **k = 1**: returns the maximum element.
+- **k = n**: returns the minimum element (entire array is in the heap).
+- **All elements equal**: all duplicates, correctly returns the common value.
+- **k > n**: invalid per constraints, but min heap approach gracefully returns the minimum.

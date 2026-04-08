@@ -1,0 +1,104 @@
+---
+title: "Trees — DFS & BFS"
+description: "Recursive DFS and iterative BFS traversals across binary trees, with path, depth, and ancestor problems."
+signal: "Tree traversal, path sum, depth, ancestor. Signal: 'binary tree', 'level by level', 'path from root to leaf', 'lowest common ancestor'. Think recursion first."
+gotchas: "Inorder of BST = sorted array. Level-order uses BFS (Queue). DFS uses recursion or Stack. Null checks before .left/.right. Height = 1 + max(left, right). Diameter = max(leftHeight + rightHeight) at each node."
+color: "#34d399"
+colorDim: "#052e16"
+colorBorder: "#10b981"
+icon: "tree"
+order: 8
+tier: 2
+draft: false
+---
+
+## How to Spot This Pattern
+
+Any problem operating on a binary tree almost always reduces to one of two traversals:
+
+- **DFS** — recursion (or explicit stack): good for path problems, depth, subtree structure
+- **BFS** — Queue level by level: good for "level order", "minimum depth", "nearest neighbor"
+
+**Signal phrases:**
+- *"Maximum/minimum depth"* → DFS, return `1 + max(left, right)`
+- *"Level order"* / *"level by level"* → BFS with Queue
+- *"Path from root to leaf"* → DFS, carry running sum down
+- *"Lowest common ancestor"* → DFS, propagate found nodes up
+- *"Same structure"* → DFS, compare both trees simultaneously
+
+## DFS Templates
+
+**Post-order (process children before current node):**
+```java
+int dfs(TreeNode node) {
+    if (node == null) return BASE_CASE;
+    int left  = dfs(node.left);
+    int right = dfs(node.right);
+    return combine(left, right, node.val);
+}
+```
+Used for: height, diameter, balanced check, path sum from any node.
+
+**Pre-order (process current node before children):**
+```java
+void dfs(TreeNode node, int runningValue) {
+    if (node == null) return;
+    runningValue = update(runningValue, node.val);
+    if (isLeaf(node)) { /* check answer */ return; }
+    dfs(node.left,  runningValue);
+    dfs(node.right, runningValue);
+}
+```
+Used for: path sum from root, building paths, serialization.
+
+## BFS Template
+
+```java
+Queue<TreeNode> queue = new LinkedList<>();
+queue.offer(root);
+while (!queue.isEmpty()) {
+    int size = queue.size(); // snapshot — nodes at this level
+    for (int i = 0; i < size; i++) {
+        TreeNode node = queue.poll();
+        // process node
+        if (node.left  != null) queue.offer(node.left);
+        if (node.right != null) queue.offer(node.right);
+    }
+    // end of one level
+}
+```
+
+The `int size = queue.size()` snapshot is the key: it separates one level from the next within a single while loop.
+
+## Global vs Return Value
+
+A common pattern: the answer accumulates in a **global/outer variable**, while the recursive function returns something smaller (like subtree height).
+
+```java
+int diameter = 0; // global answer
+
+int height(TreeNode node) {
+    if (node == null) return 0;
+    int L = height(node.left);
+    int R = height(node.right);
+    diameter = Math.max(diameter, L + R); // update global at each node
+    return 1 + Math.max(L, R);            // return height to parent
+}
+```
+
+When the recursive return value alone can't carry the answer (e.g., diameter = leftHeight + rightHeight, which you can't fold into a single return), expose it via a class field or a `int[]` wrapper.
+
+## BST Properties (Bonus)
+
+When the tree is a BST (left < root < right):
+- **Inorder traversal** yields sorted order — use this to find kth smallest, validate BST.
+- **Search** is O(h) — O(log n) balanced, O(n) skewed.
+- **Insertion/deletion** follow the same left/right branching logic as search.
+
+## Common Gotchas
+
+- **Null check first**: `if (node == null) return ...` before accessing `.left` or `.right`.
+- **Height vs depth**: height = longest path *down* to a leaf; depth = distance *up* to root.
+- **Diameter ≠ height**: diameter passes *through* a node using both subtrees.
+- **Level-order size snapshot**: capture `queue.size()` before the inner for-loop — as you add children, the queue grows mid-iteration.
+- **LCA**: the first node where target appears in different subtrees (or the node *is* one of the targets) is the LCA.

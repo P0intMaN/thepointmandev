@@ -1,0 +1,127 @@
+---
+title: "Dijkstra's Algorithm"
+description: "Find the shortest path from a source to all other nodes in a weighted graph with non-negative edge weights."
+signal: "Shortest path in weighted graph, minimum cost to reach a destination. Signal: 'shortest path in weighted graph', 'minimum cost', 'cheapest flights'. FAILS with negative edges — use Bellman-Ford instead."
+gotchas: "Dijkstra FAILS with negative edges. Mark visited (or skip stale entries) when POPPING from heap — not when pushing. Distance array initialized to Integer.MAX_VALUE; avoid overflow when adding to it. Modified Dijkstra: extend the state (node, extra_info) for constrained shortest path problems."
+color: "#38bdf8"
+colorDim: "#082f49"
+colorBorder: "#0ea5e9"
+icon: "dijkstra"
+order: 22
+tier: 3
+draft: false
+---
+
+## How to Spot This Pattern
+
+- *"Shortest path in a weighted graph"* with **non-negative weights** → Dijkstra
+- *"Minimum cost to reach destination"* → Dijkstra
+- *"Cheapest flights within K stops"* → Modified Dijkstra (extended state)
+- Negative edge weights → Bellman-Ford instead
+
+## Algorithm
+
+```java
+int[] dijkstra(int n, List<List<int[]>> graph, int src) {
+    // graph.get(u) = list of [v, weight]
+    int[] dist = new int[n];
+    Arrays.fill(dist, Integer.MAX_VALUE);
+    dist[src] = 0;
+
+    // Min heap: [distance, node]
+    PriorityQueue<int[]> heap = new PriorityQueue<>((a, b) -> a[0] - b[0]);
+    heap.offer(new int[]{0, src});
+
+    while (!heap.isEmpty()) {
+        int[] curr = heap.poll();
+        int d = curr[0], u = curr[1];
+
+        if (d > dist[u]) continue; // stale entry — skip
+
+        for (int[] edge : graph.get(u)) {
+            int v = edge[0], w = edge[1];
+            if (dist[u] + w < dist[v]) {
+                dist[v] = dist[u] + w;
+                heap.offer(new int[]{dist[v], v});
+            }
+        }
+    }
+
+    return dist;
+}
+```
+
+**`if (d > dist[u]) continue`**: lazy deletion. Instead of removing stale entries from the heap (expensive), skip them when popped. An entry is stale if we've already found a shorter path to `u`.
+
+## Complexity
+
+| | Time | Space |
+|---|---|---|
+| With binary heap | O((V + E) log V) | O(V) |
+| With Fibonacci heap | O(E + V log V) | O(V) |
+
+In practice, binary heap (Java `PriorityQueue`) is standard. E edges, V vertices.
+
+## Modified Dijkstra — Constrained Shortest Path
+
+Extend the state when the shortest path has additional constraints:
+
+```java
+// "Cheapest Flights Within K Stops"
+// State: [cost, node, stops_remaining]
+// Don't use a dist array — K constraint means the same node at different stop counts are different states
+PriorityQueue<int[]> heap = new PriorityQueue<>((a, b) -> a[0] - b[0]);
+heap.offer(new int[]{0, src, k});
+int[] dist = new int[n];
+Arrays.fill(dist, Integer.MAX_VALUE);
+
+while (!heap.isEmpty()) {
+    int[] curr = heap.poll();
+    int cost = curr[0], u = curr[1], stops = curr[2];
+    if (u == dst) return cost;
+    if (stops == 0) continue;
+    for (int[] edge : graph.get(u)) {
+        int v = edge[0], w = edge[1];
+        if (cost + w < dist[v]) {
+            dist[v] = cost + w;
+            heap.offer(new int[]{cost + w, v, stops - 1});
+        }
+    }
+}
+```
+
+The principle: add the constraint (stops remaining, keys collected, fuel left) to the heap state. This converts a constrained shortest path into an unconstrained one in an extended state space.
+
+## Dijkstra on a Grid
+
+Cells are nodes, movement costs are edge weights:
+
+```java
+int[][] dirs = {{0,1},{0,-1},{1,0},{-1,0}};
+int[][] dist = new int[rows][cols];
+for (int[] row : dist) Arrays.fill(row, Integer.MAX_VALUE);
+dist[0][0] = 0;
+
+PriorityQueue<int[]> heap = new PriorityQueue<>((a, b) -> a[0] - b[0]);
+heap.offer(new int[]{0, 0, 0}); // [cost, row, col]
+
+while (!heap.isEmpty()) {
+    int[] curr = heap.poll();
+    int cost = curr[0], r = curr[1], c = curr[2];
+    if (cost > dist[r][c]) continue;
+    for (int[] d : dirs) {
+        int nr = r + d[0], nc = c + d[1];
+        if (inBounds(nr, nc) && dist[r][c] + grid[nr][nc] < dist[nr][nc]) {
+            dist[nr][nc] = dist[r][c] + grid[nr][nc];
+            heap.offer(new int[]{dist[nr][nc], nr, nc});
+        }
+    }
+}
+```
+
+## Common Gotchas
+
+- **Negative edges**: Dijkstra gives incorrect results. Use Bellman-Ford or SPFA.
+- **Mark visited on POP, not PUSH**: multiple entries for the same node may be in the heap. The first pop gives the shortest distance; subsequent pops are stale.
+- **Integer overflow**: `dist[u] + w` can overflow if `dist[u]` is `Integer.MAX_VALUE`. Check before adding.
+- **0-weight edges**: use 0-1 BFS (deque) for graphs with only 0 and 1 weights — faster than Dijkstra.

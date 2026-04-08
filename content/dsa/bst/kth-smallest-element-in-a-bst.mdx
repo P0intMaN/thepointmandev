@@ -1,0 +1,121 @@
+---
+title: "Kth Smallest Element in a BST"
+description: "Find the kth smallest value in a BST using inorder traversal."
+date: "2026-04-08"
+tags: ["tree", "bst", "dfs", "inorder"]
+category: "Binary Search Tree"
+difficulty: "medium"
+timeComplexity: "O(h + k)"
+spaceComplexity: "O(h)"
+companies: ["Amazon", "Google", "Microsoft", "Airbnb"]
+leetcodeNumber: 230
+draft: false
+---
+
+## Problem Statement
+
+Given the `root` of a binary search tree, and an integer `k`, return the **kth smallest** value (1-indexed) of all the values of the nodes in the tree.
+
+```
+Input:  root = [3,1,4,null,2], k = 1
+Output: 1
+
+Input:  root = [5,3,6,2,4,null,null,1], k = 3
+Output: 3
+```
+
+## Key Property
+
+Inorder traversal of a BST visits nodes in **ascending sorted order**. The kth node visited during inorder is the kth smallest element.
+
+## Approach 1: Recursive Inorder — O(n)
+
+```java
+private int count, result;
+
+public int kthSmallest(TreeNode root, int k) {
+    count = k;
+    inorder(root);
+    return result;
+}
+
+private void inorder(TreeNode node) {
+    if (node == null) return;
+    inorder(node.left);
+    if (--count == 0) {
+        result = node.val;
+        return;
+    }
+    inorder(node.right);
+}
+```
+
+Decrement `count` at each node visited. When `count` hits 0, we've reached the kth node.
+
+**Limitation**: even after finding the answer, Java can't break out of a recursive call chain — the remaining recursive calls still execute (returning immediately, but adding overhead). Use the iterative approach to truly stop early.
+
+## Approach 2: Iterative Inorder — O(h + k) ✅ Optimal
+
+```java
+public int kthSmallest(TreeNode root, int k) {
+    Deque<TreeNode> stack = new ArrayDeque<>();
+    TreeNode curr = root;
+
+    while (curr != null || !stack.isEmpty()) {
+        // Go as far left as possible
+        while (curr != null) {
+            stack.push(curr);
+            curr = curr.left;
+        }
+
+        curr = stack.pop(); // next inorder node
+
+        if (--k == 0) return curr.val; // found kth smallest
+
+        curr = curr.right; // move to right subtree
+    }
+
+    return -1; // k > number of nodes (invalid input)
+}
+```
+
+This stops the moment the kth element is found — O(h + k) rather than O(n). For small `k` and a deep tree, this is a significant improvement.
+
+**Why O(h + k)?** We push at most `h` nodes to reach the leftmost leaf (O(h)), then pop and process `k` nodes (O(k)).
+
+## Tracing the Example
+
+`root = [3, 1, 4, null, 2]`, `k = 1`
+
+```
+Push 3 → push 1 → 1 has no left, stop.
+Pop 1 → k=1, --k=0 → return 1  ✓
+```
+
+`k = 3`:
+
+```
+Push 3 → push 1 → pop 1, k=2 → curr = 1.right = 2
+Push 2 → pop 2, k=1 → curr = 2.right = null
+Pop 3, k=0 → return 3  ✓
+```
+
+## Complexity
+
+| | Time | Space |
+|---|---|---|
+| Recursive inorder | O(n) | O(h) |
+| Iterative inorder | O(h + k) | O(h) |
+
+## Key Insight
+
+Any problem asking for the kth element in a BST reduces to **counting inorder traversal steps**. The iterative approach is the one to use when k is small relative to n — it exits as soon as the answer is found.
+
+If the BST is frequently modified and kth-smallest queries are frequent, augment each node with a `leftCount` field (number of nodes in its left subtree). This enables O(h) per query without traversal, at the cost of O(h) updates per insertion/deletion.
+
+## Edge Cases
+
+- **k = 1**: the leftmost node (minimum value). Finds it after traversing down the left spine.
+- **k = n** (largest): visits every node, returns the rightmost.
+- **Single node, k = 1**: returns root's value.
+- **k > n**: invalid per problem constraints, but the iterative version returns -1 safely.

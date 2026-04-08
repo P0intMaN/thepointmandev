@@ -1,0 +1,74 @@
+---
+title: "Intervals"
+description: "Problems involving overlapping, merging, or inserting intervals. Sort by start time; compare end times to detect overlaps."
+signal: "Merging overlapping ranges. Inserting an interval. Minimum rooms/platforms. Overlap detection. Signal phrases: 'given a list of intervals', 'overlap', 'merge', 'insert interval', 'non-overlapping'."
+gotchas: "Sort by start time first. Overlap condition: A and B overlap iff A.start < B.end AND B.start < A.end (strict). Touch-at-endpoint = [1,3],[3,5] — whether this is overlap depends on problem (usually NOT). To merge: extend last.end = max(last.end, curr.end). Minimum rooms = max simultaneous overlaps (use coordinate sweep or min heap of end times)."
+color: "#e879f9"
+colorDim: "#1a001a"
+colorBorder: "#d946ef"
+icon: "intervals"
+order: 26
+tier: 2
+draft: false
+---
+
+## Core Template: Merge Overlapping Intervals
+
+```java
+// Sort by start time
+Arrays.sort(intervals, (a, b) -> a[0] - b[0]);
+
+List<int[]> merged = new ArrayList<>();
+merged.add(intervals[0]);
+
+for (int i = 1; i < intervals.length; i++) {
+    int[] last = merged.get(merged.size() - 1);
+    int[] curr = intervals[i];
+
+    if (curr[0] <= last[1]) {
+        // Overlap: extend the end
+        last[1] = Math.max(last[1], curr[1]);
+    } else {
+        // No overlap: add as new interval
+        merged.add(curr);
+    }
+}
+```
+
+## Overlap Detection
+
+Two intervals `[a, b]` and `[c, d]` overlap if and only if:
+```
+a <= d AND c <= b
+```
+Equivalently, they do NOT overlap if `b < c` or `d < a`.
+
+For "strictly overlapping" (touching endpoints don't count): `a < d AND c < b`.
+
+## Common Patterns
+
+| Problem type | Approach |
+|---|---|
+| Merge overlapping | Sort by start, extend last.end |
+| Insert + merge | Find insertion point, merge with neighbors |
+| Minimum rooms | Max simultaneous overlaps (coordinate sweep / min heap) |
+| Non-overlapping count | Sort by end, greedy activity selection |
+| Employee free time | Merge all intervals, find gaps |
+
+## Coordinate Sweep
+
+Convert intervals to events `(time, +1 or -1)`, sort, scan:
+
+```java
+int[] starts = ..., ends = ...;
+Arrays.sort(starts); Arrays.sort(ends);
+
+int active = 0, maxActive = 0, j = 0;
+for (int i = 0; i < n; i++) {
+    if (starts[i] < ends[j]) {
+        active++; maxActive = Math.max(maxActive, active);
+    } else {
+        active--; j++;
+    }
+}
+```

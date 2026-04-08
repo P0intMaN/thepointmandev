@@ -3,7 +3,7 @@ import fs from "fs";
 import path from "path";
 import { parseFrontmatter } from "./parseFrontmatter";
 import { BlogFrontmatterSchema, type BlogPost } from "@/types/blog";
-import { DSAFrontmatterSchema, type DSAProblem } from "@/types/dsa";
+import { DSAFrontmatterSchema, DSAPatternFrontmatterSchema, type DSAProblem, type DSAPattern } from "@/types/dsa";
 import { CourseFrontmatterSchema, LessonFrontmatterSchema, type Course, type Lesson } from "@/types/course";
 import { estimateReadingTime, getExcerpt } from "@/lib/readingTime";
 
@@ -56,6 +56,36 @@ export const getAllBlogPosts = cache((): BlogPost[] => {
   );
 });
 
+// ── DSA patterns ───────────────────────────────────────────────
+export const getAllDSAPatterns = cache((): DSAPattern[] => {
+  const dsaDir = path.join(CONTENT_ROOT, "dsa");
+  if (!fs.existsSync(dsaDir)) return [];
+
+  const patterns: DSAPattern[] = [];
+
+  const entries = fs.readdirSync(dsaDir);
+  for (const entry of entries) {
+    const entryPath = path.join(dsaDir, entry);
+    if (!fs.statSync(entryPath).isDirectory()) continue;
+
+    const metaPath = path.join(entryPath, "_meta.mdx");
+    if (!fs.existsSync(metaPath)) continue;
+
+    const source = readMdxFile(metaPath);
+    const { data: frontmatter, content } = parseFrontmatter(source, DSAPatternFrontmatterSchema, metaPath);
+    if (frontmatter.draft) continue;
+
+    // Count problems directly to avoid circular dependency with getAllDSAProblems
+    const problemCount = fs.readdirSync(entryPath).filter(
+      (f) => f.endsWith(".mdx") && f !== "_meta.mdx"
+    ).length;
+
+    patterns.push({ slug: entry, frontmatter, content, problemCount });
+  }
+
+  return patterns.sort((a, b) => a.frontmatter.order - b.frontmatter.order);
+});
+
 // ── DSA problems ───────────────────────────────────────────────
 export const getAllDSAProblems = cache((): DSAProblem[] => {
   const dsaDir = path.join(CONTENT_ROOT, "dsa");
@@ -63,29 +93,30 @@ export const getAllDSAProblems = cache((): DSAProblem[] => {
 
   const problems: DSAProblem[] = [];
 
-  function scanDir(dir: string) {
-    const entries = fs.readdirSync(dir);
-    for (const entry of entries) {
-      const entryPath = path.join(dir, entry);
-      const stat = fs.statSync(entryPath);
-      if (stat.isDirectory()) {
-        scanDir(entryPath);
-      } else if (entry.endsWith(".mdx")) {
-        const source = readMdxFile(entryPath);
-        const { data: frontmatter, content } = parseFrontmatter(source, DSAFrontmatterSchema, entryPath);
-        if (frontmatter.draft) continue;
-        const slug = entry.replace(/\.mdx$/, "");
-        problems.push({
-          slug,
-          frontmatter,
-          readingTime: estimateReadingTime(content),
-        });
-      }
+  const patternDirs = fs.readdirSync(dsaDir).filter((e) =>
+    fs.statSync(path.join(dsaDir, e)).isDirectory()
+  );
+
+  for (const patternSlug of patternDirs) {
+    const patternDir = path.join(dsaDir, patternSlug);
+    const files = fs.readdirSync(patternDir).filter(
+      (f) => f.endsWith(".mdx") && f !== "_meta.mdx"
+    );
+    for (const file of files) {
+      const filePath = path.join(patternDir, file);
+      const source = readMdxFile(filePath);
+      const { data: frontmatter, content } = parseFrontmatter(source, DSAFrontmatterSchema, filePath);
+      if (frontmatter.draft) continue;
+      problems.push({
+        slug: file.replace(/\.mdx$/, ""),
+        patternSlug,
+        frontmatter,
+        readingTime: estimateReadingTime(content),
+      });
     }
   }
 
-  scanDir(dsaDir);
-  return problems.sort((a, b) => a.frontmatter.title.localeCompare(b.frontmatter.title));
+  return problems.sort((a, b) => (a.frontmatter.leetcodeNumber ?? 9999) - (b.frontmatter.leetcodeNumber ?? 9999));
 });
 
 // ── Courses ────────────────────────────────────────────────────

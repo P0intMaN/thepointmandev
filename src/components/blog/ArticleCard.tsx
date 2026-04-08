@@ -19,13 +19,13 @@ export function ArticleCard({ post, compact = false }: ArticleCardProps) {
       >
         {/* Shimmer line */}
         <div className="pointer-events-none absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-[#4ade80]/60 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-        <span className="font-mono text-xs text-[var(--color-text-faint)]">
+        <span className="font-mono text-sm text-[var(--color-text-faint)]">
           {frontmatter.category}
         </span>
-        <span className="text-sm font-medium text-[var(--color-text-primary)] group-hover:text-[var(--color-accent)]">
+        <span className="text-base font-medium text-[var(--color-text-primary)] group-hover:text-[var(--color-accent)]">
           {frontmatter.title}
         </span>
-        <span className="font-mono text-xs text-[var(--color-text-faint)]">
+        <span className="font-mono text-sm text-[var(--color-text-faint)]">
           {formatDate(frontmatter.date)} · {readingTime}
         </span>
       </Link>
@@ -44,10 +44,10 @@ export function ArticleCard({ post, compact = false }: ArticleCardProps) {
 
       {/* Category + meta */}
       <div className="flex items-center gap-3">
-        <span className="font-mono text-xs font-medium text-[var(--color-accent)]">
+        <span className="font-mono text-sm font-medium text-[var(--color-accent)]">
           {frontmatter.category}
         </span>
-        <span className="font-mono text-xs text-[var(--color-text-faint)]">
+        <span className="font-mono text-sm text-[var(--color-text-faint)]">
           {formatDate(frontmatter.date)} · {readingTime}
         </span>
       </div>
@@ -61,7 +61,7 @@ export function ArticleCard({ post, compact = false }: ArticleCardProps) {
       </Link>
 
       {/* Excerpt */}
-      <p className="line-clamp-2 text-sm leading-relaxed text-[var(--color-text-muted)]">
+      <p className="line-clamp-2 text-base leading-relaxed text-[var(--color-text-muted)]">
         {excerpt}
       </p>
 

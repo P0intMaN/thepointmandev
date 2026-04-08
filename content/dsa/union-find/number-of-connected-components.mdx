@@ -1,0 +1,103 @@
+---
+title: "Number of Connected Components in an Undirected Graph"
+description: "Count the number of connected components in an undirected graph."
+date: "2026-04-08"
+tags: ["graph", "union-find", "dfs"]
+category: "Union-Find"
+difficulty: "medium"
+timeComplexity: "O(n + e · α(n))"
+spaceComplexity: "O(n)"
+companies: ["Google", "Amazon", "Facebook", "LinkedIn"]
+leetcodeNumber: 323
+draft: false
+---
+
+## Problem Statement
+
+You have `n` nodes labeled `0` to `n-1` and a list of undirected edges. Write a function to find the **number of connected components** in the graph.
+
+```
+Input:  n = 5, edges = [[0,1],[1,2],[3,4]]
+Output: 2
+
+Input:  n = 5, edges = [[0,1],[1,2],[2,3],[3,4]]
+Output: 1
+```
+
+## Approach 1: Union-Find — O(n + e·α(n)) ✅
+
+Start with `n` components (each node isolated). For each edge, union the two endpoints. If they were already connected, no change. Count remaining components.
+
+```java
+public int countComponents(int n, int[][] edges) {
+    int[] parent = new int[n], rank = new int[n];
+    for (int i = 0; i < n; i++) parent[i] = i;
+
+    int components = n;
+    for (int[] edge : edges) {
+        int px = find(parent, edge[0]), py = find(parent, edge[1]);
+        if (px != py) {
+            // Union by rank
+            if (rank[px] < rank[py]) parent[px] = py;
+            else if (rank[px] > rank[py]) parent[py] = px;
+            else { parent[py] = px; rank[px]++; }
+            components--;
+        }
+    }
+    return components;
+}
+
+private int find(int[] parent, int x) {
+    if (parent[x] != x) parent[x] = find(parent, parent[x]);
+    return parent[x];
+}
+```
+
+## Approach 2: DFS — O(n + e)
+
+Same as Number of Islands / Number of Provinces: build adjacency list, run DFS from each unvisited node.
+
+```java
+public int countComponents(int n, int[][] edges) {
+    List<List<Integer>> graph = new ArrayList<>();
+    for (int i = 0; i < n; i++) graph.add(new ArrayList<>());
+    for (int[] e : edges) {
+        graph.get(e[0]).add(e[1]);
+        graph.get(e[1]).add(e[0]);
+    }
+
+    boolean[] visited = new boolean[n];
+    int count = 0;
+    for (int i = 0; i < n; i++) {
+        if (!visited[i]) { dfs(graph, visited, i); count++; }
+    }
+    return count;
+}
+
+private void dfs(List<List<Integer>> graph, boolean[] visited, int node) {
+    visited[node] = true;
+    for (int neighbor : graph.get(node)) {
+        if (!visited[neighbor]) dfs(graph, visited, neighbor);
+    }
+}
+```
+
+## Complexity
+
+| | Time | Space |
+|---|---|---|
+| Union-Find | O(n + e·α(n)) | O(n) |
+| DFS | O(n + e) | O(n + e) |
+
+Union-Find is preferred when edges arrive in a stream (online processing). DFS is preferred when you have the full graph upfront.
+
+## Key Insight
+
+This problem is "Number of Islands" on an explicit edge list rather than a grid. The Union-Find approach is especially elegant: start with n components, decrement on each successful union. Final count = components remaining.
+
+## Edge Cases
+
+- **No edges**: n isolated nodes, return n.
+- **All nodes connected**: one component after all unions, return 1.
+- **Self-loops**: `find(edge[0]) == find(edge[1])`, no union, no change.
+- **Duplicate edges**: same as self-loops after first union.

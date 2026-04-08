@@ -8,7 +8,7 @@ interface DSACardProps {
 }
 
 export function DSACard({ problem }: DSACardProps) {
-  const { frontmatter, slug } = problem;
+  const { frontmatter, slug, patternSlug } = problem;
 
   return (
     <article className="group relative flex flex-col gap-3 overflow-hidden rounded-[var(--radius-lg)] border border-[var(--color-bg-border)] bg-[var(--color-bg-elevated)] p-5 transition-all duration-300 hover:border-[#67e8f9]/40">
@@ -23,26 +23,34 @@ export function DSACard({ problem }: DSACardProps) {
       {/* Difficulty + category */}
       <div className="flex items-center gap-3">
         <DifficultyBadge difficulty={frontmatter.difficulty} />
-        <span className="font-mono text-xs text-[var(--color-text-faint)]">
+        <span className="font-mono text-sm text-[var(--color-text-faint)]">
           {frontmatter.category}
         </span>
         {frontmatter.leetcodeNumber && (
-          <span className="ml-auto font-mono text-xs text-[var(--color-text-faint)]">
-            #{frontmatter.leetcodeNumber}
-          </span>
+          <a
+            href={`https://leetcode.com/problems/${slug}/`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="ml-auto flex items-center gap-1 font-mono text-xs text-[var(--color-text-faint)] no-underline transition-colors hover:text-[#67e8f9] hover:no-underline"
+          >
+            LeetCode #{frontmatter.leetcodeNumber}
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none" className="opacity-50">
+              <path d="M1 9L9 1M9 1H3M9 1V7" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </a>
         )}
       </div>
 
       {/* Title */}
       <Link
-        href={`/dsa/${slug}`}
+        href={`/dsa/${patternSlug}/${slug}`}
         className="text-lg font-semibold text-[var(--color-text-primary)] no-underline hover:text-[#67e8f9] hover:no-underline"
       >
         {frontmatter.title}
       </Link>
 
       {/* Description */}
-      <p className="text-sm text-[var(--color-text-muted)]">{frontmatter.description}</p>
+      <p className="text-base text-[var(--color-text-muted)]">{frontmatter.description}</p>
 
       {/* Complexity */}
       <div className="flex gap-3 font-mono text-xs">

@@ -1,0 +1,104 @@
+---
+title: "Sliding Window Maximum"
+description: "Find the maximum value in every sliding window of size k."
+date: "2026-04-08"
+tags: ["monotonic-stack", "sliding-window", "deque", "array"]
+category: "Monotonic Stack"
+difficulty: "hard"
+timeComplexity: "O(n)"
+spaceComplexity: "O(k)"
+companies: ["Amazon", "Google", "Microsoft", "Facebook"]
+leetcodeNumber: 239
+draft: false
+---
+
+## Problem Statement
+
+Given an integer array `nums` and an integer `k`, find the maximum value in each sliding window of size `k`.
+
+```
+Input:  nums = [1,3,-1,-3,5,3,6,7], k = 3
+Output: [3,3,5,5,6,7]
+
+Window [1,3,-1]  → max 3
+Window [3,-1,-3] → max 3
+Window [-1,-3,5] → max 5
+Window [-3,5,3]  → max 5
+Window [5,3,6]   → max 6
+Window [3,6,7]   → max 7
+```
+
+## Approach: Monotonic Deque — O(n)
+
+A deque (double-ended queue) maintains indices in decreasing order of values. The front is always the maximum of the current window.
+
+**Three operations per element `i`**:
+1. **Expire**: remove front if `deque.front < i - k + 1` (out of window)
+2. **Trim**: remove back while `nums[back] <= nums[i]` (smaller elements can never be the max)
+3. **Record**: if `i >= k - 1`, the front is the window maximum
+
+```java
+public int[] maxSlidingWindow(int[] nums, int k) {
+    int n = nums.length;
+    int[] result = new int[n - k + 1];
+    Deque<Integer> deque = new ArrayDeque<>(); // stores indices
+
+    for (int i = 0; i < n; i++) {
+        // Step 1: Remove expired indices from front
+        while (!deque.isEmpty() && deque.peekFirst() < i - k + 1)
+            deque.pollFirst();
+
+        // Step 2: Maintain decreasing order — remove smaller values from back
+        while (!deque.isEmpty() && nums[deque.peekLast()] <= nums[i])
+            deque.pollLast();
+
+        deque.offerLast(i);
+
+        // Step 3: Record max when window is full
+        if (i >= k - 1)
+            result[i - k + 1] = nums[deque.peekFirst()];
+    }
+    return result;
+}
+```
+
+**Walkthrough** `[1,3,-1,-3,5,3,6,7]`, k=3:
+- i=0: deque=[0]
+- i=1 (3>1): remove 0, deque=[1]
+- i=2: deque=[1,2]. Window full → result[0]=nums[1]=3
+- i=3 (-3<-1): deque=[1,2,3]. result[1]=nums[1]=3
+- i=4 (5>all): remove 3,2,1 → deque=[4]. result[2]=nums[4]=5
+- i=5 (3<5): deque=[4,5]. result[3]=nums[4]=5
+- i=6 (6>3): remove 5, deque=[4,6]. 6<? → deque=[4,6]. result[4]=nums[4]... wait: expire: 4 >= 6-3+1=4, so keep. result[4]=nums[4]=5? No: i=6, result[6-3+1]=result[4]=nums[deque.front=4]=5. Then 6 > 5: remove 4, deque=[6]. result[4]=nums[6]=6. ✓
+- i=7: deque=[6,7]. Expire: 6 >= 7-3+1=5, keep. result[5]=nums[6]=6? No: 7>6, remove 6, deque=[7]. result[5]=nums[7]=7. ✓
+
+## Complexity
+
+| Approach | Time | Space |
+|---|---|---|
+| Brute force (max per window) | O(n·k) | O(1) |
+| Segment tree / sparse table | O(n log n) | O(n log n) |
+| **Monotonic deque** | **O(n)** | **O(k)** |
+
+## Key Insight
+
+The deque stores indices in decreasing order of values. When a new element arrives:
+- It makes all smaller elements to its left irrelevant (they can't be the max while this element is in the window)
+- This is the core "trim from back" step
+
+Every element is added to and removed from the deque exactly once → O(n).
+
+## Why Deque over Stack?
+
+Stacks only allow access from one end. Here we need:
+- **Front access**: to get the current max and expire old indices
+- **Back access**: to trim smaller elements
+
+A deque gives O(1) operations on both ends.
+
+## Edge Cases
+
+- **k = 1**: each window is a single element → result = nums
+- **k = n**: single window → result = [max(nums)]
+- **All same values**: deque always has one element → result = repeated same value
+- **Strictly decreasing** `[5,4,3,2,1]`, k=3: front never expires early, window max is always the leftmost element

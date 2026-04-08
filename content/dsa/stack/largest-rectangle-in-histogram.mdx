@@ -1,0 +1,153 @@
+---
+title: "Largest Rectangle in Histogram"
+description: "Find the area of the largest rectangle that can be formed within the bars of a histogram."
+date: "2026-03-17"
+tags: ["array", "stack", "monotonic-stack"]
+category: "Stack"
+difficulty: "hard"
+timeComplexity: "O(n)"
+spaceComplexity: "O(n)"
+companies: ["Amazon", "Google", "Microsoft", "Nvidia", "ByteDance"]
+leetcodeNumber: 84
+draft: false
+---
+
+## Problem Statement
+
+Given an array of integers `heights` representing the heights of bars in a histogram where each bar has a width of 1, return the **area of the largest rectangle** that can be formed within the histogram.
+
+```
+Input:  heights = [2,1,5,6,2,3]
+Output: 10
+Explanation: The rectangle of height 5 spanning bars [2,3] (indices 2–3) has area 5×2=10
+
+Input:  heights = [2,4]
+Output: 4
+```
+
+## The Core Insight
+
+A rectangle's height is constrained by the **shortest bar within its span**. For a rectangle using bar `i` as its height, you need to find:
+
+- How far **left** can you extend before hitting a shorter bar?
+- How far **right** can you extend before hitting a shorter bar?
+
+The area is then: `heights[i] × (rightBound - leftBound - 1)`
+
+Brute force computes this for every pair — O(n²). A monotonic stack finds both bounds for every bar in a single O(n) pass.
+
+---
+
+## Approach 1: Brute Force — O(n²)
+
+For each bar, expand left and right as far as the height allows.
+
+```java
+public int largestRectangleArea(int[] heights) {
+    int maxArea = 0;
+    for (int i = 0; i < heights.length; i++) {
+        int minHeight = heights[i];
+        for (int j = i; j < heights.length; j++) {
+            minHeight = Math.min(minHeight, heights[j]);
+            maxArea = Math.max(maxArea, minHeight * (j - i + 1));
+        }
+    }
+    return maxArea;
+}
+```
+
+Correct but O(n²) — times out for large inputs.
+
+---
+
+## Approach 2: Monotonic Stack — O(n) ✅ Optimal
+
+Maintain a **monotonically increasing stack** of indices. When a bar shorter than the stack top is encountered, the top bar can no longer extend rightward — its right boundary is the current index, and its left boundary is the new stack top after popping.
+
+```java
+public int largestRectangleArea(int[] heights) {
+    int n = heights.length;
+    int maxArea = 0;
+
+    // Sentinel 0 at the end forces all remaining bars to be processed
+    int[] h = Arrays.copyOf(heights, n + 1);
+    h[n] = 0;
+
+    Deque<Integer> stack = new ArrayDeque<>();
+
+    for (int i = 0; i <= n; i++) {
+        while (!stack.isEmpty() && h[stack.peek()] > h[i]) {
+            int height = h[stack.pop()];
+            // Left boundary: new top of stack (or -1 if stack is empty)
+            int leftBound  = stack.isEmpty() ? -1 : stack.peek();
+            int width = i - leftBound - 1;
+            maxArea = Math.max(maxArea, height * width);
+        }
+        stack.push(i);
+    }
+
+    return maxArea;
+}
+```
+
+## Tracing the Example
+
+`heights = [2, 1, 5, 6, 2, 3]` (with sentinel `0` appended at index 6)
+
+| i | h[i] | stack (indices) | popped | height | left | width | area |
+|---|------|-----------------|--------|--------|------|-------|------|
+| 0 | 2    | [0]             | —      | —      | —    | —     | —    |
+| 1 | 1    | [1]             | 0      | 2      | -1   | 1-(-1)-1=**1** | **2** |
+| 2 | 5    | [1,2]           | —      | —      | —    | —     | —    |
+| 3 | 6    | [1,2,3]         | —      | —      | —    | —     | —    |
+| 4 | 2    | [1,4]           | 3      | 6      | 2    | 4-2-1=**1** | **6** |
+|   |      |                 | 2      | 5      | 1    | 4-1-1=**2** | **10** |
+| 5 | 3    | [1,4,5]         | —      | —      | —    | —     | —    |
+| 6 | 0    | []              | 5      | 3      | 4    | 6-4-1=**1** | **3** |
+|   |      |                 | 4      | 2      | 1    | 6-1-1=**4** | **8** |
+|   |      |                 | 1      | 1      | -1   | 6-(-1)-1=**6** | **6** |
+
+Maximum area: **10** ✓
+
+## Why the Sentinel?
+
+Appending `h[n] = 0` forces every bar still in the stack to be processed at the end of the loop. Without it, you'd need a second pass after the loop to drain the stack — the sentinel is a clean alternative that keeps all logic in one place.
+
+## Understanding the Width Calculation
+
+When bar at index `top` is popped at position `i`:
+
+- **Right boundary** = `i` (current index, first bar shorter than `top`)
+- **Left boundary** = `stack.peek()` after popping (last bar still taller than `top`), or `-1` if stack is empty (meaning `top` extends all the way to the left edge)
+- **Width** = `i - leftBound - 1`
+
+The `-1` accounts for the boundaries being exclusive — neither `i` nor `leftBound` is included in the rectangle.
+
+## Complexity
+
+|                  | Time  | Space |
+|------------------|-------|-------|
+| Brute Force      | O(n²) | O(1)  |
+| Monotonic Stack  | O(n)  | O(n)  |
+
+Each bar is pushed once and popped once — O(n) total.
+
+## Key Insight
+
+This is the **next smaller element on both sides** problem in disguise. When a bar is popped:
+- The current index `i` is its **first smaller element to the right**
+- The new stack top is its **first smaller element to the left**
+
+Both boundaries are found simultaneously during a single left-to-right pass. This is the full power of the monotonic stack — it lazily resolves "next smaller" for every element as you go, without ever backtracking.
+
+The same pattern with slight variations solves:
+- **Trapping Rain Water** (#42) — bounded by taller walls instead of shorter ones
+- **Maximal Rectangle** (#85) — apply this histogram solution row by row on a binary matrix
+- **Sum of Subarray Minimums** (#907) — sum of minimums over all subarrays using same left/right bounds
+
+## Edge Cases
+
+- **Single bar** `[5]` → sentinel forces it to pop at `i=1`. Width = `1-(-1)-1 = 1`. Area = 5.
+- **All equal** `[3,3,3]` → bars stack up, all popped by sentinel. Last pop spans full width.
+- **Strictly increasing** `[1,2,3,4]` → nothing pops until sentinel. Width of bar 0 = full array.
+- **Strictly decreasing** `[4,3,2,1]` → each new bar immediately pops the previous. Each rectangle is width 1.

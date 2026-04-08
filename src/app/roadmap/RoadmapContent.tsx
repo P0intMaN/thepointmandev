@@ -97,7 +97,7 @@ function MustBeacon() {
 
 function TagPill({ tag }: { tag: string }) {
   return (
-    <span className="rounded bg-[var(--color-bg-muted)] px-1.5 py-0.5 font-mono text-[10px] text-[var(--color-text-faint)]">
+    <span className="rounded bg-[var(--color-bg-muted)] px-1.5 py-0.5 font-mono text-xs text-[var(--color-text-faint)]">
       {tag}
     </span>
   );
@@ -235,14 +235,14 @@ function JavaTab({ done: doneSet, onToggle }: { done: Set<string>; onToggle: (id
                       <div className="flex items-start gap-2">
                         {t.priority === "Must" && <MustBeacon />}
                         <span className={cn(
-                          "text-sm font-medium leading-snug",
+                          "text-base font-medium leading-snug",
                           checked ? "line-through text-[var(--color-text-faint)]" : "text-[var(--color-text-primary)]"
                         )}>
                           {t.topic}
                         </span>
                       </div>
                       <div className="flex flex-wrap items-center gap-1.5">
-                        <span className={cn("rounded border px-1.5 py-0.5 font-mono text-[10px]", diffColor[t.difficulty])}>
+                        <span className={cn("rounded border px-1.5 py-0.5 font-mono text-xs", diffColor[t.difficulty])}>
                           {t.difficulty}
                         </span>
                         {t.tags.slice(0, 3).map((tag) => <TagPill key={tag} tag={tag} />)}
@@ -342,17 +342,17 @@ function DSATab({ done: doneSet, onToggle }: { done: Set<string>; onToggle: (id:
                     <CheckButton checked={checked} onToggle={() => onToggle(p.id)} />
                     <div className="min-w-0 flex-1 space-y-2">
                       <span className={cn(
-                        "block text-sm font-medium leading-snug",
+                        "block text-base font-medium leading-snug",
                         checked ? "line-through text-[var(--color-text-faint)]" : "text-[var(--color-text-primary)]"
                       )}>
                         {p.pattern}
                       </span>
-                      <span className="block font-mono text-xs text-[var(--color-text-faint)]">
+                      <span className="block font-mono text-sm text-[var(--color-text-faint)]">
                         {p.dataStructure}
                       </span>
                       {/* Witty description */}
                       {dsaExtra[p.id]?.description && (
-                        <p className="text-xs italic text-[var(--color-text-faint)] leading-snug">
+                        <p className="text-sm italic text-[var(--color-text-faint)] leading-snug">
                           {dsaExtra[p.id].description}
                         </p>
                       )}
@@ -372,12 +372,12 @@ function DSATab({ done: doneSet, onToggle }: { done: Set<string>; onToggle: (id:
                               onClick={(e) => e.stopPropagation()}
                             >
                               <span className={cn(
-                                "flex-shrink-0 font-mono text-[9px] font-bold",
+                                "flex-shrink-0 font-mono text-xs font-bold",
                                 prob.difficulty === "Easy" ? "text-green-400" : prob.difficulty === "Medium" ? "text-amber-400" : "text-red-400"
                               )}>
                                 #{prob.id}
                               </span>
-                              <span className="truncate text-[10px] text-[var(--color-text-faint)] group-hover/lc:text-[var(--color-text-secondary)] transition-colors">
+                              <span className="truncate text-xs text-[var(--color-text-faint)] group-hover/lc:text-[var(--color-text-secondary)] transition-colors">
                                 {prob.title}
                               </span>
                               <svg width="8" height="8" viewBox="0 0 8 8" fill="none" className="flex-shrink-0 opacity-0 group-hover/lc:opacity-60 transition-opacity">
@@ -481,18 +481,18 @@ function SystemDesignTab({ done: doneSet, onToggle }: { done: Set<string>; onTog
               <CheckButton checked={checked} onToggle={() => onToggle(c.id)} />
               <div className="min-w-0 flex-1 space-y-2">
                 <div className="flex items-start gap-2">
-                  <span className="font-mono text-[10px] text-[var(--color-text-faint)] flex-shrink-0 mt-0.5">
+                  <span className="font-mono text-xs text-[var(--color-text-faint)] flex-shrink-0 mt-0.5">
                     #{c.number.toString().padStart(2, "0")}
                   </span>
                   <span className={cn(
-                    "text-sm font-medium leading-snug",
+                    "text-base font-medium leading-snug",
                     checked ? "line-through text-[var(--color-text-faint)]" : "text-[var(--color-text-primary)]"
                   )}>
                     {c.concept}
                   </span>
                 </div>
                 <div className="flex flex-wrap gap-1.5">
-                  <span className={cn("rounded border px-1.5 py-0.5 font-mono text-[10px]", sdTypeColor[c.type])}>
+                  <span className={cn("rounded border px-1.5 py-0.5 font-mono text-xs", sdTypeColor[c.type])}>
                     {c.type}
                   </span>
                   {c.tags.slice(0, 2).map((tag) => <TagPill key={tag} tag={tag} />)}
@@ -544,10 +544,13 @@ function WeeklyPlanTab({ done: doneSet, onToggle }: { done: Set<string>; onToggl
                         : "border-[var(--color-bg-border)] bg-[var(--color-bg-elevated)] hover:border-[var(--color-bg-muted)]"
                     )}
                   >
-                    {/* Week header */}
-                    <button
+                    {/* Week header — div instead of button to avoid nested <button> inside <button> (CheckButton) */}
+                    <div
+                      role="button"
+                      tabIndex={0}
                       className="flex w-full items-center gap-4 p-4 text-left cursor-pointer"
                       onClick={() => setOpenWeek(isOpen ? null : w.week)}
+                      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setOpenWeek(isOpen ? null : w.week); } }}
                     >
                       <CheckButton
                         checked={checked}
@@ -573,7 +576,7 @@ function WeeklyPlanTab({ done: doneSet, onToggle }: { done: Set<string>; onToggl
                       >
                         <path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                       </svg>
-                    </button>
+                    </div>
 
                     {/* Week body */}
                     {isOpen && (

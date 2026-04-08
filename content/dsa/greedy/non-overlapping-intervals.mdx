@@ -1,0 +1,103 @@
+---
+title: "Non-overlapping Intervals"
+description: "Find the minimum number of intervals to remove to make the rest non-overlapping."
+date: "2026-04-08"
+tags: ["greedy", "array", "sorting", "intervals"]
+category: "Greedy"
+difficulty: "medium"
+timeComplexity: "O(n log n)"
+spaceComplexity: "O(1)"
+companies: ["Google", "Amazon", "Facebook", "Microsoft"]
+leetcodeNumber: 435
+draft: false
+---
+
+## Problem Statement
+
+Given an array of intervals `intervals[i] = [start, end]`, return the **minimum number of intervals you need to remove** to make the rest non-overlapping.
+
+```
+Input:  intervals = [[1,2],[2,3],[3,4],[1,3]]
+Output: 1  (remove [1,3])
+
+Input:  intervals = [[1,2],[1,2],[1,2]]
+Output: 2  (keep one [1,2])
+
+Input:  intervals = [[1,2],[2,3]]
+Output: 0  (no overlap — [1,2] and [2,3] touching endpoints are not considered overlapping)
+```
+
+## The Equivalence
+
+**Minimum removals = n − maximum non-overlapping intervals**
+
+Maximizing the number of intervals you keep (activity selection problem) is equivalent to minimizing removals.
+
+## Algorithm — Greedy by End Time
+
+Sort by end time. Greedily keep the interval that ends earliest (leaves most room for future intervals). Skip any interval that overlaps with the last kept.
+
+```java
+public int eraseOverlapIntervals(int[][] intervals) {
+    Arrays.sort(intervals, (a, b) -> a[1] - b[1]); // sort by end time
+
+    int kept = 1, lastEnd = intervals[0][1];
+
+    for (int i = 1; i < intervals.length; i++) {
+        if (intervals[i][0] >= lastEnd) {
+            // No overlap — keep this interval
+            kept++;
+            lastEnd = intervals[i][1];
+        }
+        // Overlap — skip (remove) this interval
+    }
+
+    return intervals.length - kept;
+}
+```
+
+## Why Sort by End Time?
+
+We want to keep as many intervals as possible. By always choosing the interval that ends earliest, we leave the maximum amount of "time" available for subsequent intervals. This is the classic **activity selection** argument.
+
+Sorting by start time would fail: `[[1,100],[2,3],[3,4]]` — start-sorted would pick [1,100] first, eliminating everything else. End-sorted picks [2,3], [3,4], keeping 2 intervals.
+
+## Tracing the Example
+
+`intervals = [[1,2],[2,3],[3,4],[1,3]]`, sorted by end: `[[1,2],[2,3],[1,3],[3,4]]`
+
+| i | interval | start >= lastEnd? | action | kept | lastEnd |
+|---|----------|-------------------|--------|------|---------|
+| 0 | [1,2]    | (init)            | keep   | 1    | 2       |
+| 1 | [2,3]    | 2 >= 2 ✓          | keep   | 2    | 3       |
+| 2 | [1,3]    | 1 >= 3 ✗          | skip   | 2    | 3       |
+| 3 | [3,4]    | 3 >= 3 ✓          | keep   | 3    | 4       |
+
+Kept = 3, removed = 4 - 3 = **1** ✓
+
+## Complexity
+
+| | Time | Space |
+|---|---|---|
+| Sort + scan | O(n log n) | O(1) |
+
+## Key Insight
+
+This is the **activity selection problem** reframed as a removal problem. The greedy by end time is provably optimal — any other choice can only be swapped for the end-sorted choice without worsening the result (exchange argument).
+
+The same sort-by-end-time pattern solves several related problems:
+
+| Problem | Same technique? |
+|---|---|
+| #435 Non-overlapping Intervals | Yes (removals = n - kept) |
+| #452 Minimum Arrows to Burst Balloons | Yes (sort by end, count new arrows) |
+| #646 Maximum Length of Pair Chain | Yes (sort by end, chain) |
+| Merge Intervals (#56) | Sort by START instead |
+| Meeting Rooms II (#253) | Min-heap approach |
+
+## Edge Cases
+
+- **Single interval**: no overlap possible, return 0.
+- **All identical**: keep 1, remove n-1.
+- **Touching endpoints** `[1,2]` and `[2,3]`: `start(2) >= lastEnd(2)` → they don't overlap (per problem definition).
+- **All non-overlapping**: kept = n, return 0.

@@ -1,0 +1,113 @@
+---
+title: "Number of Provinces"
+description: "Find the number of connected components (provinces) in an undirected graph given as an adjacency matrix."
+date: "2026-04-08"
+tags: ["graph", "dfs", "union-find"]
+category: "Graphs — DFS"
+difficulty: "medium"
+timeComplexity: "O(n²)"
+spaceComplexity: "O(n)"
+companies: ["Amazon", "Google", "Microsoft", "Facebook"]
+leetcodeNumber: 547
+draft: false
+---
+
+## Problem Statement
+
+There are `n` cities. Some are directly connected, and others are connected through indirect paths. A **province** is a group of directly or indirectly connected cities — a connected component.
+
+You are given an `n x n` matrix `isConnected` where `isConnected[i][j] = 1` means city `i` and city `j` are directly connected. Return the **total number of provinces**.
+
+```
+Input:  isConnected = [[1,1,0],[1,1,0],[0,0,1]]
+Output: 2
+
+Input:  isConnected = [[1,0,0],[0,1,0],[0,0,1]]
+Output: 3
+```
+
+## Approach 1: DFS — O(n²)
+
+For each unvisited city, run DFS to mark all cities in its province as visited, and increment the count.
+
+```java
+public int findCircleNum(int[][] isConnected) {
+    int n = isConnected.length;
+    boolean[] visited = new boolean[n];
+    int provinces = 0;
+
+    for (int i = 0; i < n; i++) {
+        if (!visited[i]) {
+            dfs(isConnected, visited, i, n);
+            provinces++;
+        }
+    }
+    return provinces;
+}
+
+private void dfs(int[][] isConnected, boolean[] visited, int city, int n) {
+    visited[city] = true;
+    for (int j = 0; j < n; j++) {
+        if (isConnected[city][j] == 1 && !visited[j]) {
+            dfs(isConnected, visited, j, n);
+        }
+    }
+}
+```
+
+## Approach 2: Union-Find — O(n²·α(n)) ≈ O(n²)
+
+```java
+public int findCircleNum(int[][] isConnected) {
+    int n = isConnected.length;
+    int[] parent = new int[n];
+    for (int i = 0; i < n; i++) parent[i] = i;
+
+    for (int i = 0; i < n; i++) {
+        for (int j = i + 1; j < n; j++) {
+            if (isConnected[i][j] == 1) union(parent, i, j);
+        }
+    }
+
+    int provinces = 0;
+    for (int i = 0; i < n; i++) {
+        if (find(parent, i) == i) provinces++; // i is a root
+    }
+    return provinces;
+}
+
+private int find(int[] parent, int x) {
+    if (parent[x] != x) parent[x] = find(parent, parent[x]); // path compression
+    return parent[x];
+}
+
+private void union(int[] parent, int x, int y) {
+    parent[find(parent, x)] = find(parent, y);
+}
+```
+
+## Complexity
+
+| | Time | Space |
+|---|---|---|
+| DFS | O(n²) | O(n) |
+| Union-Find | O(n²·α(n)) | O(n) |
+
+The O(n²) comes from reading the adjacency matrix — unavoidable regardless of approach.
+
+## Key Insight
+
+**Number of Islands** and **Number of Provinces** are the same problem in different representations:
+- Islands: graph as a 2D grid, edges implicit between adjacent cells
+- Provinces: graph as an adjacency matrix, edges explicit as `isConnected[i][j]`
+
+The algorithm is identical — count connected components via DFS/BFS from each unvisited node.
+
+This problem is also a classic Union-Find exercise. If the graph is given as an edge list (not adjacency matrix), Union-Find is often the cleaner approach.
+
+## Edge Cases
+
+- **All cities connected**: one province, return 1.
+- **No cities connected** (only self-loops in the matrix): n provinces, return n.
+- **Self-loops**: `isConnected[i][i] = 1` always — the DFS skips these via the `visited` check (city is already marked visited when you'd revisit it through the self-loop).
+- **n = 1**: one city, one province, return 1.

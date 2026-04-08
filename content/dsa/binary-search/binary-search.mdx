@@ -1,0 +1,115 @@
+---
+title: "Binary Search"
+description: "Given a sorted array and a target, return the index of the target or -1 if it does not exist."
+date: "2026-03-18"
+tags: ["array", "binary-search"]
+category: "Binary Search"
+difficulty: "easy"
+timeComplexity: "O(log n)"
+spaceComplexity: "O(1)"
+companies: ["Amazon", "Google", "Microsoft", "Apple"]
+leetcodeNumber: 704
+draft: false
+---
+
+## Problem Statement
+
+Given an array of integers `nums` sorted in ascending order and an integer `target`, write a function to search `target` in `nums`. Return the index if found, otherwise return `-1`.
+
+```
+Input:  nums = [-1,0,3,5,9,12], target = 9
+Output: 4
+
+Input:  nums = [-1,0,3,5,9,12], target = 2
+Output: -1
+```
+
+## The Algorithm
+
+Binary search works by maintaining a search window `[lo, hi]` and repeatedly halving it:
+
+1. Compute the midpoint `mid`
+2. If `nums[mid] == target` — found, return `mid`
+3. If `nums[mid] < target` — target must be to the right, set `lo = mid + 1`
+4. If `nums[mid] > target` — target must be to the left, set `hi = mid - 1`
+5. If `lo > hi` — window is empty, target doesn't exist
+
+```java
+public int search(int[] nums, int target) {
+    int lo = 0, hi = nums.length - 1;
+
+    while (lo <= hi) {
+        int mid = lo + (hi - lo) / 2; // overflow-safe midpoint
+
+        if (nums[mid] == target) {
+            return mid;
+        } else if (nums[mid] < target) {
+            lo = mid + 1;
+        } else {
+            hi = mid - 1;
+        }
+    }
+
+    return -1;
+}
+```
+
+## Tracing the Example
+
+`nums = [-1, 0, 3, 5, 9, 12]`, `target = 9`
+
+| iteration | lo | hi | mid | nums[mid] | decision       |
+|-----------|----|----|-----|-----------|----------------|
+| 1         | 0  | 5  | 2   | 3         | 3 < 9 → lo = 3 |
+| 2         | 3  | 5  | 4   | 9         | 9 == 9 → **return 4** |
+
+`target = 2`:
+
+| iteration | lo | hi | mid | nums[mid] | decision        |
+|-----------|----|----|-----|-----------|-----------------|
+| 1         | 0  | 5  | 2   | 3         | 3 > 2 → hi = 1  |
+| 2         | 0  | 1  | 0   | -1        | -1 < 2 → lo = 1 |
+| 3         | 1  | 1  | 1   | 0         | 0 < 2 → lo = 2  |
+| 4         | lo=2 > hi=1 — loop exits → **return -1** |
+
+## Complexity
+
+| | Time | Space |
+|---|---|---|
+| Linear scan | O(n) | O(1) |
+| Binary search | O(log n) | O(1) |
+
+Each iteration halves the search space. After `k` iterations, `n / 2^k` elements remain. When `n / 2^k = 1`, k = log₂n. For n = 10^9, that's just 30 iterations.
+
+## The Two Details That Matter
+
+**1. Overflow-safe midpoint:**
+```java
+// ❌ Overflows when lo + hi > Integer.MAX_VALUE
+int mid = (lo + hi) / 2;
+
+// ✅ Always safe
+int mid = lo + (hi - lo) / 2;
+```
+
+**2. `lo <= hi` not `lo < hi`:**
+
+The `<=` ensures the single-element window `[x, x]` is checked. With `<`, you'd exit when `lo == hi` and miss checking that last element.
+
+## Key Insight
+
+Binary search is not just for finding a target — it's a framework for **eliminating half the search space at each step**. This problem is the pure form, but the same template scales to:
+
+- Rotated arrays — binary search with modified condition
+- Finding boundaries — leftmost/rightmost occurrence
+- Answer-space search — the value being searched isn't in an array at all
+
+Before reaching for O(n) scan, always ask: *"Is there a monotonic property I can exploit to binary search instead?"*
+
+## Edge Cases
+
+- **Single element, is target** `[5], target=5` → `lo=hi=0`, `mid=0`, found immediately.
+- **Single element, not target** `[5], target=3` → `mid=0`, `nums[0] > 3`, `hi=-1`, loop exits, returns -1.
+- **Target smaller than all** → `lo` keeps advancing past `hi`.
+- **Target larger than all** → `hi` keeps retreating below `lo`.
+- **Duplicate elements** — not present in this problem (guaranteed distinct), but if present, this returns *an* occurrence, not necessarily the leftmost.

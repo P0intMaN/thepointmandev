@@ -1,0 +1,89 @@
+---
+title: "Count Primes"
+description: "Count the number of prime numbers less than n using the Sieve of Eratosthenes."
+date: "2026-04-08"
+tags: ["math", "sieve", "array"]
+category: "Math"
+difficulty: "medium"
+timeComplexity: "O(n log log n)"
+spaceComplexity: "O(n)"
+companies: ["Amazon", "Google", "Facebook"]
+leetcodeNumber: 204
+draft: false
+---
+
+## Problem Statement
+
+Count the number of prime numbers strictly less than `n`.
+
+```
+Input:  n = 10
+Output: 4  (primes: 2, 3, 5, 7)
+
+Input:  n = 0
+Output: 0
+
+Input:  n = 1
+Output: 0
+```
+
+## Approach: Sieve of Eratosthenes — O(n log log n)
+
+Mark all multiples of each prime as composite, starting from `p²` (not `2p`).
+
+```java
+public int countPrimes(int n) {
+    if (n < 2) return 0;
+
+    boolean[] isComposite = new boolean[n];
+    // isComposite[i] = true means i is NOT prime
+
+    for (int p = 2; (long) p * p < n; p++) {
+        if (!isComposite[p]) {
+            // Mark all multiples of p starting from p*p
+            for (int j = p * p; j < n; j += p) {
+                isComposite[j] = true;
+            }
+        }
+    }
+
+    int count = 0;
+    for (int i = 2; i < n; i++) {
+        if (!isComposite[i]) count++;
+    }
+    return count;
+}
+```
+
+**Why start inner loop at `p²`?**
+For a prime `p`, all multiples `2p, 3p, ..., (p-1)*p` have already been marked by smaller primes:
+- `2p` was marked when p=2
+- `3p` was marked when p=3
+- etc.
+
+So the first unmarked multiple of `p` is `p*p`.
+
+**Why `(long) p * p < n`?** Cast to `long` to avoid integer overflow when `p` is near `sqrt(Integer.MAX_VALUE)`.
+
+## Complexity Analysis
+
+The sieve marks each composite number once per distinct prime factor. By the prime harmonic series, the total work is:
+`n/2 + n/3 + n/5 + n/7 + ... ≈ n * ln(ln(n))` → **O(n log log n)**
+
+## Optimization: Sieve of Sundaram / Segmented Sieve
+
+For very large `n` where memory is limited, use a **segmented sieve**:
+1. Compute primes up to `√n` using the basic sieve
+2. Process segments of size `√n` one at a time, marking composites in each segment
+
+This reduces space from O(n) to O(√n).
+
+## Key Insight
+
+The Sieve is optimal for finding all primes up to `n`. The key trick — starting at `p²` rather than `2p` — is what gives the `O(n log log n)` bound. Without this, you'd process each prime from 2 and the constant factor would be much larger.
+
+## Edge Cases
+
+- **n ≤ 2**: no primes strictly less than 2 → 0
+- **n = 3**: only prime < 3 is 2 → 1
+- **Large n**: use `(long) p * p < n` to avoid overflow in the loop condition

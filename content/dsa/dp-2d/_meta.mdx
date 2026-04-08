@@ -1,0 +1,95 @@
+---
+title: "Dynamic Programming — 2D"
+description: "Solve grid path, string matching, and knapsack problems using a 2D table of subproblem solutions."
+signal: "Grid path counting, edit distance, longest common subsequence, 0/1 knapsack. Signal: 'grid path', 'edit distance', 'subsequence matching', 'partition'. Two sequences or two dimensions."
+gotchas: "dp[i][j] depends on dp[i-1][j], dp[i][j-1], or dp[i-1][j-1]. Offset indices by 1 when including empty string/row as a base case. LCS: if chars match dp[i][j]=dp[i-1][j-1]+1; else max(dp[i-1][j],dp[i][j-1]). Knapsack: include vs exclude item. Space optimize by rolling array when only previous row is needed."
+color: "#86efac"
+colorDim: "#052e16"
+colorBorder: "#4ade80"
+icon: "dp-2d"
+order: 16
+tier: 3
+draft: false
+---
+
+## How to Spot This Pattern
+
+2D DP applies when the problem has **two independent dimensions** that together define a subproblem:
+- **Two strings/sequences** — LCS, edit distance, string matching
+- **Grid coordinates** — unique paths, minimum path sum, obstacles
+- **Item + capacity** — 0/1 knapsack, partition equal subset sum
+
+Signal: *"longest common subsequence"*, *"edit distance"*, *"unique paths"*, *"partition"*, *"word break"*, *"matrix chain"*.
+
+## The 2D DP Table
+
+Define `dp[i][j]` as the solution to the subproblem involving the first `i` elements of one dimension and the first `j` of the other.
+
+**Key patterns for the transition**:
+
+| Situation | Transition |
+|---|---|
+| Characters match `s[i-1] == t[j-1]` | `dp[i][j] = dp[i-1][j-1] + 1` |
+| Characters don't match | `dp[i][j] = 1 + min(dp[i-1][j], dp[i][j-1], dp[i-1][j-1])` |
+| Include/exclude item | `dp[i][j] = max(dp[i-1][j], dp[i-1][j-weight] + value)` |
+| Grid movement (down/right) | `dp[i][j] = dp[i-1][j] + dp[i][j-1]` |
+
+## 1-Indexed Trick
+
+Offset the string/array by 1 so that index 0 represents the empty prefix. This avoids edge cases at the boundaries.
+
+```java
+// s has length m, t has length n
+int[][] dp = new int[m + 1][n + 1]; // dp[0][*] and dp[*][0] = base cases
+
+for (int i = 1; i <= m; i++) {
+    for (int j = 1; j <= n; j++) {
+        if (s.charAt(i - 1) == t.charAt(j - 1)) {
+            dp[i][j] = dp[i-1][j-1] + 1; // match
+        } else {
+            dp[i][j] = 1 + Math.min(dp[i-1][j-1], Math.min(dp[i-1][j], dp[i][j-1]));
+        }
+    }
+}
+```
+
+## Space Optimization
+
+If `dp[i][j]` only depends on the current and previous row, you can reduce from O(m·n) to O(n) space using a rolling array:
+
+```java
+int[] dp = new int[n + 1]; // only one row at a time
+int[] prev = new int[n + 1];
+
+for (int i = 1; i <= m; i++) {
+    int[] curr = new int[n + 1];
+    for (int j = 1; j <= n; j++) {
+        // fill curr[j] using prev and curr
+    }
+    prev = curr;
+}
+```
+
+Or even simpler: traverse `j` in reverse order for 0/1 knapsack (prevents using the same item twice).
+
+## Common 2D DP Problems
+
+| Problem | dp[i][j] meaning | Key transitions |
+|---|---|---|
+| Unique Paths | ways to reach (i,j) | `dp[i-1][j] + dp[i][j-1]` |
+| Min Path Sum | min cost to (i,j) | `grid[i][j] + min(dp[i-1][j], dp[i][j-1])` |
+| LCS | LCS of s[0..i-1] and t[0..j-1] | match: +1; else max of skip-s or skip-t |
+| Edit Distance | edits to convert s[0..i-1] to t[0..j-1] | match: prev diagonal; else 1+min(3 neighbors) |
+| 0/1 Knapsack | max value with first i items, capacity j | exclude: `dp[i-1][j]`; include: `dp[i-1][j-w]+v` |
+
+## Iteration Order Matters
+
+- **Top-left to bottom-right**: when `dp[i][j]` depends on `dp[i-1][*]` and `dp[*][j-1]`.
+- **Reverse for 0/1 knapsack (1D array)**: processing `j` from high to low ensures each item is used at most once.
+
+## Common Gotchas
+
+- **1-indexed offsets**: `s.charAt(i-1)` when `i` is 1-indexed in the DP table.
+- **Base case correctness**: `dp[0][j] = j` for edit distance (delete j characters to get from "" to t[0..j-1]).
+- **Include vs exclude**: in 0/1 knapsack, when including item `i`, subtract its weight from `j` and use `dp[i-1]`, not `dp[i]` — each item used at most once.
+- **Answer location**: sometimes `dp[m][n]`, sometimes `max over all i,j`, sometimes `dp[n]` after space optimization.

@@ -1,0 +1,102 @@
+---
+title: "Dynamic Programming — 1D"
+description: "Solve optimization and counting problems by building up solutions from smaller subproblems along a single dimension."
+signal: "Maximum/minimum value, count ways, can you reach a target. Signal: 'maximum profit', 'minimum cost', 'number of ways', 'longest increasing'. Start with recursion + memoization, then optimize to bottom-up DP."
+gotchas: "Define dp[i] carefully — what does it represent? Base cases are critical and easy to miss. Two approaches: top-down (memoization) vs bottom-up (tabulation). The transition equation is the crux — derive it from the recurrence. Space optimization: 1D array often suffices when 2D DP only depends on previous row."
+color: "#a3e635"
+colorDim: "#1a2e05"
+colorBorder: "#84cc16"
+icon: "dp-1d"
+order: 15
+tier: 2
+draft: false
+---
+
+## How to Spot This Pattern
+
+DP applies when a problem has:
+1. **Optimal substructure** — the optimal solution to the whole problem can be built from optimal solutions to subproblems.
+2. **Overlapping subproblems** — the same subproblems are solved repeatedly.
+
+Signal phrases: *"maximum/minimum"*, *"number of ways"*, *"can you reach"*, *"longest"*, *"fewest steps"*.
+
+**If you can express the answer recursively and you're recomputing the same inputs**, DP applies.
+
+## Top-Down vs Bottom-Up
+
+**Top-down (memoization)**: write the recursion, cache results.
+
+```java
+Map<Integer, Integer> memo = new HashMap<>();
+
+int dp(int n) {
+    if (n <= 1) return n;                          // base case
+    if (memo.containsKey(n)) return memo.get(n);   // cached
+    int result = dp(n - 1) + dp(n - 2);            // recurrence
+    memo.put(n, result);
+    return result;
+}
+```
+
+**Bottom-up (tabulation)**: fill a table from smallest to largest.
+
+```java
+int[] dp = new int[n + 1];
+dp[0] = 0; dp[1] = 1; // base cases
+for (int i = 2; i <= n; i++) {
+    dp[i] = dp[i-1] + dp[i-2]; // recurrence
+}
+return dp[n];
+```
+
+Bottom-up is generally preferred: no recursion overhead, no stack overflow risk, easier to optimize space.
+
+## The DP Design Framework
+
+1. **Define the state**: What does `dp[i]` represent? Be precise.
+2. **Write the recurrence**: How does `dp[i]` depend on previous states?
+3. **Handle base cases**: What are the smallest valid values?
+4. **Determine iteration order**: process states in an order where all dependencies are already computed.
+5. **Extract the answer**: is it `dp[n]`, `max(dp[i])`, or something else?
+
+## Common 1D DP Patterns
+
+| Pattern | dp[i] definition | Recurrence |
+|---|---|---|
+| **Staircase** | ways to reach step i | `dp[i-1] + dp[i-2]` |
+| **Rob houses** | max sum without adjacent | `max(dp[i-1], dp[i-2] + nums[i])` |
+| **Coin change** | min coins for amount i | `1 + min(dp[i-c] for each coin c)` |
+| **LIS** | length of LIS ending at i | `1 + max(dp[j] for j<i where nums[j]<nums[i])` |
+| **Max subarray** | max sum ending at i | `max(nums[i], dp[i-1] + nums[i])` |
+
+## Space Optimization
+
+When the recurrence only depends on the previous 1 or 2 states, you don't need the full array:
+
+```java
+// Fibonacci: only need last two values
+int prev2 = 0, prev1 = 1;
+for (int i = 2; i <= n; i++) {
+    int curr = prev1 + prev2;
+    prev2 = prev1;
+    prev1 = curr;
+}
+return prev1;
+```
+
+## Top-Down vs Bottom-Up Choice
+
+| | Top-down | Bottom-up |
+|---|---|---|
+| Easier to write initially | ✓ | |
+| No stack overflow | | ✓ |
+| Easier space optimization | | ✓ |
+| Only computes needed states | ✓ | |
+
+## Common Gotchas
+
+- **dp[0] is often a base case, not "the answer for 0 items"** — define clearly.
+- **Off-by-one in array size**: if dp is 1-indexed, allocate `n+1`.
+- **Initialization matters**: initialize to `0` for counting, `Integer.MAX_VALUE` for min-cost (be careful of overflow when adding to `MAX_VALUE`).
+- **Answer might not be dp[n]**: for "maximum subarray" it's `max(dp[i])` over all i.
+- **Derive the recurrence before coding**: rushing to code without a clear recurrence leads to bugs.

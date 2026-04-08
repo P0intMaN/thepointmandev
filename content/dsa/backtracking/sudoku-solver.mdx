@@ -1,0 +1,141 @@
+---
+title: "Sudoku Solver"
+description: "Solve a Sudoku puzzle by filling empty cells with digits 1-9, satisfying all row, column, and box constraints."
+date: "2026-04-08"
+tags: ["backtracking", "array", "hash-set"]
+category: "Backtracking"
+difficulty: "hard"
+timeComplexity: "O(9^m)"
+spaceComplexity: "O(m)"
+companies: ["Amazon", "Google", "Microsoft", "Apple"]
+leetcodeNumber: 37
+draft: false
+---
+
+## Problem Statement
+
+Write a program to solve a Sudoku puzzle by filling the empty cells (`'.'`). Each digit `1-9` must appear exactly once in each row, column, and 3×3 box.
+
+The input is guaranteed to have exactly one valid solution.
+
+## Algorithm — Backtracking Cell by Cell
+
+Try each digit 1-9 for each empty cell. If the digit is valid (not in the same row, column, or box), place it and recurse to the next empty cell. If no digit works, backtrack.
+
+```java
+public void solveSudoku(char[][] board) {
+    solve(board);
+}
+
+private boolean solve(char[][] board) {
+    for (int r = 0; r < 9; r++) {
+        for (int c = 0; c < 9; c++) {
+            if (board[r][c] != '.') continue; // skip filled cells
+
+            for (char ch = '1'; ch <= '9'; ch++) {
+                if (isValid(board, r, c, ch)) {
+                    board[r][c] = ch;           // place
+                    if (solve(board)) return true; // recurse
+                    board[r][c] = '.';          // backtrack
+                }
+            }
+
+            return false; // no digit worked — backtrack to previous cell
+        }
+    }
+    return true; // all cells filled
+}
+
+private boolean isValid(char[][] board, int row, int col, char ch) {
+    int boxRow = (row / 3) * 3, boxCol = (col / 3) * 3;
+
+    for (int i = 0; i < 9; i++) {
+        if (board[row][i] == ch) return false;          // check row
+        if (board[i][col] == ch) return false;          // check column
+        if (board[boxRow + i/3][boxCol + i%3] == ch) return false; // check box
+    }
+    return true;
+}
+```
+
+**Key line**: `return false` after trying all 9 digits signals to the caller that this branch has no solution. The caller then backtracks its own choice.
+
+**`return true` propagates up**: once a valid solution is found, each recursive call immediately returns true without trying more options.
+
+## Optimized: Pre-computed Constraint Sets
+
+`isValid` above is O(27) per check. For large-scale solving, pre-compute bitmask sets for each row, column, and box:
+
+```java
+boolean[] rows[] = new boolean[9][10];
+boolean[] cols[] = new boolean[9][10];
+boolean[] boxs[] = new boolean[9][10];
+
+// Initialize from given board
+for (int r = 0; r < 9; r++) {
+    for (int c = 0; c < 9; c++) {
+        if (board[r][c] != '.') {
+            int num = board[r][c] - '0';
+            rows[r][num] = cols[c][num] = boxs[(r/3)*3+c/3][num] = true;
+        }
+    }
+}
+
+// In backtracking:
+private boolean solve(char[][] board, boolean[][] rows, boolean[][] cols, boolean[][] boxs) {
+    for (int r = 0; r < 9; r++) {
+        for (int c = 0; c < 9; c++) {
+            if (board[r][c] != '.') continue;
+            for (int num = 1; num <= 9; num++) {
+                int box = (r/3)*3+c/3;
+                if (!rows[r][num] && !cols[c][num] && !boxs[box][num]) {
+                    board[r][c] = (char)('0' + num);
+                    rows[r][num] = cols[c][num] = boxs[box][num] = true;
+                    if (solve(board, rows, cols, boxs)) return true;
+                    board[r][c] = '.';
+                    rows[r][num] = cols[c][num] = boxs[box][num] = false;
+                }
+            }
+            return false;
+        }
+    }
+    return true;
+}
+```
+
+O(1) per validity check instead of O(27).
+
+## Complexity
+
+m = number of empty cells (at most 81).
+
+| | Time | Space |
+|---|---|---|
+| Backtracking | O(9^m) | O(m) recursion depth |
+
+In practice, constraint propagation makes it much faster than 9^81. Most Sudoku puzzles solve in microseconds.
+
+## Box Index Formula
+
+Cell `(r, c)` is in box `(r/3)*3 + c/3`:
+- Row 0-2, Col 0-2 → box 0
+- Row 0-2, Col 3-5 → box 1
+- Row 3-5, Col 0-2 → box 3
+
+The box traversal `board[boxRow + i/3][boxCol + i%3]` for `i` in `[0,8]` visits all 9 cells in the box.
+
+## Key Insight
+
+Sudoku Solver is N-Queens with a less structured search space. The same pattern:
+1. Find the next empty position
+2. Try each valid choice
+3. Recurse
+4. Backtrack on failure
+
+The `return false` after exhausting all digits is critical — it triggers backtracking. Without it, the function would continue to the next cell even when stuck, producing incorrect results.
+
+## Edge Cases
+
+- **Fully filled board** (no `'.'`): outer loop finds no empty cells, returns true immediately.
+- **Single empty cell**: tries digits 1-9, exactly one is valid per the problem guarantee.
+- **Invalid board** (no solution): the problem guarantees exactly one solution, but if it didn't, the function returns false.

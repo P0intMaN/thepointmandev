@@ -1,0 +1,117 @@
+---
+title: "Minimum Height Trees"
+description: "Find all roots that minimize the height of the resulting tree in an undirected tree graph."
+date: "2026-04-08"
+tags: ["graph", "topological-sort", "tree"]
+category: "Topological Sort"
+difficulty: "medium"
+timeComplexity: "O(n)"
+spaceComplexity: "O(n)"
+companies: ["Google", "Amazon", "Microsoft"]
+leetcodeNumber: 310
+draft: false
+---
+
+## Problem Statement
+
+A tree is an undirected graph where any two vertices are connected by exactly one path. Given a tree of `n` nodes (labeled `0` to `n-1`) and an array of `n-1` edges, return all nodes that, when chosen as the root, minimize the height of the tree.
+
+```
+Input:  n = 4, edges = [[1,0],[1,2],[1,3]]
+Output: [1]
+
+Input:  n = 6, edges = [[3,0],[3,1],[3,2],[3,4],[5,4]]
+Output: [3, 4]
+```
+
+## Insight: Leaf Stripping (Reversed Kahn's)
+
+The root(s) of a Minimum Height Tree are the **center** of the tree — the midpoint(s) of the longest path. There are at most 2 such centers.
+
+Rather than trying all roots (O(n²)), repeatedly strip leaf nodes (nodes with degree 1) from the outside in — like peeling an onion — until at most 2 nodes remain. Those are the centers.
+
+This is Kahn's topological sort applied to an **undirected tree** treated as an almost-DAG, with leaves as the "0 in-degree" start nodes.
+
+```java
+public List<Integer> findMinHeightTrees(int n, int[][] edges) {
+    if (n == 1) return List.of(0);
+
+    List<Set<Integer>> graph = new ArrayList<>();
+    for (int i = 0; i < n; i++) graph.add(new HashSet<>());
+    for (int[] e : edges) {
+        graph.get(e[0]).add(e[1]);
+        graph.get(e[1]).add(e[0]);
+    }
+
+    // Start with all leaves (degree 1)
+    Queue<Integer> leaves = new LinkedList<>();
+    for (int i = 0; i < n; i++) {
+        if (graph.get(i).size() == 1) leaves.offer(i);
+    }
+
+    int remaining = n;
+    while (remaining > 2) {
+        int size = leaves.size();
+        remaining -= size;
+        for (int i = 0; i < size; i++) {
+            int leaf = leaves.poll();
+            int parent = graph.get(leaf).iterator().next(); // only one neighbor
+            graph.get(parent).remove(leaf);
+            if (graph.get(parent).size() == 1) {
+                leaves.offer(parent); // parent became a new leaf
+            }
+        }
+    }
+
+    return new ArrayList<>(leaves);
+}
+```
+
+## Why At Most 2 Centers?
+
+The center(s) are the midpoint(s) of the tree's diameter (longest path). A path has either one midpoint (odd length) or two (even length). There can never be 3 or more centers in a tree.
+
+## Tracing the Example
+
+`n=6, edges: 3-0, 3-1, 3-2, 3-4, 5-4`
+
+```
+Tree:
+    0
+    |
+1 - 3 - 4 - 5
+    |
+    2
+
+Degrees: 0→1, 1→1, 2→1, 3→4, 4→2, 5→1
+Leaves: {0, 1, 2, 5}, remaining=6
+
+Round 1: strip 0,1,2,5. remaining=2
+  - Remove 0 from 3: deg(3)=3
+  - Remove 1 from 3: deg(3)=2
+  - Remove 2 from 3: deg(3)=1 → 3 becomes leaf
+  - Remove 5 from 4: deg(4)=1 → 4 becomes leaf
+
+remaining=2, leaves={3,4} → return [3,4] ✓
+```
+
+## Complexity
+
+| | Time | Space |
+|---|---|---|
+| Leaf stripping | O(n) | O(n) |
+
+Each node is removed exactly once.
+
+## Key Insight
+
+This is Kahn's algorithm in disguise: leaves = nodes with in-degree 1, stripping a leaf = decrementing neighbor's degree. The algorithm terminates when ≤ 2 nodes remain — these are the topological "center" of the tree.
+
+The insight that centers = midpoint of diameter, and that leaf stripping finds them, is the non-obvious part. The algorithm itself is mechanical once you see it.
+
+## Edge Cases
+
+- **n = 1**: return `[0]` immediately (single node, no edges).
+- **n = 2**: both nodes are leaves of each other. After one round of stripping, 0 nodes remain — but `remaining = 2 ≤ 2` stops before that. Return both.
+- **Star graph** (one center, all others leaves): all leaves are stripped at once, the center remains.
+- **Path graph** `0-1-2-3-4`: leaves are 0 and 4. After stripping: 1 and 3 are new leaves. After stripping: 2 remains. Return `[2]`.

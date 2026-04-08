@@ -1,0 +1,97 @@
+---
+title: "Path Sum"
+description: "Determine if a root-to-leaf path exists whose node values sum to a given target."
+date: "2026-04-08"
+tags: ["tree", "dfs", "recursion"]
+category: "Trees"
+difficulty: "easy"
+timeComplexity: "O(n)"
+spaceComplexity: "O(h)"
+companies: ["Amazon", "Google", "Microsoft"]
+leetcodeNumber: 112
+draft: false
+---
+
+## Problem Statement
+
+Given the `root` of a binary tree and an integer `targetSum`, return `true` if the tree has a **root-to-leaf** path such that adding up all the values along the path equals `targetSum`.
+
+A **leaf** is a node with no children.
+
+```
+Input:  root = [5,4,8,11,null,13,4,7,2,null,null,null,1], targetSum = 22
+Output: true
+Explanation: Path 5 → 4 → 11 → 2 = 22
+
+Input:  root = [1,2,3], targetSum = 5
+Output: false
+
+Input:  root = [], targetSum = 0
+Output: false
+```
+
+## Algorithm — DFS with Decremented Target
+
+Instead of carrying a running sum down, subtract each node's value from the target. At a leaf, check if the remaining target equals 0.
+
+```java
+public boolean hasPathSum(TreeNode root, int targetSum) {
+    if (root == null) return false;
+
+    // At a leaf: check if this node's value completes the sum
+    if (root.left == null && root.right == null) {
+        return root.val == targetSum;
+    }
+
+    // Recurse, subtracting current node's value
+    int remaining = targetSum - root.val;
+    return hasPathSum(root.left, remaining) || hasPathSum(root.right, remaining);
+}
+```
+
+The `||` short-circuits — if the left path finds a valid sum, the right is never explored.
+
+**Why subtract instead of accumulate?** Both work, but subtracting avoids passing a second parameter for the accumulated sum. The invariant is: `remaining` at any node = how much sum is still needed below this node.
+
+## Tracing the Example
+
+`targetSum = 22`, path `5 → 4 → 11 → 2`
+
+| node | remaining before | remaining after (−val) | leaf? |
+|------|-----------------|------------------------|-------|
+| 5    | 22              | 17                     | no    |
+| 4    | 17              | 13                     | no    |
+| 11   | 13              | 2                      | no    |
+| 2    | 2               | —                      | **yes, 2 == remaining → true** |
+
+## Variants
+
+| Problem | Change |
+|---|---|
+| **#113 Path Sum II** | Return all root-to-leaf paths that sum to target (backtracking) |
+| **#437 Path Sum III** | Count paths summing to target — paths don't need to start at root or end at leaf (prefix sum + HashMap) |
+| **#124 Binary Tree Maximum Path Sum** | Max sum path between *any* two nodes — can go up through a parent (global max, post-order) |
+
+## Complexity
+
+| | Time | Space |
+|---|---|---|
+| DFS | O(n) | O(h) |
+
+Worst case visits every node. Space is the recursion depth.
+
+## Key Insight
+
+Path Sum is the simplest **pre-order DFS with a carried value** problem. The pattern is:
+1. Process the current node (subtract from target / add to path)
+2. Recurse into children
+3. At a leaf, check the termination condition
+
+The leaf check `root.left == null && root.right == null` is critical — returning true at any null node would incorrectly count internal nodes as "leaves" for single-child parents.
+
+## Edge Cases
+
+- **Null root**: return false (no path exists).
+- **Single node**: it's both root and leaf. Return `root.val == targetSum`.
+- **Negative values**: the subtraction approach handles negatives naturally.
+- **Single-child node is not a leaf**: `[1, 2], targetSum = 1` — node 1 has a left child (node 2), so it is not a leaf. The only leaf is 2, path sum is 3 ≠ 1, returns false. Forgetting the leaf check causes bugs here.

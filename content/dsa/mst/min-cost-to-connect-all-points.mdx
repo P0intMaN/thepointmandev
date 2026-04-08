@@ -1,0 +1,121 @@
+---
+title: "Min Cost to Connect All Points"
+description: "Find the minimum cost to connect all points using Manhattan distance edges (MST)."
+date: "2026-04-08"
+tags: ["mst", "graph", "greedy", "union-find"]
+category: "Minimum Spanning Tree"
+difficulty: "medium"
+timeComplexity: "O(n² log n)"
+spaceComplexity: "O(n²)"
+companies: ["Amazon", "Google", "Facebook"]
+leetcodeNumber: 1584
+draft: false
+---
+
+## Problem Statement
+
+You are given `n` points in a 2D plane `points[i] = [x_i, y_i]`. The cost of connecting two points is their **Manhattan distance** `|x_i - x_j| + |y_i - y_j|`. Return the minimum cost to connect all points.
+
+```
+Input:  points = [[0,0],[2,2],[3,10],[5,2],[7,0]]
+Output: 20
+```
+
+## Approach 1: Prim's Algorithm — O(n²)
+
+For a complete graph with n nodes, generating all edges takes O(n²) time and space. Prim's with a simple array (not heap) is O(n²), which is optimal here since we have n² edges.
+
+```java
+public int minCostConnectPoints(int[][] points) {
+    int n = points.length;
+    int[] minDist = new int[n]; // min distance from MST to each unvisited node
+    Arrays.fill(minDist, Integer.MAX_VALUE);
+    boolean[] inMST = new boolean[n];
+    minDist[0] = 0;
+
+    int totalCost = 0;
+
+    for (int i = 0; i < n; i++) {
+        // Pick the unvisited node with minimum dist to MST
+        int u = -1;
+        for (int j = 0; j < n; j++) {
+            if (!inMST[j] && (u == -1 || minDist[j] < minDist[u])) {
+                u = j;
+            }
+        }
+
+        inMST[u] = true;
+        totalCost += minDist[u];
+
+        // Update neighbors' distances
+        for (int v = 0; v < n; v++) {
+            if (!inMST[v]) {
+                int dist = Math.abs(points[u][0] - points[v][0])
+                         + Math.abs(points[u][1] - points[v][1]);
+                minDist[v] = Math.min(minDist[v], dist);
+            }
+        }
+    }
+
+    return totalCost;
+}
+```
+
+**Time**: O(n²) — n iterations, each O(n). No heap needed because we recompute distances lazily.
+
+## Approach 2: Kruskal's Algorithm — O(n² log n)
+
+Generate all n² edges, sort them, apply Union-Find.
+
+```java
+public int minCostConnectPoints(int[][] points) {
+    int n = points.length;
+    List<int[]> edges = new ArrayList<>();
+
+    for (int i = 0; i < n; i++)
+        for (int j = i + 1; j < n; j++) {
+            int dist = Math.abs(points[i][0] - points[j][0])
+                     + Math.abs(points[i][1] - points[j][1]);
+            edges.add(new int[]{dist, i, j});
+        }
+
+    edges.sort((a, b) -> a[0] - b[0]);
+
+    int[] parent = new int[n], rank = new int[n];
+    for (int i = 0; i < n; i++) parent[i] = i;
+
+    int totalCost = 0, edgesUsed = 0;
+
+    for (int[] edge : edges) {
+        int w = edge[0], u = edge[1], v = edge[2];
+        if (find(parent, u) != find(parent, v)) {
+            union(parent, rank, u, v);
+            totalCost += w;
+            if (++edgesUsed == n - 1) break;
+        }
+    }
+
+    return totalCost;
+}
+```
+
+## Complexity
+
+| Approach | Time | Space |
+|---|---|---|
+| **Prim's (array-based)** | **O(n²)** | **O(n)** |
+| Kruskal's | O(n² log n) | O(n²) |
+
+For dense graphs (all pairs connected), Prim's with an array beats Prim's with a heap.
+
+## Key Insight
+
+This is a pure MST problem in disguise. "Connect all points with minimum total cost" = find the MST of the complete graph where edge weights are Manhattan distances.
+
+For a complete graph (n nodes, n² edges), Prim's with a distance array is more efficient than sorting all n² edges for Kruskal's.
+
+## Edge Cases
+
+- **Single point**: return 0 (already connected)
+- **Two points**: return their Manhattan distance
+- **All collinear**: MST is the path along the line

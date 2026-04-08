@@ -1,0 +1,134 @@
+---
+title: "Search in Rotated Sorted Array"
+description: "Search for a target in a sorted array that has been rotated at an unknown pivot index."
+date: "2026-04-08"
+tags: ["array", "binary-search"]
+category: "Binary Search"
+difficulty: "medium"
+timeComplexity: "O(log n)"
+spaceComplexity: "O(1)"
+companies: ["Amazon", "Google", "Microsoft", "Facebook", "Apple"]
+leetcodeNumber: 33
+draft: false
+---
+
+## Problem Statement
+
+There is an integer array `nums` sorted in ascending order, rotated at some pivot index `k`. Given the array after rotation and a `target`, return the index of `target` in `nums`, or `-1` if it is not present. You must write an algorithm with O(log n) runtime.
+
+```
+Input:  nums = [4,5,6,7,0,1,2], target = 0
+Output: 4
+
+Input:  nums = [4,5,6,7,0,1,2], target = 3
+Output: -1
+
+Input:  nums = [1], target = 0
+Output: -1
+```
+
+## The Core Observation
+
+A rotated sorted array has one key property: **at least one half of any window `[lo, hi]` is always sorted**. You can tell which half by comparing `nums[lo]` to `nums[mid]`:
+
+- If `nums[lo] <= nums[mid]` → the **left half** `[lo, mid]` is cleanly sorted.
+- Otherwise → the **right half** `[mid, hi]` is cleanly sorted.
+
+Once you know which half is sorted, check if `target` falls within that half's range. If yes, search there. If no, search the other half.
+
+---
+
+## Algorithm — O(log n)
+
+```java
+public int search(int[] nums, int target) {
+    int lo = 0, hi = nums.length - 1;
+
+    while (lo <= hi) {
+        int mid = lo + (hi - lo) / 2;
+
+        if (nums[mid] == target) return mid;
+
+        // Determine which half is sorted
+        if (nums[lo] <= nums[mid]) {
+            // Left half [lo, mid] is sorted
+            if (nums[lo] <= target && target < nums[mid]) {
+                hi = mid - 1; // target in left half
+            } else {
+                lo = mid + 1; // target in right half
+            }
+        } else {
+            // Right half [mid, hi] is sorted
+            if (nums[mid] < target && target <= nums[hi]) {
+                lo = mid + 1; // target in right half
+            } else {
+                hi = mid - 1; // target in left half
+            }
+        }
+    }
+
+    return -1;
+}
+```
+
+## Tracing the Example
+
+`nums = [4, 5, 6, 7, 0, 1, 2]`, `target = 0`
+
+| lo | hi | mid | nums[mid] | sorted half | target in range?      | decision     |
+|----|-----|-----|-----------|-------------|----------------------|--------------|
+| 0  | 6   | 3   | 7         | left [4..7] | 0 ∈ [4,7)? No        | lo = 4       |
+| 4  | 6   | 5   | 1         | right [1..2]| 0 ∈ (1,2]? No        | hi = 4       |
+| 4  | 4   | 4   | 0         | —           | nums[mid] == target  | **return 4** |
+
+`target = 3`:
+
+| lo | hi | mid | nums[mid] | sorted half  | target in range?  | decision  |
+|----|-----|-----|-----------|--------------|-------------------|-----------|
+| 0  | 6   | 3   | 7         | left [4..7]  | 3 ∈ [4,7)? No     | lo = 4    |
+| 4  | 6   | 5   | 1         | right [1..2] | 3 ∈ (1,2]? No     | hi = 4    |
+| 4  | 4   | 4   | 0         | left [0..0]  | 3 ∈ [0,0)? No     | lo = 5    |
+| lo=5 > hi=4 → **return -1** |
+
+---
+
+## Why `nums[lo] <= nums[mid]` (not `<`)?
+
+The `<=` handles the case where `lo == mid` (single-element window). In that case, `nums[lo] == nums[mid]`, and the left "half" is trivially sorted. Using `<` would misclassify it and potentially loop incorrectly.
+
+## The Boundary Conditions
+
+When checking if target falls in the sorted half:
+
+- **Left half sorted** `[lo, mid]`: check `nums[lo] <= target < nums[mid]` (inclusive lo, exclusive mid since mid was already checked)
+- **Right half sorted** `[mid, hi]`: check `nums[mid] < target <= nums[hi]` (exclusive mid, inclusive hi)
+
+Getting these inequalities wrong is the #1 source of off-by-one bugs on this problem. Draw them out: the sorted half is a closed range, and you know mid isn't the target (checked first), so exclude it.
+
+---
+
+## Complexity
+
+| | Time | Space |
+|---|---|---|
+| Brute force scan | O(n) | O(1) |
+| Rotated binary search | O(log n) | O(1) |
+
+---
+
+## Key Insight
+
+The rotation breaks global sortedness but preserves **local sortedness** — one half of every window is always clean. Use that guarantee to eliminate half the search space on each iteration, just like standard binary search.
+
+The same pattern extends to:
+- **#81 Search in Rotated Sorted Array II** — duplicates mean `nums[lo] == nums[mid]` is ambiguous; fall back to `lo++` when that happens, degrading to O(n) worst case.
+- **#153 Find Minimum in Rotated Sorted Array** — binary search for the pivot (the smallest element) using the same left/right sorted half logic.
+
+---
+
+## Edge Cases
+
+- **Not rotated** (pivot at index 0): `nums[lo] <= nums[mid]` always true, degenerates to standard binary search.
+- **Single element**: `lo == hi == mid`, checked immediately.
+- **Two elements**: one iteration suffices — mid equals lo or hi, one half is trivially sorted.
+- **Target at pivot**: caught by the `nums[mid] == target` check before any half-detection logic.

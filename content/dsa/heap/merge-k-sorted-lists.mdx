@@ -1,0 +1,139 @@
+---
+title: "Merge K Sorted Lists"
+description: "Merge k sorted linked lists into one sorted linked list."
+date: "2026-04-08"
+tags: ["linked-list", "heap", "divide-and-conquer"]
+category: "Heap / Priority Queue"
+difficulty: "hard"
+timeComplexity: "O(N log k)"
+spaceComplexity: "O(k)"
+companies: ["Amazon", "Google", "Microsoft", "Facebook", "Apple"]
+leetcodeNumber: 23
+draft: false
+---
+
+## Problem Statement
+
+You are given an array of `k` linked-lists `lists`, each sorted in ascending order. Merge all the linked lists into one sorted linked list and return it.
+
+```
+Input:  lists = [[1,4,5],[1,3,4],[2,6]]
+Output: [1,1,2,3,4,4,5,6]
+
+Input:  lists = []
+Output: []
+
+Input:  lists = [[]]
+Output: []
+```
+
+## Approach 1: Min Heap — O(N log k) ✅ Optimal
+
+Initialize the heap with the head of each non-null list. Repeatedly extract the minimum node and advance that list's pointer.
+
+```java
+public ListNode mergeKLists(ListNode[] lists) {
+    PriorityQueue<ListNode> heap = new PriorityQueue<>((a, b) -> a.val - b.val);
+
+    // Seed the heap with the first node of each list
+    for (ListNode list : lists) {
+        if (list != null) heap.offer(list);
+    }
+
+    ListNode dummy = new ListNode(0);
+    ListNode curr = dummy;
+
+    while (!heap.isEmpty()) {
+        ListNode node = heap.poll();      // extract minimum
+        curr.next = node;
+        curr = curr.next;
+        if (node.next != null) {
+            heap.offer(node.next);        // advance that list
+        }
+    }
+
+    return dummy.next;
+}
+```
+
+At any moment, the heap contains at most one node from each list — O(k) space. Each of the N total nodes is pushed and popped once — O(N log k) time.
+
+## Approach 2: Divide and Conquer (Pair Merge) — O(N log k)
+
+Repeatedly merge pairs of lists until one remains. Similar to merge sort.
+
+```java
+public ListNode mergeKLists(ListNode[] lists) {
+    if (lists.length == 0) return null;
+
+    int interval = 1;
+    while (interval < lists.length) {
+        for (int i = 0; i + interval < lists.length; i += interval * 2) {
+            lists[i] = mergeTwoLists(lists[i], lists[i + interval]);
+        }
+        interval *= 2;
+    }
+    return lists[0];
+}
+
+private ListNode mergeTwoLists(ListNode l1, ListNode l2) {
+    ListNode dummy = new ListNode(0), curr = dummy;
+    while (l1 != null && l2 != null) {
+        if (l1.val <= l2.val) { curr.next = l1; l1 = l1.next; }
+        else                  { curr.next = l2; l2 = l2.next; }
+        curr = curr.next;
+    }
+    curr.next = l1 != null ? l1 : l2;
+    return dummy.next;
+}
+```
+
+log k rounds of merging, each round processes N total nodes → O(N log k).
+
+## Approach 3: Naive — O(Nk)
+
+Merge lists one at a time from left to right. Each merge costs O(current length), leading to O(Nk) total. Avoid this.
+
+## Tracing the Heap Approach
+
+`lists = [[1→4→5], [1→3→4], [2→6]]`
+
+| heap state | extracted | appended to result |
+|---|---|---|
+| {1(L1), 1(L2), 2(L3)} | 1(L1) | 1, add 4(L1) |
+| {1(L2), 2(L3), 4(L1)} | 1(L2) | 1→1, add 3(L2) |
+| {2(L3), 3(L2), 4(L1)} | 2(L3) | 1→1→2, add 6(L3) |
+| {3(L2), 4(L1), 6(L3)} | 3(L2) | →3, add 4(L2) |
+| {4(L1), 4(L2), 6(L3)} | 4(L1) | →4, add 5(L1) |
+| {4(L2), 5(L1), 6(L3)} | 4(L2) | →4, L2 done |
+| {5(L1), 6(L3)} | 5(L1) | →5, L1 done |
+| {6(L3)} | 6(L3) | →6 |
+
+Result: `1→1→2→3→4→4→5→6` ✓
+
+## Complexity
+
+| | Time | Space |
+|---|---|---|
+| Naive (one by one) | O(Nk) | O(1) |
+| Min heap | O(N log k) | O(k) |
+| Divide and conquer | O(N log k) | O(log k) recursion |
+
+N = total nodes across all lists, k = number of lists.
+
+## Key Insight
+
+The min heap reduces "find the minimum across k sorted streams" from O(k) to O(log k) per element. This is the core of the **K-way merge** pattern:
+
+- **#373 Find K Pairs with Smallest Sums** — k-way merge on implicit pairs
+- **#378 Kth Smallest Element in a Sorted Matrix** — row-by-row k-way merge
+- External merge sort — merging k sorted file chunks
+
+Whenever you have k sorted sources and need to produce a globally sorted output, reach for a min heap of size k.
+
+## Edge Cases
+
+- **Empty array** `lists = []`: loop over empty array, heap empty, `dummy.next = null`.
+- **List of empty lists** `[[]]`: null lists are skipped in seeding.
+- **k = 1**: heap has one element, degenerates to copying the single list.
+- **All lists of length 1**: heap does k extractions with no re-insertions.

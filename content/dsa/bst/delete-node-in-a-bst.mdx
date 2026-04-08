@@ -1,0 +1,118 @@
+---
+title: "Delete Node in a BST"
+description: "Delete a node with a given key from a BST and return the root of the updated tree."
+date: "2026-04-08"
+tags: ["tree", "bst", "recursion"]
+category: "Binary Search Tree"
+difficulty: "medium"
+timeComplexity: "O(h)"
+spaceComplexity: "O(h)"
+companies: ["Amazon", "Google", "Microsoft", "LinkedIn"]
+leetcodeNumber: 450
+draft: false
+---
+
+## Problem Statement
+
+Given a root node reference of a BST and a key, delete the node with the given key in the BST. Return the **root node reference** (possibly updated) of the BST.
+
+```
+Input:  root = [5,3,6,2,4,null,7], key = 3
+Output: [5,4,6,2,null,null,7]
+   (or [5,2,6,null,4,null,7] — both are valid)
+
+Input:  root = [5,3,6,2,4,null,7], key = 0
+Output: [5,3,6,2,4,null,7]  (key not found, no change)
+```
+
+## The Three Cases
+
+Finding the node is standard BST search. Once found, deletion has three cases:
+
+**Case 1 — No children (leaf):** Remove the node — return `null` to parent.
+
+**Case 2 — One child:** Replace the node with its only child.
+
+**Case 3 — Two children:** Replace the node's value with its **inorder successor** (leftmost node of the right subtree — the smallest value greater than the current node), then delete the successor from the right subtree.
+
+```java
+public TreeNode deleteNode(TreeNode root, int key) {
+    if (root == null) return null;
+
+    if (key < root.val) {
+        root.left  = deleteNode(root.left,  key); // search left
+    } else if (key > root.val) {
+        root.right = deleteNode(root.right, key); // search right
+    } else {
+        // Found the node to delete
+
+        // Case 1 & 2: no left child
+        if (root.left == null)  return root.right;
+
+        // Case 2: no right child
+        if (root.right == null) return root.left;
+
+        // Case 3: two children
+        TreeNode successor = getMin(root.right);   // inorder successor
+        root.val   = successor.val;                // replace value
+        root.right = deleteNode(root.right, successor.val); // delete successor
+    }
+
+    return root;
+}
+
+private TreeNode getMin(TreeNode node) {
+    while (node.left != null) node = node.left;
+    return node;
+}
+```
+
+The recursive structure handles pointer updates automatically — the parent receives the modified subtree root via the return value.
+
+## Tracing Case 3
+
+Delete key `3` from `[5, 3, 6, 2, 4]`:
+
+```
+Node 3 has two children (2 and 4).
+Inorder successor = getMin(root.right) = getMin(4) = 4 (no left child).
+Replace node 3's value with 4.
+Delete 4 from the right subtree of the (now-renamed) node.
+Result: node with value 4, left=2, right=null.
+```
+
+Before: `5 → 3 (left=2, right=4) → 6`
+After:  `5 → 4 (left=2, right=null) → 6`
+
+Both are valid BSTs. ✓
+
+## Why Inorder Successor?
+
+The inorder successor is the smallest value in the right subtree — it's guaranteed to be:
+- Greater than all values in the left subtree (since it was in the right)
+- Less than all other values in the right subtree (since it's the minimum there)
+
+So replacing the deleted node with its inorder successor preserves the BST property. You could also use the **inorder predecessor** (rightmost of the left subtree) — both are valid.
+
+## Complexity
+
+| | Time | Space |
+|---|---|---|
+| Delete | O(h) | O(h) |
+
+`h` = height of the tree. O(log n) balanced, O(n) skewed.
+
+## Key Insight
+
+BST deletion reduces to:
+1. **BST search** to find the node — same left/right branching as search
+2. **Three-case handling** at the node — leaf, one child, two children
+
+The two-children case is the only interesting one. Memorize: *replace with inorder successor (min of right subtree), then delete successor from right subtree*.
+
+## Edge Cases
+
+- **Key not found**: `root == null` returns null at the base case; no structural change propagates back.
+- **Delete root with two children**: inorder successor becomes the new root value.
+- **Delete the only node**: leaf case, returns null — caller gets an empty tree.
+- **BST with duplicates**: not applicable here (problem guarantees unique values).

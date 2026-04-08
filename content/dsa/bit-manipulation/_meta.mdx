@@ -1,0 +1,87 @@
+---
+title: "Bit Manipulation"
+description: "Direct manipulation of binary representations using AND, OR, XOR, NOT, and shifts to solve problems in O(1) or O(log n) without division or modulo."
+signal: "Single number (XOR cancellation). Missing number. Power of 2. Subsets via bitmask. Count bits. Unique character in string. Signal: 'without extra space', 'in O(n) with O(1) space', 'find the odd one out'."
+gotchas: "XOR is its own inverse: a^a=0, a^0=a. Use `n & (n-1)` to clear lowest set bit (power of 2 test, count bits). Use `n & (-n)` to isolate lowest set bit (BIT/Fenwick tree). Left shift by 1 = multiply by 2. Arithmetic right shift preserves sign bit. Integer.bitCount() exists in Java but know the manual methods."
+color: "#06b6d4"
+colorDim: "#001a1f"
+colorBorder: "#0891b2"
+icon: "bit-manipulation"
+order: 24
+tier: 2
+draft: false
+---
+
+## Core Bit Operations
+
+| Operation | Code | Meaning |
+|---|---|---|
+| Check bit `k` | `(n >> k) & 1` | Is bit k set? |
+| Set bit `k` | `n \| (1 << k)` | Turn on bit k |
+| Clear bit `k` | `n & ~(1 << k)` | Turn off bit k |
+| Toggle bit `k` | `n ^ (1 << k)` | Flip bit k |
+| Clear lowest set bit | `n & (n-1)` | Remove rightmost 1 |
+| Isolate lowest set bit | `n & (-n)` | Get rightmost 1 only |
+| Power of 2 check | `n > 0 && (n & (n-1)) == 0` | Exactly one 1 bit |
+| Odd/even check | `n & 1` | 1 = odd, 0 = even |
+
+## XOR Properties
+
+XOR is the cornerstone of bit manipulation problems:
+
+```
+a ^ a = 0        (self-cancellation)
+a ^ 0 = a        (identity)
+a ^ b ^ a = b    (commutative + self-cancellation)
+```
+
+**Applications:**
+- Find the single non-duplicate in an array where every other element appears twice
+- Swap two integers without a temp variable: `a ^= b; b ^= a; a ^= b;`
+- Find missing number: XOR all indices with all values
+
+## Bitmask for Subsets
+
+Generate all subsets of an array using bitmask from `0` to `2^n - 1`:
+
+```java
+for (int mask = 0; mask < (1 << n); mask++) {
+    List<Integer> subset = new ArrayList<>();
+    for (int j = 0; j < n; j++) {
+        if ((mask & (1 << j)) != 0) {
+            subset.add(nums[j]);
+        }
+    }
+}
+```
+
+## Count Set Bits (Brian Kernighan's Algorithm)
+
+```java
+int countBits(int n) {
+    int count = 0;
+    while (n != 0) {
+        n = n & (n - 1); // clears the lowest set bit
+        count++;
+    }
+    return count; // Java: Integer.bitCount(n)
+}
+```
+
+## Common Tricks
+
+```java
+// Multiply/divide by powers of 2
+n << 1  == n * 2
+n >> 1  == n / 2   (arithmetic shift, sign-preserving)
+n >>> 1 == n / 2   (logical shift, zero-fill — use for unsigned)
+
+// Swap without temp
+a ^= b; b ^= a; a ^= b;
+
+// Get the sign
+int sign = (n >> 31) & 1; // 0 = positive, 1 = negative
+
+// Average without overflow
+int mid = (a & b) + ((a ^ b) >> 1); // instead of (a + b) / 2
+```

@@ -1,0 +1,89 @@
+---
+title: "Network Delay Time"
+description: "Find the minimum time for all nodes to receive a signal sent from a given source node."
+date: "2026-04-08"
+tags: ["graph", "dijkstra", "shortest-path"]
+category: "Dijkstra's Algorithm"
+difficulty: "medium"
+timeComplexity: "O((V + E) log V)"
+spaceComplexity: "O(V + E)"
+companies: ["Google", "Amazon", "Facebook", "Microsoft"]
+leetcodeNumber: 743
+draft: false
+---
+
+## Problem Statement
+
+You are given a network of `n` nodes labeled `1` to `n`. Times are given as a list `times[i] = [u, v, w]` representing a directed edge from `u` to `v` with travel time `w`. Return the **minimum time** it takes for all `n` nodes to receive the signal if the signal is sent from node `k`. If it is impossible for all nodes to receive the signal, return `-1`.
+
+```
+Input:  times = [[2,1,1],[2,3,1],[3,4,1]], n = 4, k = 2
+Output: 2
+```
+
+## Insight
+
+The minimum time for ALL nodes to receive the signal = the **maximum** of the shortest paths from `k` to every other node. Dijkstra gives all shortest paths from a single source.
+
+```java
+public int networkDelayTime(int[][] times, int n, int k) {
+    // Build adjacency list (1-indexed)
+    List<List<int[]>> graph = new ArrayList<>();
+    for (int i = 0; i <= n; i++) graph.add(new ArrayList<>());
+    for (int[] t : times) graph.get(t[0]).add(new int[]{t[1], t[2]});
+
+    // Dijkstra from k
+    int[] dist = new int[n + 1];
+    Arrays.fill(dist, Integer.MAX_VALUE);
+    dist[k] = 0;
+
+    PriorityQueue<int[]> heap = new PriorityQueue<>((a, b) -> a[0] - b[0]);
+    heap.offer(new int[]{0, k});
+
+    while (!heap.isEmpty()) {
+        int[] curr = heap.poll();
+        int d = curr[0], u = curr[1];
+        if (d > dist[u]) continue; // stale
+
+        for (int[] edge : graph.get(u)) {
+            int v = edge[0], w = edge[1];
+            if (dist[u] + w < dist[v]) {
+                dist[v] = dist[u] + w;
+                heap.offer(new int[]{dist[v], v});
+            }
+        }
+    }
+
+    // Maximum of all shortest distances (skip index 0, nodes are 1-indexed)
+    int maxDist = 0;
+    for (int i = 1; i <= n; i++) {
+        if (dist[i] == Integer.MAX_VALUE) return -1; // unreachable
+        maxDist = Math.max(maxDist, dist[i]);
+    }
+    return maxDist;
+}
+```
+
+## Complexity
+
+| | Time | Space |
+|---|---|---|
+| Dijkstra | O((V + E) log V) | O(V + E) |
+
+V = n nodes, E = times.length edges.
+
+## Key Insight
+
+The answer is `max(shortest_path(k, v) for all v)` — the signal reaches all nodes when the last (farthest) node receives it. If any node is unreachable, return -1.
+
+This framing — "single-source shortest path, then aggregate the result" — appears in many Dijkstra problems:
+- **#787 Cheapest Flights Within K Stops** — modified Dijkstra with stop constraint
+- **#1631 Path With Minimum Effort** — Dijkstra where edge weight = max height difference on the path
+- **#778 Swim in Rising Water** — binary search on answer + BFS, or Dijkstra where edge weight = max cell value
+
+## Edge Cases
+
+- **k is isolated** (no outgoing edges, n > 1): all other nodes have `dist = MAX_VALUE`, return -1.
+- **Single node** (n=1): `dist[k]=0`, max is 0, return 0.
+- **Multiple edges between same pair**: Dijkstra naturally picks the shorter one.
+- **1-indexed nodes**: adjust array size to `n+1`, skip index 0 when computing max.

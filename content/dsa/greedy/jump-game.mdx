@@ -1,0 +1,114 @@
+---
+title: "Jump Game"
+description: "Determine if you can reach the last index given each element represents your maximum jump length."
+date: "2026-04-08"
+tags: ["greedy", "array", "dp"]
+category: "Greedy"
+difficulty: "medium"
+timeComplexity: "O(n)"
+spaceComplexity: "O(1)"
+companies: ["Amazon", "Google", "Microsoft", "Apple", "Bloomberg"]
+leetcodeNumber: 55
+draft: false
+---
+
+## Problem Statement
+
+You are given an integer array `nums` where `nums[i]` represents your maximum jump length from position `i`. Starting at index 0, determine if you can reach the last index.
+
+```
+Input:  nums = [2,3,1,1,4]
+Output: true  (jump 2 to index 2, jump 1 to 3, jump 1 to 4)
+
+Input:  nums = [3,2,1,0,4]
+Output: false  (always stuck at index 3)
+```
+
+## Approach 1: Greedy — O(n) time, O(1) space ✅
+
+Track the **maximum index reachable** so far. If the current index ever exceeds `maxReach`, we're stuck. If `maxReach` reaches or passes the last index, we can reach it.
+
+```java
+public boolean canJump(int[] nums) {
+    int maxReach = 0;
+    for (int i = 0; i < nums.length; i++) {
+        if (i > maxReach) return false;         // stuck — can't reach index i
+        maxReach = Math.max(maxReach, i + nums[i]); // can we go further?
+    }
+    return true;
+}
+```
+
+**Why greedy works?** If we can reach index `i`, we can reach any index up to `i + nums[i]`. We just need to know the furthest we can ever get.
+
+## Approach 2: DP — O(n) time, O(n) space
+
+`dp[i]` = can we reach index `i`?
+
+```java
+public boolean canJump(int[] nums) {
+    boolean[] dp = new boolean[nums.length];
+    dp[0] = true;
+    for (int i = 1; i < nums.length; i++) {
+        for (int j = 0; j < i; j++) {
+            if (dp[j] && j + nums[j] >= i) {
+                dp[i] = true;
+                break;
+            }
+        }
+    }
+    return dp[nums.length - 1];
+}
+```
+
+O(n²) time — the greedy approach is strictly better.
+
+## Tracing the Example
+
+`nums = [3, 2, 1, 0, 4]`
+
+| i | maxReach | i > maxReach? | new maxReach |
+|---|----------|---------------|--------------|
+| 0 | 0        | no            | max(0, 0+3)=3 |
+| 1 | 3        | no            | max(3, 1+2)=3 |
+| 2 | 3        | no            | max(3, 2+1)=3 |
+| 3 | 3        | no            | max(3, 3+0)=3 |
+| 4 | 3        | **4 > 3 → false** |  |
+
+Returns false ✓
+
+## Complexity
+
+| | Time | Space |
+|---|---|---|
+| Greedy | O(n) | O(1) |
+| DP | O(n²) | O(n) |
+
+## Key Insight
+
+The greedy insight: **you never need to decide which specific jump to take — just whether the furthest reachable position is advancing**. `maxReach` tracks the frontier. If you ever find yourself at an index beyond the frontier, no sequence of prior jumps could have gotten you there.
+
+Extension — **#45 Jump Game II** (minimum jumps to reach end):
+
+```java
+public int jump(int[] nums) {
+    int jumps = 0, curEnd = 0, farthest = 0;
+    for (int i = 0; i < nums.length - 1; i++) {
+        farthest = Math.max(farthest, i + nums[i]);
+        if (i == curEnd) { // used up current jump's range
+            jumps++;
+            curEnd = farthest;
+        }
+    }
+    return jumps;
+}
+```
+
+BFS-like: treat each "jump" as reaching a new level. Increment jumps when you exhaust the current level's reach.
+
+## Edge Cases
+
+- **Single element**: `nums = [0]` → already at the last index, return true.
+- **`nums[0] = 0` with n > 1**: `maxReach` stays 0, `i=1 > maxReach=0` → false.
+- **All zeros**: only index 0 is reachable; returns false for n > 1.
+- **Large jumps**: `nums[0] = n` → `maxReach >= n-1` on first iteration, returns true immediately.

@@ -1,0 +1,96 @@
+---
+title: "Monotonic Stack / Deque"
+description: "A stack or deque that maintains elements in monotonically increasing or decreasing order, enabling O(1) amortized next-greater / next-smaller lookups."
+signal: "Next greater/smaller element. Sliding window maximum/minimum. 'Find the first X to the left/right'. Histogram area. Trapping water. Signal phrase: 'for each element, find the nearest element that is greater/smaller'."
+gotchas: "Decide increasing vs decreasing based on what you pop: pop when current > top (for next-greater). For deques, pop from front when index out of window, pop from back when current element is >= back (for max). Store indices, not values, when you need position or distance. Process answer when you pop, not when you push."
+color: "#f97316"
+colorDim: "#1c0a00"
+colorBorder: "#ea580c"
+icon: "monotonic-stack"
+order: 20
+tier: 2
+draft: false
+---
+
+## How to Spot This Pattern
+
+Use a Monotonic Stack when:
+- You need the **next greater / next smaller** element for each position
+- You need the **previous greater / previous smaller** element
+- You need to find the **largest rectangle** / **trapped water** in a histogram-style problem
+- You need a **sliding window maximum or minimum** (use deque instead of stack)
+
+Signal phrases:
+- "For each element, find the nearest larger element to the right"
+- "Daily temperatures" — how many days until a warmer temperature
+- "Largest rectangle in histogram"
+- "Maximum of all subarrays of size k"
+
+## Two Templates
+
+### Monotonic Decreasing Stack — Next Greater Element
+
+Maintain a stack of indices with **decreasing values**. When `nums[i] > nums[stack.top()]`, pop — the current element is the "next greater" for the popped index.
+
+```java
+int[] nextGreater = new int[n];
+Arrays.fill(nextGreater, -1); // -1 if no next greater exists
+Deque<Integer> stack = new ArrayDeque<>(); // stores indices
+
+for (int i = 0; i < n; i++) {
+    while (!stack.isEmpty() && nums[i] > nums[stack.peek()]) {
+        int idx = stack.pop();
+        nextGreater[idx] = nums[i]; // nums[i] is the next greater for idx
+    }
+    stack.push(i);
+}
+// Remaining elements in stack have no next greater (already -1)
+```
+
+### Monotonic Deque — Sliding Window Maximum
+
+Maintain a deque of indices with **decreasing values** (front = max of window):
+1. **Front**: remove indices that fall outside the window
+2. **Back**: remove indices whose values are ≤ current (they'll never be the max)
+3. **Front value**: is the window's maximum
+
+```java
+int[] result = new int[n - k + 1];
+Deque<Integer> deque = new ArrayDeque<>(); // indices, front = max
+
+for (int i = 0; i < n; i++) {
+    // Remove out-of-window indices from front
+    while (!deque.isEmpty() && deque.peekFirst() < i - k + 1)
+        deque.pollFirst();
+
+    // Remove indices smaller than current from back
+    while (!deque.isEmpty() && nums[deque.peekLast()] <= nums[i])
+        deque.pollLast();
+
+    deque.offerLast(i);
+
+    if (i >= k - 1) result[i - k + 1] = nums[deque.peekFirst()];
+}
+```
+
+## Increasing vs Decreasing Stack
+
+| Want to find | Stack type | Pop condition |
+|---|---|---|
+| Next **greater** element | Decreasing | `nums[i] > nums[top]` |
+| Next **smaller** element | Increasing | `nums[i] < nums[top]` |
+| Previous **greater** element | Process on push | Check before pushing |
+| Largest rectangle | Increasing | `heights[i] < heights[top]` |
+| Trapping rain water | Decreasing | `height[i] > height[top]` |
+
+## Store Indices, Not Values
+
+Almost always push **indices** onto the stack — you need:
+- The **position** to compute distances (Daily Temperatures: `i - stack.top()`)
+- The **width** calculation for histograms (Largest Rectangle: width = `i - stack.top() - 1`)
+
+## Key Insight
+
+Every element is pushed once and popped at most once → **O(n) amortized**, even though there's a nested while loop. The while loop does not run O(n) per iteration on average because each element can only be popped once total.
+
+For sliding window problems, a deque is needed (pop from both ends) rather than a stack.

@@ -1,0 +1,135 @@
+---
+title: "Cheapest Flights Within K Stops"
+description: "Find the cheapest flight from src to dst with at most K stops."
+date: "2026-04-08"
+tags: ["dijkstra", "graph", "dynamic-programming", "bfs"]
+category: "Dijkstra"
+difficulty: "medium"
+timeComplexity: "O(E · K)"
+spaceComplexity: "O(V · K)"
+companies: ["Amazon", "Google", "Microsoft", "Facebook"]
+leetcodeNumber: 787
+draft: false
+---
+
+## Problem Statement
+
+There are `n` cities connected by `m` flights. Each flight `[from, to, price]` goes from city `from` to city `to` with cost `price`. Find the cheapest price from `src` to `dst` with at most `k` stops. Return `-1` if no route exists.
+
+```
+Input:  n = 4, flights = [[0,1,100],[1,2,100],[2,0,100],[1,3,600],[2,3,200]]
+        src = 0, dst = 3, k = 1
+Output: 700
+Explanation: 0→1→3 costs 700 (1 stop). 0→1→2→3 costs 400 but requires 2 stops.
+```
+
+## Approach 1: Bellman-Ford with K Iterations — O(K · E)
+
+Run Bellman-Ford for exactly `k+1` rounds (k stops = k+1 edges). Only update using the **previous round's** distances to prevent chaining in a single round.
+
+```java
+public int findCheapestPrice(int n, int[][] flights, int src, int dst, int k) {
+    int[] prices = new int[n];
+    Arrays.fill(prices, Integer.MAX_VALUE);
+    prices[src] = 0;
+
+    for (int i = 0; i <= k; i++) { // k stops = k+1 edges
+        int[] temp = prices.clone(); // snapshot of previous round
+
+        for (int[] flight : flights) {
+            int from = flight[0], to = flight[1], price = flight[2];
+            if (prices[from] == Integer.MAX_VALUE) continue; // unreachable
+            temp[to] = Math.min(temp[to], prices[from] + price);
+        }
+        prices = temp;
+    }
+
+    return prices[dst] == Integer.MAX_VALUE ? -1 : prices[dst];
+}
+```
+
+**Why clone?** Without cloning, updating `prices[to]` in round `i` might be used in the same round to reach another node — that would mean `i+1` edges in a single "round". Cloning ensures each round adds exactly 1 edge.
+
+## Approach 2: Modified Dijkstra — O(E · K · log(V · K))
+
+Standard Dijkstra, but state = `(cost, node, stopsUsed)`. Skip states where `stopsUsed > k`. The key difference from standard Dijkstra: **don't skip a node just because it was visited** — it might be reachable via fewer stops.
+
+```java
+public int findCheapestPrice(int n, int[][] flights, int src, int dst, int k) {
+    // Build adjacency list
+    List<int[]>[] graph = new List[n];
+    for (int i = 0; i < n; i++) graph[i] = new ArrayList<>();
+    for (int[] f : flights) graph[f[0]].add(new int[]{f[1], f[2]});
+
+    // PQ: {cost, node, stops used}
+    PriorityQueue<int[]> pq = new PriorityQueue<>((a, b) -> a[0] - b[0]);
+    pq.offer(new int[]{0, src, 0});
+
+    // visited[node] = min stops to reach it (not min cost!)
+    int[] stops = new int[n];
+    Arrays.fill(stops, Integer.MAX_VALUE);
+
+    while (!pq.isEmpty()) {
+        int[] curr = pq.poll();
+        int cost = curr[0], node = curr[1], stopsUsed = curr[2];
+
+        if (node == dst) return cost;
+        if (stopsUsed > k) continue; // exceeded stop limit
+        if (stopsUsed >= stops[node]) continue; // already reached with fewer stops
+        stops[node] = stopsUsed;
+
+        for (int[] neighbor : graph[node]) {
+            pq.offer(new int[]{cost + neighbor[1], neighbor[0], stopsUsed + 1});
+        }
+    }
+    return -1;
+}
+```
+
+**Key**: the visited condition is `stopsUsed >= stops[node]` (not `cost >= costs[node]`). A node might be visited again if it can be reached via fewer stops, which opens up cheaper paths through it.
+
+## Approach 3: BFS Layer by Layer — O(K · E)
+
+Process exactly `k+1` BFS layers (each layer = one more edge).
+
+```java
+public int findCheapestPrice(int n, int[][] flights, int src, int dst, int k) {
+    int[] prices = new int[n];
+    Arrays.fill(prices, Integer.MAX_VALUE);
+    prices[src] = 0;
+
+    for (int i = 0; i <= k; i++) {
+        int[] temp = prices.clone();
+        for (int[] f : flights) {
+            if (prices[f[0]] < Integer.MAX_VALUE)
+                temp[f[1]] = Math.min(temp[f[1]], prices[f[0]] + f[2]);
+        }
+        prices = temp;
+    }
+    return prices[dst] == Integer.MAX_VALUE ? -1 : prices[dst];
+}
+```
+
+This is identical to the Bellman-Ford approach but framed as BFS.
+
+## Complexity
+
+| Approach | Time | Space |
+|---|---|---|
+| Bellman-Ford / BFS | O(K · E) | O(V) |
+| **Modified Dijkstra** | **O(E · K · log(V·K))** | **O(V · K)** |
+
+For interviews, Bellman-Ford is cleaner and easier to justify.
+
+## Key Insight
+
+Standard shortest-path algorithms don't have a "hop limit". The Bellman-Ford adaptation is natural: each round adds exactly one more hop, and we stop after `k+1` rounds. The `temp = prices.clone()` snapshot is the critical detail that enforces exactly one hop per round.
+
+For Dijkstra, the twist is that the "visited" guard must track stops used, not just the node — the same node can be visited at different stop counts.
+
+## Edge Cases
+
+- **src = dst**: trivially 0 stops, cost 0 (but problem constraints may exclude this)
+- **No path within k stops**: return -1
+- **k = 0**: only direct flights from src to dst
+- **Multiple flights between same cities**: all are considered independently

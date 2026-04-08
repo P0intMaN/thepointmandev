@@ -1,0 +1,114 @@
+---
+title: "Word Ladder"
+description: "Find the shortest transformation sequence from beginWord to endWord, changing one letter at a time through valid words."
+date: "2026-04-08"
+tags: ["graph", "bfs", "string"]
+category: "Graphs — BFS"
+difficulty: "hard"
+timeComplexity: "O(M² · N)"
+spaceComplexity: "O(M² · N)"
+companies: ["Amazon", "Google", "Facebook", "LinkedIn"]
+leetcodeNumber: 127
+draft: false
+---
+
+## Problem Statement
+
+A **transformation sequence** from word `beginWord` to word `endWord` using a dictionary `wordList` is a sequence where:
+- Every adjacent pair of words differs by a single letter.
+- Every word in the sequence is in `wordList` (except `beginWord`).
+
+Given `beginWord`, `endWord`, and `wordList`, return the **number of words in the shortest transformation sequence** from `beginWord` to `endWord`. Return 0 if no such sequence exists.
+
+```
+Input:  beginWord = "hit", endWord = "cog", wordList = ["hot","dot","dog","lot","log","cog"]
+Output: 5
+Explanation: "hit" → "hot" → "dot" → "dog" → "cog"
+
+Input:  beginWord = "hit", endWord = "cog", wordList = ["hot","dot","dog","lot","log"]
+Output: 0  (endWord not in wordList)
+```
+
+## Why BFS?
+
+We need the **shortest** path from `beginWord` to `endWord`, where edges connect words that differ by one letter. This is an unweighted graph shortest path — BFS.
+
+## The Trick: Pattern Buckets
+
+Building explicit edges (compare all pairs: O(N²M)) is too slow. Instead, map each word to its **wildcard patterns** and group words sharing a pattern.
+
+`"hot"` → patterns: `"*ot"`, `"h*t"`, `"ho*"`
+
+Words sharing a pattern are neighbors (they differ by exactly one letter).
+
+```java
+public int ladderLength(String beginWord, String endWord, List<String> wordList) {
+    Set<String> wordSet = new HashSet<>(wordList);
+    if (!wordSet.contains(endWord)) return 0;
+
+    int M = beginWord.length();
+
+    // Build: pattern → list of words
+    Map<String, List<String>> patterns = new HashMap<>();
+    for (String word : wordList) {
+        for (int i = 0; i < M; i++) {
+            String pattern = word.substring(0, i) + "*" + word.substring(i + 1);
+            patterns.computeIfAbsent(pattern, k -> new ArrayList<>()).add(word);
+        }
+    }
+
+    Queue<String> queue = new LinkedList<>();
+    Set<String> visited = new HashSet<>();
+    queue.offer(beginWord);
+    visited.add(beginWord);
+    int steps = 1;
+
+    while (!queue.isEmpty()) {
+        int size = queue.size();
+        for (int i = 0; i < size; i++) {
+            String word = queue.poll();
+            // Generate all patterns for this word
+            for (int j = 0; j < M; j++) {
+                String pattern = word.substring(0, j) + "*" + word.substring(j + 1);
+                for (String neighbor : patterns.getOrDefault(pattern, List.of())) {
+                    if (neighbor.equals(endWord)) return steps + 1;
+                    if (!visited.contains(neighbor)) {
+                        visited.add(neighbor);
+                        queue.offer(neighbor);
+                    }
+                }
+            }
+        }
+        steps++;
+    }
+
+    return 0;
+}
+```
+
+## Complexity
+
+M = word length, N = wordList size.
+- Building patterns: O(N·M) words × O(M) per word → O(N·M²)
+- BFS: each word is dequeued once, and for each it generates M patterns, each with up to N words → O(N·M²)
+- Total: **O(N·M²)**
+
+Space: pattern map holds O(N·M) patterns, each pattern stores references → **O(N·M²)** total.
+
+## Key Insight
+
+Word Ladder is a graph problem in disguise. Nodes = words, edges = single-letter differences. The wildcard pattern trick converts neighbor-finding from O(N·26^M) brute force into O(M²) per word.
+
+This problem type — BFS on an implicit graph — appears frequently:
+- **#126 Word Ladder II** — return all shortest paths (BFS + backtracking)
+- **#752 Open the Lock** — BFS on digit combinations
+- **#433 Minimum Genetic Mutation** — same pattern, 4-character gene strings
+
+**Bidirectional BFS**: run BFS from both `beginWord` and `endWord` simultaneously, stopping when the frontiers meet. Reduces search space from O(b^d) to O(b^(d/2)), where b = branching factor, d = shortest path length. Useful when the word list is large.
+
+## Edge Cases
+
+- **`endWord` not in `wordList`**: return 0 immediately.
+- **`beginWord == endWord`**: problem guarantees they differ, but if equal, return 1.
+- **No path exists**: BFS exhausts all reachable words, queue empties, return 0.
+- **Single letter words**: M=1, patterns are all `"*"` — all single-letter words are neighbors.

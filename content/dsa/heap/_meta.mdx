@@ -1,0 +1,127 @@
+---
+title: "Heap / Priority Queue"
+description: "Use a heap to efficiently track the top-K elements, merge sorted streams, or maintain a running median."
+signal: "Top K elements, K closest, streaming median, merge K sorted. Signal: 'K largest', 'K smallest', 'K most frequent', 'find median from stream', 'merge K sorted lists'."
+gotchas: "Java PriorityQueue is MIN heap by default. For max heap: new PriorityQueue<>(Collections.reverseOrder()). Heap operations are O(log n). Building heap: O(n), not O(n log n). For K largest elements: use a MIN heap of size K (counter-intuitive — the min is the eviction candidate)."
+color: "#f472b6"
+colorDim: "#2d0a1e"
+colorBorder: "#ec4899"
+icon: "heap"
+order: 10
+tier: 2
+draft: false
+---
+
+## How to Spot This Pattern
+
+- *"Top K"*, *"K largest"*, *"K smallest"*, *"K most frequent"* → heap of size K
+- *"Merge K sorted lists/arrays"* → min heap across K streams
+- *"Find median from a stream"* → two heaps (max for lower half, min for upper half)
+- *"Kth largest in a stream"* → min heap of size K, top is the answer
+
+## Java PriorityQueue Cheat Sheet
+
+```java
+// Min heap (default) — smallest element at top
+PriorityQueue<Integer> minHeap = new PriorityQueue<>();
+
+// Max heap — largest element at top
+PriorityQueue<Integer> maxHeap = new PriorityQueue<>(Collections.reverseOrder());
+
+// Custom comparator (sort by second element descending)
+PriorityQueue<int[]> pq = new PriorityQueue<>((a, b) -> b[1] - a[1]);
+
+// Common operations
+pq.offer(val);    // insert — O(log n)
+pq.poll();        // remove & return top — O(log n)
+pq.peek();        // view top without removing — O(1)
+pq.size();
+pq.isEmpty();
+```
+
+## Top-K Pattern
+
+**K largest elements** — use a **min heap of size K**:
+
+```java
+PriorityQueue<Integer> minHeap = new PriorityQueue<>();
+for (int num : nums) {
+    minHeap.offer(num);
+    if (minHeap.size() > k) minHeap.poll(); // evict smallest
+}
+// minHeap contains the K largest; top is the Kth largest
+```
+
+Why min heap for K largest? The min heap evicts the smallest element when it exceeds size K. After all elements are processed, only the K largest remain, with the smallest of those (the Kth largest) at the top.
+
+**K smallest elements** — use a **max heap of size K**:
+
+```java
+PriorityQueue<Integer> maxHeap = new PriorityQueue<>(Collections.reverseOrder());
+for (int num : nums) {
+    maxHeap.offer(num);
+    if (maxHeap.size() > k) maxHeap.poll(); // evict largest
+}
+// maxHeap contains the K smallest; top is the Kth smallest
+```
+
+## Merge K Sorted Lists
+
+Add the head of each list to a min heap. Repeatedly extract the minimum and advance that list's pointer.
+
+```java
+PriorityQueue<ListNode> heap = new PriorityQueue<>((a, b) -> a.val - b.val);
+for (ListNode list : lists) {
+    if (list != null) heap.offer(list);
+}
+ListNode dummy = new ListNode(0), curr = dummy;
+while (!heap.isEmpty()) {
+    ListNode node = heap.poll();
+    curr.next = node;
+    curr = curr.next;
+    if (node.next != null) heap.offer(node.next);
+}
+return dummy.next;
+```
+
+Time: O(N log K) where N = total nodes, K = number of lists.
+
+## Running Median (Two Heaps)
+
+Maintain two heaps:
+- `maxHeap` — lower half (largest of lower half at top)
+- `minHeap` — upper half (smallest of upper half at top)
+
+Invariant: `maxHeap.size() == minHeap.size()` or `maxHeap.size() == minHeap.size() + 1`.
+
+```java
+// Median is maxHeap.peek() (odd total) or average of both tops (even total)
+void addNum(int num) {
+    maxHeap.offer(num);                        // always add to max heap first
+    minHeap.offer(maxHeap.poll());             // balance: push max of lower to upper
+    if (minHeap.size() > maxHeap.size()) {     // keep max heap equal or one larger
+        maxHeap.offer(minHeap.poll());
+    }
+}
+
+double findMedian() {
+    if (maxHeap.size() > minHeap.size()) return maxHeap.peek();
+    return (maxHeap.peek() + minHeap.peek()) / 2.0;
+}
+```
+
+## Heap vs Sorting
+
+| Scenario | Best approach |
+|---|---|
+| Need ALL elements sorted | Sort — O(n log n) |
+| Need TOP K only | Heap of size K — O(n log k) |
+| Need Kth element once | QuickSelect — O(n) average |
+| Streaming data, need top K | Heap of size K — O(n log k) |
+
+## Common Gotchas
+
+- **Min heap for K largest** — the heap keeps the K largest by evicting small elements.
+- **Integer overflow in comparator**: use `Integer.compare(a, b)` or `a - b` only when values are known to not overflow. Prefer `Integer.compare`.
+- **Equal priority**: PriorityQueue doesn't guarantee FIFO among equal-priority elements — use a secondary sort key if needed.
+- **Building heap**: `new PriorityQueue<>(List)` is O(n), not O(n log n). The heapify algorithm is linear.

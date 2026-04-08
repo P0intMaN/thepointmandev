@@ -1,0 +1,134 @@
+---
+title: "Course Schedule"
+description: "Determine if you can finish all courses given prerequisites — detect if a directed graph has a cycle."
+date: "2026-04-08"
+tags: ["graph", "dfs", "topological-sort", "cycle-detection"]
+category: "Graphs — DFS"
+difficulty: "medium"
+timeComplexity: "O(V + E)"
+spaceComplexity: "O(V + E)"
+companies: ["Amazon", "Google", "Facebook", "Microsoft", "Apple"]
+leetcodeNumber: 207
+draft: false
+---
+
+## Problem Statement
+
+There are `numCourses` courses labeled `0` to `numCourses - 1`. You are given an array `prerequisites` where `prerequisites[i] = [a, b]` means you must take course `b` before course `a`.
+
+Return `true` if you can finish all courses, otherwise return `false`.
+
+```
+Input:  numCourses = 2, prerequisites = [[1,0]]
+Output: true  (take 0, then 1)
+
+Input:  numCourses = 2, prerequisites = [[1,0],[0,1]]
+Output: false  (0 requires 1, 1 requires 0 — cycle)
+```
+
+## Core Problem: Cycle Detection in a Directed Graph
+
+You can finish all courses if and only if the prerequisite graph is a **Directed Acyclic Graph (DAG)**. A cycle means course A requires B requires ... requires A — impossible.
+
+## Approach 1: DFS with Three States — O(V + E)
+
+Three states per node:
+- `0` — unvisited
+- `1` — currently in the DFS stack (being processed)
+- `2` — fully processed (all descendants explored, no cycle found)
+
+A **back edge** (reaching a node with state `1`) means a cycle.
+
+```java
+public boolean canFinish(int numCourses, int[][] prerequisites) {
+    List<List<Integer>> graph = new ArrayList<>();
+    for (int i = 0; i < numCourses; i++) graph.add(new ArrayList<>());
+    for (int[] pre : prerequisites) graph.get(pre[0]).add(pre[1]);
+
+    int[] state = new int[numCourses]; // 0=unvisited, 1=in-stack, 2=done
+
+    for (int i = 0; i < numCourses; i++) {
+        if (state[i] == 0 && hasCycle(graph, state, i)) return false;
+    }
+    return true;
+}
+
+private boolean hasCycle(List<List<Integer>> graph, int[] state, int node) {
+    state[node] = 1; // mark as in-stack
+    for (int neighbor : graph.get(node)) {
+        if (state[neighbor] == 1) return true;  // back edge = cycle
+        if (state[neighbor] == 0 && hasCycle(graph, state, neighbor)) return true;
+    }
+    state[node] = 2; // fully processed
+    return false;
+}
+```
+
+## Approach 2: BFS / Kahn's Algorithm — O(V + E)
+
+Topological sort using in-degrees. If all nodes can be sorted, there's no cycle.
+
+```java
+public boolean canFinish(int numCourses, int[][] prerequisites) {
+    List<List<Integer>> graph = new ArrayList<>();
+    int[] inDegree = new int[numCourses];
+
+    for (int i = 0; i < numCourses; i++) graph.add(new ArrayList<>());
+    for (int[] pre : prerequisites) {
+        graph.get(pre[1]).add(pre[0]); // pre[1] → pre[0]
+        inDegree[pre[0]]++;
+    }
+
+    Queue<Integer> queue = new LinkedList<>();
+    for (int i = 0; i < numCourses; i++) {
+        if (inDegree[i] == 0) queue.offer(i); // start with no-prerequisite courses
+    }
+
+    int processed = 0;
+    while (!queue.isEmpty()) {
+        int course = queue.poll();
+        processed++;
+        for (int dependent : graph.get(course)) {
+            if (--inDegree[dependent] == 0) queue.offer(dependent);
+        }
+    }
+
+    return processed == numCourses; // if not all processed, there's a cycle
+}
+```
+
+Kahn's algorithm: repeatedly remove nodes with in-degree 0 (no unmet prerequisites). If all nodes are removed, no cycle. If some remain, they're part of a cycle.
+
+## Complexity
+
+| | Time | Space |
+|---|---|---|
+| DFS (3-state) | O(V + E) | O(V + E) |
+| BFS (Kahn's) | O(V + E) | O(V + E) |
+
+V = numCourses, E = prerequisites.length.
+
+## Key Insight
+
+**Cycle detection in a directed graph requires three states** — not just visited/unvisited. Consider:
+
+```
+A → B → C
+D → B
+```
+
+When DFS processes A → B → C, then backtracks to B (state=2) and tries D → B, seeing B as "visited" is fine — it's already done, not a cycle. If you only had two states, you'd falsely report a cycle when hitting the already-processed B from D.
+
+State 1 (in-stack) is what identifies a true cycle — a back edge to a node currently being processed.
+
+This exact problem structure (courses = nodes, prerequisites = edges) appears in:
+- **#210 Course Schedule II** — return the actual topological order, or empty if cycle
+- **#269 Alien Dictionary** — derive character ordering from word ordering
+- **#310 Minimum Height Trees** — find roots that minimize tree height (leaf-stripping = reversed Kahn's)
+
+## Edge Cases
+
+- **No prerequisites**: all courses independent, no cycle, return true.
+- **Self-loop** `[0, 0]`: course 0 requires itself — DFS sees state[0]=1 when visiting neighbor 0, returns cycle.
+- **Disconnected graph**: outer loop in DFS approach handles all components.
+- **Multiple cycles**: any single cycle causes return false.

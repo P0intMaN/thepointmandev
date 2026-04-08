@@ -1,0 +1,155 @@
+---
+title: "Sliding Window Maximum"
+description: "Return the maximum value in each sliding window of size k as it moves across the array."
+date: "2026-03-17"
+tags: ["array", "sliding-window", "deque", "monotonic-deque"]
+category: "Sliding Window"
+difficulty: "hard"
+timeComplexity: "O(n)"
+spaceComplexity: "O(k)"
+companies: ["Amazon", "Google", "Meta", "Uber", "ByteDance"]
+leetcodeNumber: 239
+draft: false
+---
+
+## Problem Statement
+
+Given an integer array `nums` and a sliding window of size `k`, return an array of the **maximum value in each window position** as the window slides from left to right.
+
+```
+Input:  nums = [1,3,-1,-3,5,3,6,7], k = 3
+Output: [3,3,5,5,6,7]
+
+Window position        Max
+[1  3  -1] -3  5  3  6  7    →  3
+ 1 [3  -1  -3] 5  3  6  7   →  3
+ 1  3 [-1  -3  5] 3  6  7   →  5
+ 1  3  -1 [-3  5  3] 6  7   →  5
+ 1  3  -1  -3 [5  3  6] 7   →  6
+ 1  3  -1  -3  5 [3  6  7]  →  7
+```
+
+## Why the Naive Approach Fails
+
+The obvious solution scans each window of size `k` for its maximum: O(nk). With `n = 10^5` and `k = 10^4`, that's 10^9 operations — too slow.
+
+A max-heap gives O(n log k) but requires tracking stale elements. The optimal solution is a **monotonic deque** at O(n).
+
+---
+
+## Approach 1: Max-Heap — O(n log k)
+
+Maintain a max-heap of `(value, index)` pairs. For each window, peek the top — but first, pop any elements whose index is outside the current window `[i-k+1, i]`.
+
+```java
+public int[] maxSlidingWindow(int[] nums, int k) {
+    int n = nums.length;
+    int[] result = new int[n - k + 1];
+
+    // Max-heap: [value, index], ordered by value descending
+    PriorityQueue<int[]> heap = new PriorityQueue<>((a, b) -> b[0] - a[0]);
+
+    for (int i = 0; i < n; i++) {
+        heap.offer(new int[]{nums[i], i});
+
+        // Evict elements outside the window
+        while (heap.peek()[1] < i - k + 1) heap.poll();
+
+        // Record max once the first full window is formed
+        if (i >= k - 1) result[i - k + 1] = heap.peek()[0];
+    }
+
+    return result;
+}
+```
+
+O(n log k) — each element is pushed and popped from the heap at most once, and heap operations cost O(log k).
+
+---
+
+## Approach 2: Monotonic Deque — O(n) ✅ Optimal
+
+The key observation: if `nums[i] >= nums[j]` and `i > j`, then `j` can **never** be the maximum of any future window — `i` is newer and at least as large. We can discard `j` immediately.
+
+This gives us a **monotonically decreasing deque**: the front is always the current window's maximum, and we maintain the invariant by popping the back whenever a larger element enters.
+
+```java
+public int[] maxSlidingWindow(int[] nums, int k) {
+    int n = nums.length;
+    int[] result = new int[n - k + 1];
+    Deque<Integer> deque = new ArrayDeque<>(); // stores indices, not values
+
+    for (int i = 0; i < n; i++) {
+        // 1. Evict front if it's outside the current window
+        if (!deque.isEmpty() && deque.peekFirst() < i - k + 1) {
+            deque.pollFirst();
+        }
+
+        // 2. Evict from back: remove indices whose values are <= nums[i]
+        //    They can never be the max while nums[i] is in the window
+        while (!deque.isEmpty() && nums[deque.peekLast()] <= nums[i]) {
+            deque.pollLast();
+        }
+
+        deque.offerLast(i);
+
+        // 3. Front of deque is the max for this window
+        if (i >= k - 1) {
+            result[i - k + 1] = nums[deque.peekFirst()];
+        }
+    }
+
+    return result;
+}
+```
+
+## Tracing Through the Example
+
+`nums = [1,3,-1,-3,5,3,6,7], k = 3`
+
+| i | nums[i] | Deque (indices) | Window max |
+|---|---------|-----------------|------------|
+| 0 | 1       | [0]             | —          |
+| 1 | 3       | [1]             | —          |
+| 2 | -1      | [1, 2]          | nums[1]=**3** |
+| 3 | -3      | [1, 2, 3]       | nums[1]=**3** |
+| 4 | 5       | [4]             | nums[4]=**5** |
+| 5 | 3       | [4, 5]          | nums[4]=**5** |
+| 6 | 6       | [6]             | nums[6]=**6** |
+| 7 | 7       | [7]             | nums[7]=**7** |
+
+At `i=1`: `nums[1]=3 > nums[0]=1`, so index 0 is popped from the back — it can never beat 3.
+At `i=4`: `nums[4]=5` is larger than everything in the deque; all indices are popped. Front jumps to 4.
+
+## Complexity
+
+|                  | Time     | Space |
+|------------------|----------|-------|
+| Naive scan       | O(nk)    | O(1)  |
+| Max-Heap         | O(n log k)| O(k) |
+| Monotonic Deque  | O(n)     | O(k)  |
+
+Each element is added to and removed from the deque **at most once** — O(n) total operations.
+
+## Key Insight
+
+The **monotonic deque** pattern appears whenever you need a running min or max over a sliding window. The deque stores indices (not values) in monotonically increasing or decreasing order of their values. Two operations keep the invariant:
+
+1. **Pop front** when the front index falls outside the window (stale element)
+2. **Pop back** when a new element is larger (for max) or smaller (for min) than the back — useless elements that will never be chosen
+
+This exact structure reappears in:
+- **Jump Game VI** (#1696) — max over a sliding window of size k on a DP recurrence
+- **Longest Continuous Subarray With Absolute Diff ≤ Limit** (#1438) — min and max deques together
+- **Constrained Subsequence Sum** (#1425) — DP with monotonic deque optimisation
+
+## Why Store Indices, Not Values?
+
+The deque stores **indices** so we can check whether the front has slid out of the window (`deque.peekFirst() < i - k + 1`). If we stored values we'd have no way to know when to evict the front.
+
+## Edge Cases
+
+- **`k == 1`** — every element is its own window maximum. Deque never holds more than one index.
+- **`k == n`** — one window covering the whole array. Result has one element: the global max.
+- **All equal** `[3,3,3,3]` — back pops trigger (`<=`), deque always holds just one index. Max is always 3.
+- **Strictly decreasing** `[5,4,3,2,1]` — nothing ever pops from the back. Deque fills up to size k, front eviction handles the rest.

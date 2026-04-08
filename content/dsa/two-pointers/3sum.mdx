@@ -1,0 +1,135 @@
+---
+title: "3Sum"
+description: "Find all unique triplets in an array that sum to zero."
+date: "2026-03-16"
+tags: ["array", "two-pointer", "sorting"]
+category: "Two Pointers"
+difficulty: "medium"
+timeComplexity: "O(n²)"
+spaceComplexity: "O(1)"
+companies: ["Amazon", "Google", "Meta", "Microsoft", "Apple"]
+leetcodeNumber: 15
+draft: false
+---
+
+## Problem Statement
+
+Given an integer array `nums`, return all triplets `[nums[i], nums[j], nums[k]]` such that `i != j`, `i != k`, `j != k`, and `nums[i] + nums[j] + nums[k] == 0`.
+
+The solution set must **not contain duplicate triplets**.
+
+```
+Input:  nums = [-1,0,1,2,-1,-4]
+Output: [[-1,-1,2],[-1,0,1]]
+
+Input:  nums = [0,0,0]
+Output: [[0,0,0]]
+
+Input:  nums = [0,1,1]
+Output: []
+```
+
+## The Key Reduction
+
+3Sum looks like it needs O(n³) — three nested loops. The trick is to reduce it to something you already know:
+
+> **Fix one element. Run Two Sum II on the rest.**
+
+Sort the array, iterate with index `i` as the fixed element, then use two pointers (`left = i+1`, `right = n-1`) to find pairs that sum to `-nums[i]`. This turns O(n³) into O(n²).
+
+The sort also makes **duplicate elimination** trivial — duplicates are adjacent, so you just skip them.
+
+---
+
+## Solution
+
+```java
+public List<List<Integer>> threeSum(int[] nums) {
+    Arrays.sort(nums);
+    List<List<Integer>> result = new ArrayList<>();
+
+    for (int i = 0; i < nums.length - 2; i++) {
+
+        // Skip duplicate values for the fixed element
+        if (i > 0 && nums[i] == nums[i - 1]) continue;
+
+        // Early exit: smallest possible sum is already positive
+        if (nums[i] > 0) break;
+
+        int left = i + 1, right = nums.length - 1;
+
+        while (left < right) {
+            int sum = nums[i] + nums[left] + nums[right];
+
+            if (sum == 0) {
+                result.add(Arrays.asList(nums[i], nums[left], nums[right]));
+
+                // Skip duplicates for left and right pointers
+                while (left < right && nums[left] == nums[left + 1]) left++;
+                while (left < right && nums[right] == nums[right - 1]) right--;
+
+                left++;
+                right--;
+
+            } else if (sum < 0) {
+                left++;
+            } else {
+                right--;
+            }
+        }
+    }
+
+    return result;
+}
+```
+
+## Complexity
+
+|             | Time  | Space         |
+|-------------|-------|---------------|
+| Brute Force | O(n³) | O(1)          |
+| Sort + Two Pointers | O(n²) | O(1) |
+
+Sorting is O(n log n) but the two-pointer loop dominates at O(n²). Output space for the result list is not counted.
+
+## The Duplicate Skipping — Spelled Out
+
+This is where most people fumble. There are three independent places to skip duplicates:
+
+**1. The outer loop (fixed element `i`):**
+```java
+if (i > 0 && nums[i] == nums[i - 1]) continue;
+```
+If we already processed `nums[i-1]` with the same value, processing `nums[i]` again would produce identical triplets.
+
+**2 & 3. The inner pointers (after finding a valid triplet):**
+```java
+while (left < right && nums[left] == nums[left + 1]) left++;
+while (left < right && nums[right] == nums[right - 1]) right--;
+left++;
+right--;
+```
+After recording a triplet, advance past any duplicate values on both sides before moving the pointers inward. The final `left++; right--` is the normal inward move — it still happens after the skip.
+
+Note the guard: `i > 0` on the outer check. Without it, you'd skip `nums[0]` which is valid to process.
+
+## Early Exit
+
+```java
+if (nums[i] > 0) break;
+```
+
+After sorting, if `nums[i] > 0` then every element to its right is also positive. Three positive numbers can never sum to zero — so we're done.
+
+## Key Insight
+
+**Fix + Two Pointer** is a general reduction pattern. 3Sum → 2Sum. 4Sum → 3Sum → 2Sum. Any k-sum problem can be reduced to 2Sum this way, adding one O(n) loop per additional element, giving O(n^(k-1)) total.
+
+The sort is what makes both the two-pointer search and the duplicate elimination O(n) rather than O(n²). Whenever you see "find combinations/triplets/subsets with no duplicates", sort first — it almost always simplifies the problem.
+
+## Edge Cases
+
+- **All zeros** `[0,0,0,0]` → only one valid triplet `[0,0,0]`. Duplicate skipping prevents emitting it multiple times.
+- **No valid triplet** `[1,2,3]` → outer loop never finds sum=0, returns empty list.
+- **Fewer than 3 elements** → loop condition `i < nums.length - 2` means it never executes, returns empty list naturally.
+- **Large negative + large positive** `[-100000, ..., 100000]` → no overflow risk with int since `3 * 10^5` fits in int range.

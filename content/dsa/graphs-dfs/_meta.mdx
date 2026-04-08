@@ -1,0 +1,136 @@
+---
+title: "Graphs — DFS"
+description: "Depth-first exploration for connected components, cycle detection, path finding, and topological ordering."
+signal: "Explore all paths, connected components, cycle detection, topological sort. Signal: 'can you reach', 'all connected nodes', 'detect cycle', 'course schedule'. DFS on directed graphs needs three states for cycle detection."
+gotchas: "Track visited to avoid infinite loops. For cycle detection in directed graph: need THREE states (unvisited=0, in-stack=1, done=2). DFS on grid: mark visited immediately. Recursive DFS can cause StackOverflowError — convert to iterative with an explicit stack for deep graphs."
+color: "#c084fc"
+colorDim: "#1a0533"
+colorBorder: "#a855f7"
+icon: "graph-dfs"
+order: 12
+tier: 2
+draft: false
+---
+
+## How to Spot This Pattern
+
+- **Explore all paths** from a source → DFS
+- **Connected components** in undirected graph → DFS/BFS from each unvisited node
+- **Cycle detection** → DFS with three-state coloring (directed) or parent tracking (undirected)
+- **Topological sort** → DFS post-order reversal
+- **Path exists** between two nodes → DFS
+
+## DFS Template — Recursive
+
+```java
+Set<Integer> visited = new HashSet<>();
+
+void dfs(Map<Integer, List<Integer>> graph, int node) {
+    visited.add(node);         // mark before recursing
+    for (int neighbor : graph.getOrDefault(node, List.of())) {
+        if (!visited.contains(neighbor)) {
+            dfs(graph, neighbor);
+        }
+    }
+    // post-order: process node AFTER all neighbors
+}
+```
+
+## DFS Template — Iterative
+
+```java
+Deque<Integer> stack = new ArrayDeque<>();
+Set<Integer> visited = new HashSet<>();
+
+stack.push(start);
+while (!stack.isEmpty()) {
+    int node = stack.pop();
+    if (visited.contains(node)) continue;
+    visited.add(node);
+    for (int neighbor : graph.getOrDefault(node, List.of())) {
+        if (!visited.contains(neighbor)) {
+            stack.push(neighbor);
+        }
+    }
+}
+```
+
+Note: iterative DFS visits neighbors in reverse order compared to recursive DFS (due to stack LIFO ordering). This matters for topological sort — use recursive DFS for correct post-order.
+
+## Cycle Detection
+
+**Undirected graph**: track parent — a cycle exists if you reach a visited node that isn't your parent.
+
+```java
+boolean hasCycle(int node, int parent, Set<Integer> visited) {
+    visited.add(node);
+    for (int neighbor : graph.get(node)) {
+        if (!visited.contains(neighbor)) {
+            if (hasCycle(neighbor, node, visited)) return true;
+        } else if (neighbor != parent) {
+            return true; // visited non-parent neighbor = cycle
+        }
+    }
+    return false;
+}
+```
+
+**Directed graph**: need three states. "Visited and done" ≠ "currently in stack" — a node can be visited from two different paths without a cycle.
+
+```java
+// 0 = unvisited, 1 = in current DFS stack, 2 = fully processed
+int[] state = new int[n];
+
+boolean hasCycle(int node) {
+    state[node] = 1; // in stack
+    for (int neighbor : graph.get(node)) {
+        if (state[neighbor] == 1) return true;  // back edge = cycle
+        if (state[neighbor] == 0 && hasCycle(neighbor)) return true;
+    }
+    state[node] = 2; // done
+    return false;
+}
+```
+
+## Topological Sort — DFS Post-Order
+
+```java
+List<Integer> order = new ArrayList<>();
+boolean[] visited = new boolean[n];
+
+void dfs(int node) {
+    visited[node] = true;
+    for (int neighbor : graph.get(node)) {
+        if (!visited[neighbor]) dfs(neighbor);
+    }
+    order.add(node); // add AFTER all descendants
+}
+
+// Run from every unvisited node
+for (int i = 0; i < n; i++) {
+    if (!visited[i]) dfs(i);
+}
+Collections.reverse(order); // reverse post-order = topological order
+```
+
+## Connected Components
+
+```java
+int components = 0;
+boolean[] visited = new boolean[n];
+
+for (int i = 0; i < n; i++) {
+    if (!visited[i]) {
+        dfs(i, visited);
+        components++;
+    }
+}
+```
+
+## Common Gotchas
+
+- **Mark visited at the start of DFS**, not at the end — prevents infinite loops in cyclic graphs.
+- **Directed vs undirected**: undirected cycle check uses parent tracking; directed uses three-state coloring.
+- **Disconnected graph**: always iterate over all nodes and start DFS from each unvisited node.
+- **Stack overflow**: Java default stack handles ~10,000 recursion depth. For large graphs, convert to iterative.
+- **Grid DFS**: mark cell visited immediately (set `grid[r][c] = 0`) before recursing to prevent revisiting from a neighbor.

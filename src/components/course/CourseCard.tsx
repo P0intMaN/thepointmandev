@@ -37,13 +37,13 @@ export function CourseCard({ course, lessonCount }: CourseCardProps) {
 
       {/* Level + meta */}
       <div className="flex items-center gap-3">
-        <span className={`rounded border px-2 py-0.5 font-mono text-xs ${levelColors[frontmatter.level]}`}>
+        <span className={`rounded border px-2 py-0.5 font-mono text-sm ${levelColors[frontmatter.level]}`}>
           {frontmatter.level}
         </span>
-        <span className="font-mono text-xs text-[var(--color-text-faint)]">
+        <span className="font-mono text-sm text-[var(--color-text-faint)]">
           {lessonCount ?? frontmatter.totalLessons} lessons
         </span>
-        <span className="font-mono text-xs text-[var(--color-text-faint)]">
+        <span className="font-mono text-sm text-[var(--color-text-faint)]">
           {formatDate(frontmatter.date)}
         </span>
       </div>
@@ -57,7 +57,7 @@ export function CourseCard({ course, lessonCount }: CourseCardProps) {
       </Link>
 
       {/* Description */}
-      <p className="text-sm leading-relaxed text-[var(--color-text-muted)]">
+      <p className="text-base leading-relaxed text-[var(--color-text-muted)]">
         {frontmatter.description}
       </p>
 

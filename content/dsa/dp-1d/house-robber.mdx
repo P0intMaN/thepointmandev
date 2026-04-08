@@ -1,0 +1,95 @@
+---
+title: "House Robber"
+description: "Find the maximum amount you can rob without robbing two adjacent houses."
+date: "2026-04-08"
+tags: ["dp", "array"]
+category: "Dynamic Programming — 1D"
+difficulty: "medium"
+timeComplexity: "O(n)"
+spaceComplexity: "O(1)"
+companies: ["Amazon", "Google", "Microsoft", "Apple", "Bloomberg"]
+leetcodeNumber: 198
+draft: false
+---
+
+## Problem Statement
+
+You are a robber planning to rob houses along a street. Each house has some money stashed. Adjacent houses have security systems connected — if two adjacent houses are robbed on the same night, it will alert the police.
+
+Given an integer array `nums` representing the amount of money in each house, return the **maximum amount you can rob** without alerting the police.
+
+```
+Input:  nums = [1,2,3,1]
+Output: 4  (rob house 1 and 3: 1 + 3)
+
+Input:  nums = [2,7,9,3,1]
+Output: 12  (rob house 1, 3, 5: 2 + 9 + 1)
+```
+
+## State Definition
+
+`dp[i]` = maximum money robbed from houses `0` through `i` (inclusive).
+
+At house `i`, two choices:
+- **Skip house i**: best from `0..i-1` → `dp[i-1]`
+- **Rob house i**: can't rob `i-1`, so best from `0..i-2` plus `nums[i]` → `dp[i-2] + nums[i]`
+
+**Recurrence**: `dp[i] = max(dp[i-1], dp[i-2] + nums[i])`
+
+## Bottom-Up DP — O(n) time, O(1) space
+
+```java
+public int rob(int[] nums) {
+    int n = nums.length;
+    if (n == 1) return nums[0];
+
+    int prev2 = nums[0];
+    int prev1 = Math.max(nums[0], nums[1]);
+
+    for (int i = 2; i < n; i++) {
+        int curr = Math.max(prev1, prev2 + nums[i]);
+        prev2 = prev1;
+        prev1 = curr;
+    }
+    return prev1;
+}
+```
+
+Only the last two values are needed — O(1) space.
+
+## Tracing the Example
+
+`nums = [2, 7, 9, 3, 1]`
+
+| i | prev2 (dp[i-2]) | prev1 (dp[i-1]) | nums[i] | curr = max(prev1, prev2+nums[i]) |
+|---|------|------|---------|----------------------------------|
+| 0 | —    | 2    | —       | (base: dp[0]=2) |
+| 1 | 2    | 7    | —       | (base: dp[1]=max(2,7)=7) |
+| 2 | 2    | 7    | 9       | max(7, 2+9) = **11** |
+| 3 | 7    | 11   | 3       | max(11, 7+3) = **11** |
+| 4 | 11   | 11   | 1       | max(11, 11+1) = **12** |
+
+Return 12 ✓
+
+## Complexity
+
+| | Time | Space |
+|---|---|---|
+| DP | O(n) | O(1) |
+
+## Key Insight
+
+The "no adjacent" constraint transforms a greedy problem into DP. Greedy (always take the larger of two adjacent) fails — consider `[5, 1, 1, 5]`: greedy takes 5+1=6, but optimal is 5+5=10.
+
+The recurrence `dp[i] = max(dp[i-1], dp[i-2] + nums[i])` captures the choice at every house. This structure generalizes:
+
+- **#213 House Robber II** — houses in a circle. Break the circle: run the robber on `nums[0..n-2]` and `nums[1..n-1]`, take the max.
+- **#337 House Robber III** — houses are a binary tree. Run DP on the tree: each node returns `(rob_this_node, skip_this_node)`.
+- **#740 Delete and Earn** — points for picking a number, but picking `n` eliminates `n-1` and `n+1`. Transform to House Robber by counting total points per value.
+
+## Edge Cases
+
+- **n = 1**: return `nums[0]`.
+- **n = 2**: return `max(nums[0], nums[1])`.
+- **All zeros**: return 0.
+- **Strictly increasing**: optimal strategy skips every other house to maximize.

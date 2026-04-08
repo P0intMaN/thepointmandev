@@ -1,0 +1,115 @@
+---
+title: "Invert Binary Tree"
+description: "Invert (mirror) a binary tree and return its root."
+date: "2026-04-08"
+tags: ["tree", "dfs", "bfs", "recursion"]
+category: "Trees"
+difficulty: "easy"
+timeComplexity: "O(n)"
+spaceComplexity: "O(h)"
+companies: ["Google", "Apple", "Amazon", "Facebook"]
+leetcodeNumber: 226
+draft: false
+---
+
+## Problem Statement
+
+Given the `root` of a binary tree, invert the tree, and return its root. Inverting means every node's left and right children are swapped (recursively).
+
+```
+Input:  root = [4,2,7,1,3,6,9]
+Output: [4,7,2,9,6,3,1]
+
+Input:  root = [2,1,3]
+Output: [2,3,1]
+
+Input:  root = []
+Output: []
+```
+
+## Approach 1: DFS Recursion — O(n) time, O(h) space ✅
+
+Swap the left and right children at every node. The order (pre-order, post-order) doesn't matter — the swap can happen before or after recursing into children.
+
+```java
+public TreeNode invertTree(TreeNode root) {
+    if (root == null) return null;
+
+    // Swap children
+    TreeNode temp = root.left;
+    root.left  = root.right;
+    root.right = temp;
+
+    // Recurse into (now-swapped) children
+    invertTree(root.left);
+    invertTree(root.right);
+
+    return root;
+}
+```
+
+Or equivalently with post-order — recurse first, then swap:
+
+```java
+public TreeNode invertTree(TreeNode root) {
+    if (root == null) return null;
+    TreeNode left  = invertTree(root.left);
+    TreeNode right = invertTree(root.right);
+    root.left  = right;
+    root.right = left;
+    return root;
+}
+```
+
+Both produce the same result. The pre-order version (swap then recurse) is slightly more intuitive.
+
+## Approach 2: BFS — O(n) time, O(n) space
+
+Process every node level-by-level, swapping children as you go.
+
+```java
+public TreeNode invertTree(TreeNode root) {
+    if (root == null) return null;
+
+    Queue<TreeNode> queue = new LinkedList<>();
+    queue.offer(root);
+
+    while (!queue.isEmpty()) {
+        TreeNode node = queue.poll();
+
+        // Swap children
+        TreeNode temp = node.left;
+        node.left  = node.right;
+        node.right = temp;
+
+        if (node.left  != null) queue.offer(node.left);
+        if (node.right != null) queue.offer(node.right);
+    }
+
+    return root;
+}
+```
+
+## Complexity
+
+| | Time | Space |
+|---|---|---|
+| DFS | O(n) | O(h) |
+| BFS | O(n) | O(n) |
+
+Every node is visited exactly once. DFS space is the recursion depth; BFS space is the queue (up to ~n/2 nodes at the widest level).
+
+## Key Insight
+
+Every node's children must be swapped — that's the entire algorithm. The recursion handles propagating this swap to every node in the tree. This is arguably the simplest tree problem: one operation per node, no carried state, no global accumulator.
+
+This "visit every node and do one local operation" pattern is the backbone of:
+- **#101 Symmetric Tree** — compare mirrored subtrees
+- **#617 Merge Two Binary Trees** — merge values from two trees node by node
+- **#572 Subtree of Another Tree** — run a local check (isSameTree) at every node
+
+## Edge Cases
+
+- **Null root**: return null immediately.
+- **Single node**: no children to swap; tree is already its own mirror.
+- **Already symmetric**: the inversion is still applied (and the result is the same tree).

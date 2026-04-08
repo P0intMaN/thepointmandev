@@ -1,0 +1,148 @@
+---
+title: "Segment Tree"
+description: "A tree data structure enabling O(log n) range queries (sum, min, max) and point updates on an array."
+signal: "Range query with updates. Signal: 'range sum with updates', 'range min/max with updates', 'count of elements satisfying a condition in range'. Static ranges → prefix sum. Dynamic ranges (with updates) → Segment Tree or BIT."
+gotchas: "Segment tree array size = 4n. Build: O(n). Query/update: O(log n). Lazy propagation needed for range updates (defer updates to avoid O(n) propagation). Binary Indexed Tree (Fenwick Tree) is simpler for prefix sums but less flexible. Node index: left child = 2i, right child = 2i+1."
+color: "#a78bfa"
+colorDim: "#1e1040"
+colorBorder: "#8b5cf6"
+icon: "segment-tree"
+order: 19
+tier: 3
+draft: false
+---
+
+## How to Spot This Pattern
+
+Use a Segment Tree when:
+- You need **range queries** (sum, min, max over `[l, r]`) AND
+- The array is **updated dynamically** (point updates or range updates)
+
+If there are no updates: use prefix sums (O(1) query, O(n) build).
+If there are only point queries (no ranges): use a plain array.
+Segment Tree: O(log n) both query and update.
+
+## Structure
+
+A segment tree is a binary tree stored in an array. For `n` elements:
+- Node 1 = root, covering `[0, n-1]`
+- Node `i`'s left child = `2i`, right child = `2i+1`
+- Leaf nodes store individual array values
+- Internal nodes store the aggregate (sum, min, max) of their range
+
+**Array size**: allocate `4n` to safely hold all nodes.
+
+## Build — O(n)
+
+```java
+int[] tree;
+
+void build(int[] nums, int node, int start, int end) {
+    if (start == end) {
+        tree[node] = nums[start];
+    } else {
+        int mid = (start + end) / 2;
+        build(nums, 2*node, start, mid);
+        build(nums, 2*node+1, mid+1, end);
+        tree[node] = tree[2*node] + tree[2*node+1]; // aggregate (sum here)
+    }
+}
+// Call: build(nums, 1, 0, n-1)
+```
+
+## Point Update — O(log n)
+
+```java
+void update(int node, int start, int end, int idx, int val) {
+    if (start == end) {
+        tree[node] = val;
+    } else {
+        int mid = (start + end) / 2;
+        if (idx <= mid) update(2*node,   start, mid,   idx, val);
+        else            update(2*node+1, mid+1, end,   idx, val);
+        tree[node] = tree[2*node] + tree[2*node+1];
+    }
+}
+```
+
+## Range Query — O(log n)
+
+```java
+int query(int node, int start, int end, int l, int r) {
+    if (r < start || end < l) return 0;       // out of range (identity for sum)
+    if (l <= start && end <= r) return tree[node]; // fully covered
+    int mid = (start + end) / 2;
+    return query(2*node, start, mid, l, r)
+         + query(2*node+1, mid+1, end, l, r);
+}
+```
+
+## Lazy Propagation — Range Updates O(log n)
+
+Without lazy propagation, a range update (add `val` to all elements in `[l, r]`) would take O(n) in the worst case. Lazy propagation **defers** the update — mark a node as pending and propagate to children only when needed.
+
+```java
+int[] lazy; // pending additions
+
+void updateRange(int node, int start, int end, int l, int r, int val) {
+    pushDown(node, start, end); // apply pending lazy to children first
+    if (r < start || end < l) return;
+    if (l <= start && end <= r) {
+        tree[node] += val * (end - start + 1);
+        lazy[node] += val;
+        return;
+    }
+    int mid = (start + end) / 2;
+    updateRange(2*node, start, mid, l, r, val);
+    updateRange(2*node+1, mid+1, end, l, r, val);
+    tree[node] = tree[2*node] + tree[2*node+1];
+}
+
+void pushDown(int node, int start, int end) {
+    if (lazy[node] != 0) {
+        int mid = (start + end) / 2;
+        tree[2*node]   += lazy[node] * (mid - start + 1);
+        tree[2*node+1] += lazy[node] * (end - mid);
+        lazy[2*node]   += lazy[node];
+        lazy[2*node+1] += lazy[node];
+        lazy[node] = 0;
+    }
+}
+```
+
+## BIT (Fenwick Tree) — Simpler for Prefix Sums
+
+Binary Indexed Tree is simpler to implement for prefix sum queries with point updates:
+
+```java
+class BIT {
+    int[] bit;
+    int n;
+    BIT(int n) { this.n = n; bit = new int[n+1]; }
+
+    void update(int i, int delta) { // 1-indexed
+        for (++i; i <= n; i += i & (-i)) bit[i] += delta;
+    }
+
+    int query(int i) { // prefix sum [0, i]
+        int sum = 0;
+        for (++i; i > 0; i -= i & (-i)) sum += bit[i];
+        return sum;
+    }
+
+    int rangeQuery(int l, int r) { return query(r) - (l > 0 ? query(l-1) : 0); }
+}
+```
+
+BIT: O(log n) update and prefix query, O(n) space. Simpler but less flexible (no min/max, no range updates without extra tricks).
+
+## Segment Tree vs BIT
+
+| | Segment Tree | BIT (Fenwick) |
+|---|---|---|
+| Range sum query | ✓ | ✓ |
+| Range min/max query | ✓ | ✗ |
+| Point update | ✓ | ✓ |
+| Range update | ✓ (lazy) | Tricky |
+| Code complexity | Higher | Lower |
+| Space | O(4n) | O(n) |

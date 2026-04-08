@@ -1,0 +1,147 @@
+---
+title: "Trie (Prefix Tree)"
+description: "A tree where each path from root to node spells a prefix, enabling O(L) insert, search, and prefix lookup."
+signal: "Prefix search, autocomplete, spell check, 'starts with', word search in grid. Signal: 'prefix', 'starts with', 'word dictionary', 'search words with wildcards'."
+gotchas: "TrieNode: Map<Character,TrieNode> (flexible) or TrieNode[26] (faster for lowercase). isEndOfWord flag marks complete words. DFS on Trie for pattern matching. Pair Trie + DFS for Word Search II. Memory intensive for large alphabets — consider compressed tries for production."
+color: "#e879f9"
+colorDim: "#2d0a33"
+colorBorder: "#d946ef"
+icon: "trie"
+order: 18
+tier: 3
+draft: false
+---
+
+## How to Spot This Pattern
+
+- *"Does any word start with this prefix?"* → Trie
+- *"Insert and search words"* → Trie
+- *"Autocomplete / suggest completions"* → Trie
+- *"Search with wildcard '.' matching any character"* → Trie + DFS
+- *"Find all words from a dictionary in a grid"* → Trie + DFS on grid
+
+## TrieNode Structure
+
+```java
+class TrieNode {
+    TrieNode[] children = new TrieNode[26]; // for lowercase a-z
+    boolean isEndOfWord = false;
+}
+```
+
+Or for arbitrary characters:
+```java
+class TrieNode {
+    Map<Character, TrieNode> children = new HashMap<>();
+    boolean isEndOfWord = false;
+}
+```
+
+## Trie Operations
+
+```java
+class Trie {
+    private TrieNode root = new TrieNode();
+
+    // Insert a word — O(L)
+    public void insert(String word) {
+        TrieNode node = root;
+        for (char c : word.toCharArray()) {
+            int idx = c - 'a';
+            if (node.children[idx] == null) {
+                node.children[idx] = new TrieNode();
+            }
+            node = node.children[idx];
+        }
+        node.isEndOfWord = true;
+    }
+
+    // Search for exact word — O(L)
+    public boolean search(String word) {
+        TrieNode node = root;
+        for (char c : word.toCharArray()) {
+            int idx = c - 'a';
+            if (node.children[idx] == null) return false;
+            node = node.children[idx];
+        }
+        return node.isEndOfWord;
+    }
+
+    // Check if any word starts with prefix — O(L)
+    public boolean startsWith(String prefix) {
+        TrieNode node = root;
+        for (char c : prefix.toCharArray()) {
+            int idx = c - 'a';
+            if (node.children[idx] == null) return false;
+            node = node.children[idx];
+        }
+        return true; // reached end of prefix — at least one word continues from here
+    }
+}
+```
+
+## Trie + DFS for Wildcard Search
+
+When `'.'` can match any character, DFS through all possible children:
+
+```java
+public boolean searchWithWildcard(String word) {
+    return dfs(root, word, 0);
+}
+
+private boolean dfs(TrieNode node, String word, int idx) {
+    if (idx == word.length()) return node.isEndOfWord;
+    char c = word.charAt(idx);
+
+    if (c == '.') {
+        // Try all possible children
+        for (TrieNode child : node.children) {
+            if (child != null && dfs(child, word, idx + 1)) return true;
+        }
+        return false;
+    } else {
+        TrieNode child = node.children[c - 'a'];
+        return child != null && dfs(child, word, idx + 1);
+    }
+}
+```
+
+## Trie + DFS for Word Search II
+
+Build a Trie of all dictionary words, then DFS through the board. At each cell, follow the Trie — if the current path is not a prefix of any word, prune immediately.
+
+```java
+// Key optimization: remove found words from the Trie to avoid duplicates
+if (node.word != null) {
+    result.add(node.word);
+    node.word = null; // prevent duplicates
+}
+```
+
+## Complexity
+
+| Operation | Time | Space |
+|---|---|---|
+| Insert | O(L) | O(L) per word |
+| Search | O(L) | O(1) |
+| StartsWith | O(L) | O(1) |
+| Build Trie from N words | O(N·L) | O(N·L·26) |
+
+L = word length. The factor of 26 is for the children array.
+
+## When to Use Trie vs HashMap
+
+| Scenario | Use |
+|---|---|
+| Exact word lookup only | HashMap |
+| Prefix queries | Trie |
+| Autocomplete | Trie |
+| Wildcard matching | Trie + DFS |
+| Large number of prefix queries | Trie (amortizes better) |
+
+## Common Gotchas
+
+- **`isEndOfWord` flag is essential** — without it, you can't distinguish a prefix (stored in the path) from a complete word.
+- **Don't confuse search and startsWith** — `search` requires `isEndOfWord = true`; `startsWith` just needs the path to exist.
+- **Memory**: 26 children per node × millions of words = significant memory. Use HashMap children for sparse alphabets.
+- **Deletion**: rarely asked but complex. Mark `isEndOfWord = false`, then prune leaf nodes upward.

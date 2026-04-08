@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { getAllDSAProblems } from "@/lib/mdx/getAllContent";
-import { getDSAProblemBySlug } from "@/lib/mdx/getBySlug";
+import { getAllDSAPatterns, getAllDSAProblems } from "@/lib/mdx/getAllContent";
+import { getDSAProblemBySlug, getDSAPatternBySlug } from "@/lib/mdx/getBySlug";
 import { DifficultyBadge } from "@/components/dsa/DifficultyBadge";
 import { TagBadge } from "@/components/blog/TagBadge";
 import { TableOfContents } from "@/components/mdx/TableOfContents";
@@ -9,16 +9,19 @@ import { ReadingProgress } from "@/components/mdx/ReadingProgress";
 import { MDXContent } from "@/components/mdx/MDXContent";
 
 interface Props {
-  params: Promise<{ slug: string }>;
+  params: Promise<{ pattern: string; slug: string }>;
 }
 
 export async function generateStaticParams() {
-  return getAllDSAProblems().map((p) => ({ slug: p.slug }));
+  return getAllDSAProblems().map((p) => ({
+    pattern: p.patternSlug,
+    slug: p.slug,
+  }));
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { slug } = await params;
-  const result = getDSAProblemBySlug(slug);
+  const { pattern, slug } = await params;
+  const result = getDSAProblemBySlug(pattern, slug);
   if (!result) return {};
   return {
     title: result.frontmatter.title,
@@ -27,16 +30,26 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function DSAProblemPage({ params }: Props) {
-  const { slug } = await params;
-  const result = getDSAProblemBySlug(slug);
+  const { pattern, slug } = await params;
+  const result = getDSAProblemBySlug(pattern, slug);
   if (!result) notFound();
 
+  const patternMeta = getDSAPatternBySlug(pattern);
   const { frontmatter, content, readingTime, toc } = result;
 
   return (
     <>
       <ReadingProgress />
       <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
+        {/* Back to pattern */}
+        <a
+          href={`/dsa/${pattern}`}
+          className="mb-8 inline-flex items-center gap-1.5 font-mono text-xs no-underline hover:no-underline"
+          style={patternMeta ? { color: patternMeta.frontmatter.color } : { color: "var(--color-text-faint)" }}
+        >
+          ← {patternMeta?.frontmatter.title ?? "DSA"}
+        </a>
+
         <div className="lg:grid lg:grid-cols-[1fr_220px] lg:gap-12">
           <article>
             {/* Header */}
@@ -47,9 +60,17 @@ export default async function DSAProblemPage({ params }: Props) {
                   {frontmatter.category}
                 </span>
                 {frontmatter.leetcodeNumber && (
-                  <span className="font-mono text-xs text-[var(--color-text-faint)]">
+                  <a
+                    href={`https://leetcode.com/problems/${slug}/`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1 font-mono text-xs text-[var(--color-text-faint)] no-underline transition-colors hover:text-[#67e8f9] hover:no-underline"
+                  >
                     LeetCode #{frontmatter.leetcodeNumber}
-                  </span>
+                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none" className="opacity-50">
+                      <path d="M1 9L9 1M9 1H3M9 1V7" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </a>
                 )}
                 <span className="ml-auto font-mono text-xs text-[var(--color-text-faint)]">
                   {readingTime}
@@ -64,11 +85,11 @@ export default async function DSAProblemPage({ params }: Props) {
               {/* Complexity */}
               <div className="mb-4 flex flex-wrap gap-4 font-mono text-sm">
                 <span className="flex items-center gap-2 rounded border border-green-900 bg-green-950/30 px-3 py-1">
-                  <span className="text-[var(--color-text-faint)] text-xs">time</span>
+                  <span className="text-xs text-[var(--color-text-faint)]">time</span>
                   <span className="text-green-400">{frontmatter.timeComplexity}</span>
                 </span>
                 <span className="flex items-center gap-2 rounded border border-cyan-900 bg-cyan-950/30 px-3 py-1">
-                  <span className="text-[var(--color-text-faint)] text-xs">space</span>
+                  <span className="text-xs text-[var(--color-text-faint)]">space</span>
                   <span className="text-cyan-400">{frontmatter.spaceComplexity}</span>
                 </span>
               </div>

@@ -1,0 +1,123 @@
+---
+title: "Math & Number Theory"
+description: "Number theory fundamentals: primes (Sieve of Eratosthenes), GCD/LCM, fast exponentiation, and modular arithmetic for competitive programming."
+signal: "Prime counting. GCD/LCM of multiple numbers. x^n computation. Count digits. Base conversion. Factorial modulo. Signal: 'count primes up to n', 'compute power efficiently', 'find GCD'."
+gotchas: "Sieve of Eratosthenes: start inner loop at p² (not 2p) — all smaller multiples already crossed. GCD: use Euclidean algorithm gcd(a,b)=gcd(b,a%b), base case gcd(a,0)=a. Overflow: use long for intermediate products. Fast exponentiation: halve exponent each round, O(log n). Java: Math.gcd doesn't exist — use a helper or BigInteger.gcd."
+color: "#a3e635"
+colorDim: "#0f1a00"
+colorBorder: "#84cc16"
+icon: "math"
+order: 25
+tier: 2
+draft: false
+---
+
+## Euclidean GCD
+
+```java
+int gcd(int a, int b) {
+    return b == 0 ? a : gcd(b, a % b);
+}
+
+int lcm(int a, int b) {
+    return a / gcd(a, b) * b; // divide first to prevent overflow
+}
+```
+
+**Why it works**: `gcd(a, b) = gcd(b, a % b)`. The remainder shrinks by at least half every two steps → O(log min(a,b)) time.
+
+## Fast Exponentiation — O(log n)
+
+```java
+long fastPow(long base, long exp, long mod) {
+    long result = 1;
+    base %= mod;
+    while (exp > 0) {
+        if ((exp & 1) == 1) result = result * base % mod; // odd exponent
+        base = base * base % mod;
+        exp >>= 1;
+    }
+    return result;
+}
+```
+
+Halve the exponent each step: `x^8 = (x^4)^2 = ((x^2)^2)^2` — only 3 multiplications instead of 7.
+
+## Sieve of Eratosthenes — O(n log log n)
+
+```java
+boolean[] sieve(int n) {
+    boolean[] isComposite = new boolean[n + 1];
+    for (int p = 2; (long) p * p <= n; p++) {
+        if (!isComposite[p]) {
+            for (int j = p * p; j <= n; j += p) {
+                isComposite[j] = true;
+            }
+        }
+    }
+    return isComposite; // isComposite[i] = false means i is prime
+}
+```
+
+Start inner loop at `p²` (not `2p`) — all smaller composites of `p` are already marked by smaller primes.
+
+## Modular Arithmetic
+
+```java
+// (a + b) % m
+(a % m + b % m) % m
+
+// (a * b) % m
+(a % m) * (b % m) % m  // but use long to avoid int overflow!
+(long)(a % m) * (b % m) % m
+
+// (a - b) % m — can be negative in Java!
+((a - b) % m + m) % m  // always non-negative
+
+// (a / b) % m — requires modular inverse
+a * fastPow(b, m-2, m) % m  // only when m is prime (Fermat's little theorem)
+```
+
+## Common Number Theory Facts
+
+```java
+// Count digits
+int digitCount(int n) { return (int) Math.log10(n) + 1; }
+
+// Reverse integer
+int reverse(int n) {
+    int rev = 0;
+    while (n != 0) { rev = rev * 10 + n % 10; n /= 10; }
+    return rev;
+}
+
+// Check if n is perfect square
+boolean isPerfectSquare(int n) {
+    int sqrt = (int) Math.sqrt(n);
+    return sqrt * sqrt == n;
+}
+
+// Integer square root (no floating point)
+int isqrt(int n) {
+    int lo = 0, hi = (int) Math.sqrt(n) + 1;
+    while (lo < hi) {
+        int mid = lo + (hi - lo + 1) / 2;
+        if ((long) mid * mid <= n) lo = mid; else hi = mid - 1;
+    }
+    return lo;
+}
+```
+
+## Combinatorics
+
+```java
+// n choose k (Pascal's triangle, avoid overflow)
+long choose(int n, int k) {
+    if (k > n - k) k = n - k; // symmetry: C(n,k) = C(n,n-k)
+    long result = 1;
+    for (int i = 0; i < k; i++) {
+        result = result * (n - i) / (i + 1);
+    }
+    return result;
+}
+```

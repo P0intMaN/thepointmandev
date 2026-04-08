@@ -1,0 +1,108 @@
+---
+title: "Valid Parentheses"
+description: "Determine if a string of brackets is valid — every opening bracket has a matching closing bracket in the correct order."
+date: "2026-03-17"
+tags: ["string", "stack"]
+category: "Stack"
+difficulty: "easy"
+timeComplexity: "O(n)"
+spaceComplexity: "O(n)"
+companies: ["Google", "Amazon", "Meta", "Bloomberg", "Microsoft"]
+leetcodeNumber: 20
+draft: false
+---
+
+## Problem Statement
+
+Given a string `s` containing only `'('`, `')'`, `'{'`, `'}'`, `'['` and `']'`, determine if the input string is **valid**.
+
+A string is valid if:
+1. Every opening bracket has a corresponding closing bracket of the same type.
+2. Opening brackets are closed in the **correct order**.
+3. Every closing bracket has a corresponding opening bracket.
+
+```
+Input:  s = "()"        Output: true
+Input:  s = "()[]{}"    Output: true
+Input:  s = "(]"        Output: false
+Input:  s = "([)]"      Output: false  ← wrong order
+Input:  s = "{[]}"      Output: true
+```
+
+## Intuition
+
+Walk through the string. When you see an opening bracket, you don't know yet if it's valid — you need to wait for its partner. The key insight: **the most recently opened bracket must be closed first**. That's exactly LIFO — a stack.
+
+Push every opening bracket. When a closing bracket arrives, check if it matches the top of the stack. If it does, pop and continue. If not, the string is invalid.
+
+---
+
+## Solution
+
+```java
+public boolean isValid(String s) {
+    Deque<Character> stack = new ArrayDeque<>();
+
+    for (char c : s.toCharArray()) {
+        // Push the expected closing bracket onto the stack
+        if      (c == '(') stack.push(')');
+        else if (c == '{') stack.push('}');
+        else if (c == '[') stack.push(']');
+        else {
+            // c is a closing bracket — must match top of stack
+            if (stack.isEmpty() || stack.pop() != c) return false;
+        }
+    }
+
+    return stack.isEmpty();
+}
+```
+
+The trick of **pushing the expected closing bracket** (rather than the opening one) makes the comparison a single `!=` instead of a map lookup. Cleaner and slightly faster.
+
+## Trace Through `"([)]"`
+
+| char | stack    | action                              |
+|------|----------|-------------------------------------|
+| `(`  | `[')']`  | push `')'`                          |
+| `[`  | `[')', ']']` | push `']'`                      |
+| `)`  | `[')', ']']` | pop `']'` — but `']' != ')'` → **false** |
+
+The brackets open in order `(`, `[` but close as `)`, `]` — wrong order caught immediately.
+
+## Trace Through `"{[]}"`
+
+| char | stack       | action              |
+|------|-------------|---------------------|
+| `{`  | `['}']`     | push `'}'`          |
+| `[`  | `['}', ']']`| push `']'`          |
+| `]`  | `['}']`     | pop `']'` — match ✓ |
+| `}`  | `[]`        | pop `'}'` — match ✓ |
+
+Stack empty → **true** ✓
+
+## Complexity
+
+| | Time | Space |
+|---|---|---|
+| Solution | O(n) | O(n) |
+
+Each character is pushed and popped at most once. In the worst case (all opening brackets), the stack holds `n/2` elements.
+
+## Key Insight
+
+This is the **canonical stack matching problem**. The LIFO property of a stack perfectly models the nesting structure of brackets — the innermost pair must be closed before the outer pair. Any time you see nested matching or "last opened must be first closed", think stack immediately.
+
+The two failure conditions are easy to miss:
+1. **Stack empty when closing bracket arrives** — more closing brackets than opening.
+2. **Stack not empty after full traversal** — more opening brackets than closing.
+
+Both are checked explicitly: `stack.isEmpty()` before `pop()`, and `return stack.isEmpty()` at the end.
+
+## Edge Cases
+
+- **Empty string** `""` → stack stays empty, returns `true`. An empty string is trivially valid.
+- **Single bracket** `"("` → stack has one element at end, returns `false`.
+- **All closing** `"}}}"` → first char hits `stack.isEmpty()` check, returns `false` immediately.
+- **Even length but invalid** `"([)]"` → caught by order check, not just count.
+- **Odd length** — can never be valid (unmatched pair). The algorithm handles this naturally without a special check.

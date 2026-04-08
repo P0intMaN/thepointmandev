@@ -1,0 +1,116 @@
+---
+title: "Group Anagrams"
+description: "Given an array of strings, group all anagrams together into sublists."
+date: "2026-03-15"
+tags: ["array", "hash-map", "string", "sorting"]
+category: "Arrays"
+difficulty: "medium"
+timeComplexity: "O(n · k log k)"
+spaceComplexity: "O(n · k)"
+companies: ["Amazon", "Google", "Meta", "Microsoft"]
+leetcodeNumber: 49
+draft: false
+---
+
+## Problem Statement
+
+Given an array of strings `strs`, group the anagrams together. You may return the answer in **any order**.
+
+Two strings are anagrams if one is a rearrangement of the other — they contain the same characters with the same frequencies.
+
+```
+Input:  strs = ["eat","tea","tan","ate","nat","bat"]
+Output: [["bat"],["nat","tan"],["ate","eat","tea"]]
+
+Input:  strs = [""]
+Output: [[""]]
+
+Input:  strs = ["a"]
+Output: [["a"]]
+```
+
+## Key Observation
+
+Anagrams are identical when **sorted**. `"eat"`, `"tea"`, and `"ate"` all become `"aet"` after sorting. That sorted string is a perfect hash map key — all anagrams share the same key.
+
+## Approach 1: Sorted String as Key — O(n · k log k)
+
+Sort each string to produce its canonical form, then bucket strings by that key.
+
+```java
+public List<List<String>> groupAnagrams(String[] strs) {
+    Map<String, List<String>> map = new HashMap<>();
+
+    for (String s : strs) {
+        char[] chars = s.toCharArray();
+        Arrays.sort(chars);
+        String key = new String(chars);               // canonical form
+
+        map.computeIfAbsent(key, k -> new ArrayList<>()).add(s);
+    }
+
+    return new ArrayList<>(map.values());
+}
+```
+
+`computeIfAbsent` keeps the code tight — it creates a new list only when the key is first seen, then immediately adds to it.
+
+**Complexity:** `n` strings × `k log k` sort per string → **O(n · k log k)** time, **O(n · k)** space.
+
+---
+
+## Approach 2: Frequency Array as Key — O(n · k)
+
+Sorting costs `k log k`. We can get to `O(k)` per string by using a **character frequency array** of size 26 as the key instead.
+
+```java
+public List<List<String>> groupAnagrams(String[] strs) {
+    Map<String, List<String>> map = new HashMap<>();
+
+    for (String s : strs) {
+        int[] freq = new int[26];
+        for (char c : s.toCharArray()) {
+            freq[c - 'a']++;
+        }
+
+        // Encode frequency array as a string key: "1#0#0#...#1#0..."
+        StringBuilder sb = new StringBuilder();
+        for (int count : freq) {
+            sb.append(count).append('#');   // '#' separator avoids "1,12" vs "11,2" collision
+        }
+
+        String key = sb.toString();
+        map.computeIfAbsent(key, k -> new ArrayList<>()).add(s);
+    }
+
+    return new ArrayList<>(map.values());
+}
+```
+
+The `#` separator is important — without it, frequencies `[1, 12]` and `[11, 2]` would produce the same key string `"112"`.
+
+**Complexity:** **O(n · k)** time — no sort, just a linear scan per string.
+
+## Complexity Comparison
+
+|                    | Time          | Space    |
+|--------------------|---------------|----------|
+| Sorted key         | O(n · k log k)| O(n · k) |
+| Frequency array key| O(n · k)      | O(n · k) |
+
+For interview purposes, **Approach 1 is usually sufficient** and easier to communicate clearly. Approach 2 is the follow-up when the interviewer asks "can you do better than O(k log k) per string?"
+
+## Key Insight
+
+This problem teaches a core pattern: **find a canonical representation that multiple inputs share, use it as a hash map key**. You'll see this exact idea again in:
+
+- Palindrome grouping (sorted chars)
+- Isomorphic strings (character mapping as key)
+- Pattern matching (normalize both strings, compare canonical forms)
+
+## Edge Cases
+
+- **Empty string** `""` — sorts to `""`, frequency array is all zeros. Groups correctly with other empty strings.
+- **Single character strings** — each becomes its own group unless duplicated.
+- **All strings identical** — all land in one bucket.
+- **Mixed case** — problem guarantees lowercase only, but worth clarifying in an interview.

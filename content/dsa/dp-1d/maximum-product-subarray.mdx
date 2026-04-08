@@ -1,0 +1,88 @@
+---
+title: "Maximum Product Subarray"
+description: "Find the contiguous subarray with the largest product."
+date: "2026-04-08"
+tags: ["dp-1d", "array"]
+category: "DP 1D"
+difficulty: "medium"
+timeComplexity: "O(n)"
+spaceComplexity: "O(1)"
+companies: ["Amazon", "Google", "Facebook", "Bloomberg"]
+leetcodeNumber: 152
+draft: false
+---
+
+## Problem Statement
+
+Given an integer array `nums`, find a subarray that has the largest product, and return the product.
+
+```
+Input:  nums = [2,3,-2,4]
+Output: 6  ([2,3])
+
+Input:  nums = [-2,0,-1]
+Output: 0
+
+Input:  nums = [-2,3,-4]
+Output: 24  ([-2,3,-4])
+```
+
+## Approach: Track Min and Max — O(n), O(1)
+
+Negatives flip min↔max. Track both `maxProd` and `minProd` up to each position:
+
+```java
+public int maxProduct(int[] nums) {
+    int maxProd = nums[0];
+    int minProd = nums[0];
+    int result = nums[0];
+
+    for (int i = 1; i < nums.length; i++) {
+        int num = nums[i];
+        // Multiplying by a negative flips max and min
+        int tempMax = Math.max(num, Math.max(maxProd * num, minProd * num));
+        int tempMin = Math.min(num, Math.min(maxProd * num, minProd * num));
+
+        maxProd = tempMax;
+        minProd = tempMin;
+        result = Math.max(result, maxProd);
+    }
+    return result;
+}
+```
+
+**Three candidates for the new max**: the element alone (`num`), current max × num, current min × num. The minimum case matters when num is negative — a very negative `minProd * negative` becomes a large positive.
+
+## Trace: `[-2,3,-4]`
+
+- i=0: max=-2, min=-2, result=-2
+- i=1 (num=3): candidates for max: 3, -2×3=-6, -2×3=-6 → max=3. min: 3,-6,-6 → min=-6. result=3.
+- i=2 (num=-4): candidates for max: -4, 3×(-4)=-12, (-6)×(-4)=24 → max=24. min: -4,-12,24 → min=-12. result=24 ✓
+
+## Why Not Maximum Subarray (Kadane's)?
+
+Kadane's algorithm works for sum (reset to 0 when sum < 0). For products:
+- A negative number now might yield a big positive if multiplied by a future negative
+- Zero resets the product to 0 — we can never extend through a zero
+
+The dual max/min tracking handles both the "negative × negative = positive" and "zero reset" cases.
+
+## Complexity
+
+| | Time | Space |
+|---|---|---|
+| **Dual tracking DP** | **O(n)** | **O(1)** |
+| DP array | O(n) | O(n) |
+
+## Key Insight
+
+The key invariant: maintain both the max and min product subarray ending at each position. A negative number swaps them. Zero resets both to `num` itself (fresh start).
+
+This is the "keep both extremes" pattern that appears whenever negatives can flip the sign of an optimization objective.
+
+## Edge Cases
+
+- **All negatives, even count**: entire array is the answer
+- **All negatives, odd count**: drop one negative (first or last)
+- **Contains zero**: zero partitions the problem; result is max of subproblems on either side, or 0 itself
+- **Single element**: return it (could be negative)

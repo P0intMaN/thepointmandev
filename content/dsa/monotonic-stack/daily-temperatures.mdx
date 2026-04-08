@@ -1,0 +1,79 @@
+---
+title: "Daily Temperatures"
+description: "For each day, find how many days until a warmer temperature."
+date: "2026-04-08"
+tags: ["monotonic-stack", "array"]
+category: "Monotonic Stack"
+difficulty: "medium"
+timeComplexity: "O(n)"
+spaceComplexity: "O(n)"
+companies: ["Amazon", "Google", "Facebook", "Bloomberg"]
+leetcodeNumber: 739
+draft: false
+---
+
+## Problem Statement
+
+Given an array of integers `temperatures` representing daily temperatures, return an array `answer` where `answer[i]` is the number of days until a warmer temperature. If no future day is warmer, `answer[i] = 0`.
+
+```
+Input:  temperatures = [73,74,75,71,69,72,76,73]
+Output: [1,1,4,2,1,1,0,0]
+```
+
+## Approach: Monotonic Decreasing Stack — O(n)
+
+Maintain a stack of **indices** (not temperatures). The stack is monotonically decreasing in temperature. When we find a day warmer than the stack top, that day is the "next warmer day" for the top.
+
+```java
+public int[] dailyTemperatures(int[] temperatures) {
+    int n = temperatures.length;
+    int[] answer = new int[n]; // default 0
+    Deque<Integer> stack = new ArrayDeque<>(); // stores indices
+
+    for (int i = 0; i < n; i++) {
+        // Pop all indices that have found their next warmer day
+        while (!stack.isEmpty() && temperatures[i] > temperatures[stack.peek()]) {
+            int prevDay = stack.pop();
+            answer[prevDay] = i - prevDay; // distance to next warmer day
+        }
+        stack.push(i);
+    }
+    // Remaining indices in stack: no warmer day exists → answer stays 0
+    return answer;
+}
+```
+
+**Walkthrough** `[73,74,75,71,69,72,76,73]`:
+- i=0: push 0. Stack: [0]
+- i=1 (74 > 73): pop 0 → answer[0]=1. Push 1. Stack: [1]
+- i=2 (75 > 74): pop 1 → answer[1]=1. Push 2. Stack: [2]
+- i=3 (71 < 75): push 3. Stack: [2,3]
+- i=4 (69 < 71): push 4. Stack: [2,3,4]
+- i=5 (72 > 69): pop 4 → answer[4]=1. 72 > 71: pop 3 → answer[3]=2. 72 < 75: stop. Push 5. Stack: [2,5]
+- i=6 (76 > 72): pop 5 → answer[5]=1. 76 > 75: pop 2 → answer[2]=4. Push 6. Stack: [6]
+- i=7: push 7. Stack: [6,7] — no warmer day, answer stays 0
+
+## Key Insight
+
+This is the canonical "next greater element" problem. Store **indices** (not values) in the stack so you can compute the distance `i - prevDay`. The decreasing monotonic stack naturally processes elements in order of their "waiting time" — earlier elements get resolved when we encounter a later warmer day.
+
+Each element is pushed and popped exactly once → **O(n) amortized**.
+
+## Comparison with Brute Force
+
+```java
+// Brute force O(n²)
+for (int i = 0; i < n; i++)
+    for (int j = i+1; j < n; j++)
+        if (temperatures[j] > temperatures[i]) { answer[i] = j-i; break; }
+```
+
+The stack eliminates the inner loop by remembering unresolved days.
+
+## Edge Cases
+
+- **All same temperature**: no element is ever warmer → all answers are 0. Stack is never popped.
+- **Strictly increasing**: each element immediately resolves the previous → all answers are 1 (except last).
+- **Strictly decreasing**: nothing is ever popped → all answers are 0.
+- **Single element**: answer is `[0]`.

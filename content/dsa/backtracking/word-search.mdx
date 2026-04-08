@@ -1,0 +1,114 @@
+---
+title: "Word Search"
+description: "Determine if a word exists in a grid by following a path of adjacent (up/down/left/right) cells."
+date: "2026-04-08"
+tags: ["backtracking", "dfs", "grid"]
+category: "Backtracking"
+difficulty: "medium"
+timeComplexity: "O(m · n · 4^L)"
+spaceComplexity: "O(L)"
+companies: ["Amazon", "Google", "Facebook", "Microsoft", "Bloomberg"]
+leetcodeNumber: 79
+draft: false
+---
+
+## Problem Statement
+
+Given an `m x n` grid of characters `board` and a string `word`, return `true` if `word` exists in the grid. The word can be constructed from letters of sequentially adjacent cells, where adjacent means horizontally or vertically neighboring. The same cell may not be used more than once.
+
+```
+Input:  board = [["A","B","C","E"],["S","F","C","S"],["A","D","E","E"]], word = "ABCCED"
+Output: true
+
+Input:  board = [["A","B","C","E"],["S","F","C","S"],["A","D","E","E"]], word = "SEE"
+Output: true
+
+Input:  board = [["A","B","C","E"],["S","F","C","S"],["A","D","E","E"]], word = "ABCB"
+Output: false
+```
+
+## Algorithm — Backtracking DFS on Grid
+
+Try starting the word from every cell. For each starting cell, DFS to match each character of the word, marking cells as visited to avoid reuse.
+
+```java
+public boolean exist(char[][] board, String word) {
+    int rows = board.length, cols = board[0].length;
+
+    for (int r = 0; r < rows; r++) {
+        for (int c = 0; c < cols; c++) {
+            if (dfs(board, word, r, c, 0, rows, cols)) return true;
+        }
+    }
+    return false;
+}
+
+private int[][] dirs = {{0,1},{0,-1},{1,0},{-1,0}};
+
+private boolean dfs(char[][] board, String word, int r, int c, int idx, int rows, int cols) {
+    if (idx == word.length()) return true; // all characters matched
+
+    // Bounds check, visited check, character match
+    if (r < 0 || r >= rows || c < 0 || c >= cols) return false;
+    if (board[r][c] == '#') return false;                        // visited
+    if (board[r][c] != word.charAt(idx)) return false;           // mismatch
+
+    char temp = board[r][c];
+    board[r][c] = '#'; // mark visited (in-place, no extra space)
+
+    for (int[] d : dirs) {
+        if (dfs(board, word, r + d[0], c + d[1], idx + 1, rows, cols)) {
+            board[r][c] = temp; // restore before returning
+            return true;
+        }
+    }
+
+    board[r][c] = temp; // restore (backtrack)
+    return false;
+}
+```
+
+**In-place visited marking**: overwrite with `'#'` to avoid a separate `boolean[][] visited`. Restore on backtrack.
+
+## Pruning Optimization
+
+Before running DFS, check if the board has enough characters to form the word. If any character in `word` appears more times in `word` than in the board, return false immediately.
+
+```java
+// Early termination: character frequency check
+int[] wordFreq  = new int[128];
+int[] boardFreq = new int[128];
+for (char c : word.toCharArray())  wordFreq[c]++;
+for (char[] row : board) for (char c : row) boardFreq[c]++;
+for (int i = 0; i < 128; i++) {
+    if (wordFreq[i] > boardFreq[i]) return false;
+}
+```
+
+Additionally, if the first character is rare and the last is common, search the word in **reverse** — start DFS from the last character. This can reduce the branching factor dramatically.
+
+## Complexity
+
+L = word length, m = rows, n = cols.
+- We try m×n starting cells.
+- From each cell, DFS explores at most 4^L paths (4 directions, L depth).
+- In practice, much faster due to early mismatch termination.
+
+| | Time | Space |
+|---|---|---|
+| DFS | O(m·n·4^L) | O(L) recursion depth |
+
+## Key Insight
+
+Word Search is backtracking on a grid — the same choose/explore/unchoose pattern, but the "state" is grid position and the "choice" is direction.
+
+The in-place `'#'` trick avoids allocating a separate visited array. The restoration on backtrack is what makes it correct — the cell must be available for other paths tried from different starting points.
+
+For **#212 Word Search II** (find all words from a dictionary), using a Trie dramatically reduces redundant searches: instead of running this DFS once per word, run a single DFS that checks against the Trie at each step.
+
+## Edge Cases
+
+- **Word longer than all cells**: immediately returns false (4^L paths don't cover more cells than exist).
+- **Word starts/ends at border**: handled naturally by bounds checking.
+- **Same character repeated in word**: the `'#'` marking prevents reuse of the same cell.
+- **1×1 board**: one cell, checks if `word == board[0][0]` effectively.

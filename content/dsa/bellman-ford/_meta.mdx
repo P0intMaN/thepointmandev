@@ -1,0 +1,126 @@
+---
+title: "Bellman-Ford / SPFA"
+description: "Single-source shortest paths in graphs with negative weights. Detects negative cycles. SPFA is an optimized queue-based variant."
+signal: "Shortest path with negative edge weights. Negative cycle detection. Constrained hops (at most k edges). Arbitrage detection. Signal: 'find cheapest/shortest with at most k steps', 'detect negative cycle', 'currency exchange arbitrage'."
+gotchas: "Run exactly V-1 relaxation rounds for shortest paths (not more). Use a snapshot copy of distances each round when hop limit matters. To detect negative cycles: run a V-th round — if any distance improves, a negative cycle exists. SPFA uses a queue to only re-relax nodes whose distance improved (average O(E) but O(V·E) worst case)."
+color: "#f43f5e"
+colorDim: "#1c0005"
+colorBorder: "#e11d48"
+icon: "bellman-ford"
+order: 23
+tier: 3
+draft: false
+---
+
+## How to Spot This Pattern
+
+Use Bellman-Ford when:
+- The graph has **negative edge weights** (Dijkstra fails here)
+- You need to **detect a negative cycle**
+- There is a **hop limit** (at most k edges) — run exactly k rounds
+- **Arbitrage detection** (currency exchange with profit cycles)
+
+## Algorithm
+
+Relax all edges `V-1` times. After `V-1` rounds, all shortest paths of length ≤ V-1 edges are optimal (since a simple path has at most V-1 edges).
+
+```java
+int[] dist = new int[V];
+Arrays.fill(dist, Integer.MAX_VALUE);
+dist[src] = 0;
+
+for (int round = 0; round < V - 1; round++) {
+    boolean updated = false;
+    for (int[] edge : edges) { // edge = [from, to, weight]
+        int u = edge[0], v = edge[1], w = edge[2];
+        if (dist[u] != Integer.MAX_VALUE && dist[u] + w < dist[v]) {
+            dist[v] = dist[u] + w;
+            updated = true;
+        }
+    }
+    if (!updated) break; // early termination: already converged
+}
+```
+
+## Negative Cycle Detection
+
+Run a V-th relaxation round. If any distance improves, a negative cycle is reachable.
+
+```java
+// After V-1 rounds...
+for (int[] edge : edges) {
+    int u = edge[0], v = edge[1], w = edge[2];
+    if (dist[u] != Integer.MAX_VALUE && dist[u] + w < dist[v]) {
+        // Negative cycle detected!
+        return true;
+    }
+}
+return false;
+```
+
+## Hop-Limited Bellman-Ford
+
+For "at most k edges" problems (e.g., LeetCode #787), run exactly k rounds and use a snapshot to prevent chaining within a single round:
+
+```java
+int[] prices = new int[n];
+Arrays.fill(prices, Integer.MAX_VALUE);
+prices[src] = 0;
+
+for (int i = 0; i < k; i++) {
+    int[] temp = prices.clone(); // snapshot — prevents using new distances in same round
+    for (int[] edge : edges) {
+        int from = edge[0], to = edge[1], cost = edge[2];
+        if (prices[from] != Integer.MAX_VALUE)
+            temp[to] = Math.min(temp[to], prices[from] + cost);
+    }
+    prices = temp;
+}
+```
+
+## SPFA (Shortest Path Faster Algorithm)
+
+Queue-based optimization: only re-relax nodes whose distance was recently updated.
+
+```java
+boolean[] inQueue = new boolean[V];
+Queue<Integer> queue = new LinkedList<>();
+dist[src] = 0;
+queue.offer(src);
+inQueue[src] = true;
+
+while (!queue.isEmpty()) {
+    int u = queue.poll();
+    inQueue[u] = false;
+
+    for (int[] neighbor : graph[u]) {
+        int v = neighbor[0], w = neighbor[1];
+        if (dist[u] + w < dist[v]) {
+            dist[v] = dist[u] + w;
+            if (!inQueue[v]) {
+                queue.offer(v);
+                inQueue[v] = true;
+            }
+        }
+    }
+}
+```
+
+SPFA averages O(E) but degrades to O(V·E) in worst case (adversarial graphs). For competitive programming with tight constraints, prefer standard Bellman-Ford or Dijkstra.
+
+## Complexity
+
+| | Time | Space |
+|---|---|---|
+| Bellman-Ford | O(V · E) | O(V) |
+| SPFA (average) | O(E) | O(V) |
+| SPFA (worst case) | O(V · E) | O(V) |
+
+## Bellman-Ford vs Dijkstra
+
+| | Bellman-Ford | Dijkstra |
+|---|---|---|
+| Negative edges | ✓ | ✗ |
+| Negative cycles | Detects | Infinite loop |
+| Time complexity | O(V · E) | O(E log V) |
+| Use case | Rare negative weights | Most shortest-path problems |

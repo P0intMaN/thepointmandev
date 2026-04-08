@@ -1,0 +1,101 @@
+---
+title: "Word Break"
+description: "Determine if a string can be segmented into words from a dictionary."
+date: "2026-04-08"
+tags: ["dp-1d", "string", "trie", "hash-set"]
+category: "DP 1D"
+difficulty: "medium"
+timeComplexity: "O(n² · m)"
+spaceComplexity: "O(n)"
+companies: ["Amazon", "Google", "Facebook", "Bloomberg", "Apple"]
+leetcodeNumber: 139
+draft: false
+---
+
+## Problem Statement
+
+Given a string `s` and a dictionary of strings `wordDict`, return `true` if `s` can be segmented into a space-separated sequence of one or more dictionary words.
+
+```
+Input:  s = "leetcode", wordDict = ["leet","code"]
+Output: true
+
+Input:  s = "applepenapple", wordDict = ["apple","pen"]
+Output: true
+
+Input:  s = "catsandog", wordDict = ["cats","dog","sand","and","cat"]
+Output: false
+```
+
+## Approach: DP — O(n² · m)
+
+`dp[i]` = true if `s[0..i-1]` can be segmented using words in the dictionary.
+
+```java
+public boolean wordBreak(String s, List<String> wordDict) {
+    Set<String> dict = new HashSet<>(wordDict);
+    int n = s.length();
+    boolean[] dp = new boolean[n + 1];
+    dp[0] = true; // empty string is always valid
+
+    for (int i = 1; i <= n; i++) {
+        for (int j = 0; j < i; j++) {
+            if (dp[j] && dict.contains(s.substring(j, i))) {
+                dp[i] = true;
+                break; // no need to check other splits
+            }
+        }
+    }
+    return dp[n];
+}
+```
+
+**State**: `dp[i]` = "can we form `s[0..i-1]` from the dictionary?"
+**Transition**: for each `i`, try every split point `j`. If `dp[j]` is true and `s[j..i-1]` is in the dict, then `dp[i] = true`.
+
+**Optimization**: break early once `dp[i] = true`.
+
+## Trace: `s = "leetcode"`, dict = `{"leet","code"}`
+
+- dp[0] = true
+- dp[1]: j=0 → dp[0]&&"l" in dict? No.
+- dp[2]: j=0→"le"? No. j=1→dp[1]=F.
+- dp[3]: j=0→"lee"? No. Others false.
+- dp[4]: j=0→dp[0]&&"leet"? Yes! dp[4]=true.
+- dp[5..7]: no valid split.
+- dp[8]: j=4→dp[4]&&"code"? Yes! dp[8]=true. ✓
+
+## Complexity
+
+`n` = length of `s`, `m` = average word length (for `contains` check on substring).
+
+| | Time | Space |
+|---|---|---|
+| **DP + HashSet** | **O(n² · m)** | **O(n)** |
+| DP + Trie | O(n²) | O(W·L) |
+| Memoized recursion | O(n²) | O(n) |
+
+## Key Insight
+
+`dp[i]` captures "is there any valid segmentation of the first `i` characters?" The key is trying all possible last words ending at `i`. Unlike naive recursion (exponential), DP ensures each `dp[i]` is computed once.
+
+**Interview tip**: optimize by iterating over dict words instead of all split points if the dict is small.
+
+```java
+// Alternative: iterate words (better when |wordDict| << n)
+for (int i = 1; i <= n; i++) {
+    for (String word : wordDict) {
+        int start = i - word.length();
+        if (start >= 0 && dp[start] && s.startsWith(word, start)) {
+            dp[i] = true; break;
+        }
+    }
+}
+```
+
+## Edge Cases
+
+- **Single character in dict**: fine, dp processes character by character
+- **s is a single dict word**: dp[n] set directly in first valid split
+- **No valid segmentation**: all dp[1..n] remain false → return false
+- **Repeated words**: dict.contains handles repeated patterns correctly

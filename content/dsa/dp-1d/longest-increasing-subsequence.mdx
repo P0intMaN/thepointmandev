@@ -1,0 +1,124 @@
+---
+title: "Longest Increasing Subsequence"
+description: "Find the length of the longest strictly increasing subsequence in an array."
+date: "2026-04-08"
+tags: ["dp", "array", "binary-search"]
+category: "Dynamic Programming — 1D"
+difficulty: "medium"
+timeComplexity: "O(n log n)"
+spaceComplexity: "O(n)"
+companies: ["Amazon", "Google", "Microsoft", "Apple", "Uber"]
+leetcodeNumber: 300
+draft: false
+---
+
+## Problem Statement
+
+Given an integer array `nums`, return the length of the **longest strictly increasing subsequence**.
+
+A subsequence is derived by deleting some elements without changing the order of the remaining elements.
+
+```
+Input:  nums = [10,9,2,5,3,7,101,18]
+Output: 4  ([2,3,7,101] or [2,5,7,101] or [2,3,7,18])
+
+Input:  nums = [0,1,0,3,2,3]
+Output: 4
+
+Input:  nums = [7,7,7,7,7]
+Output: 1
+```
+
+## Approach 1: DP — O(n²)
+
+`dp[i]` = length of the longest increasing subsequence ending at index `i`.
+
+For each `i`, look at all `j < i` where `nums[j] < nums[i]`. The LIS ending at `i` is `1 + max(dp[j])` for all such `j`.
+
+```java
+public int lengthOfLIS(int[] nums) {
+    int n = nums.length;
+    int[] dp = new int[n];
+    Arrays.fill(dp, 1); // each element is a subsequence of length 1
+
+    int maxLen = 1;
+    for (int i = 1; i < n; i++) {
+        for (int j = 0; j < i; j++) {
+            if (nums[j] < nums[i]) {
+                dp[i] = Math.max(dp[i], dp[j] + 1);
+            }
+        }
+        maxLen = Math.max(maxLen, dp[i]);
+    }
+    return maxLen;
+}
+```
+
+## Approach 2: Binary Search (Patience Sorting) — O(n log n) ✅ Optimal
+
+Maintain a `tails` array where `tails[i]` is the smallest possible tail element of any increasing subsequence of length `i+1`.
+
+For each element `x`:
+- If `x > tails.last`, append — extend the longest subsequence.
+- Otherwise, binary search for the leftmost position in `tails` where `tails[pos] >= x`, and replace `tails[pos] = x` — this maintains the smallest possible tail for subsequences of that length.
+
+```java
+public int lengthOfLIS(int[] nums) {
+    List<Integer> tails = new ArrayList<>();
+
+    for (int num : nums) {
+        int lo = 0, hi = tails.size();
+
+        // Find leftmost position where tails[pos] >= num
+        while (lo < hi) {
+            int mid = lo + (hi - lo) / 2;
+            if (tails.get(mid) < num) lo = mid + 1;
+            else hi = mid;
+        }
+
+        if (lo == tails.size()) tails.add(num);   // extend
+        else tails.set(lo, num);                   // replace
+    }
+
+    return tails.size();
+}
+```
+
+**Important**: `tails` does NOT store an actual valid subsequence — it's a bookkeeping structure. Only its **size** is meaningful as the LIS length.
+
+## Tracing: [10, 9, 2, 5, 3, 7, 101, 18]
+
+| num | tails before | action | tails after |
+|-----|-------------|--------|-------------|
+| 10  | []          | append | [10]        |
+| 9   | [10]        | replace pos 0 | [9]  |
+| 2   | [9]         | replace pos 0 | [2]  |
+| 5   | [2]         | append | [2, 5]      |
+| 3   | [2, 5]      | replace pos 1 | [2, 3] |
+| 7   | [2, 3]      | append | [2, 3, 7]   |
+| 101 | [2, 3, 7]   | append | [2, 3, 7, 101] |
+| 18  | [2,3,7,101] | replace pos 3 | [2,3,7,18] |
+
+`tails.size() = 4` ✓
+
+## Complexity
+
+| | Time | Space |
+|---|---|---|
+| DP O(n²) | O(n²) | O(n) |
+| Binary search | O(n log n) | O(n) |
+
+## Key Insight
+
+LIS is the canonical example where a naive O(n²) DP has an O(n log n) optimized version via binary search on a maintained data structure. The key insight: **we don't need to know which elements form the LIS, only the length**. This lets us use `tails` as a compact bookkeeping structure that supports binary search.
+
+The O(n log n) approach generalizes:
+- **#354 Russian Doll Envelopes** — 2D LIS (sort by width asc, height desc, then LIS on height)
+- **#1671 Minimum Number of Removals to Make Mountain Array** — LIS from left + LDS from right at each index
+
+## Edge Cases
+
+- **Single element**: LIS = 1.
+- **Strictly decreasing**: every element replaces `tails[0]`, LIS = 1.
+- **Strictly increasing**: every element appends, LIS = n.
+- **All equal**: `nums[j] < nums[i]` never true in O(n²) approach. In binary search, `tails[pos] >= num` always hits position 0, replacing. LIS = 1.

@@ -57,7 +57,7 @@
   html {
     background-color: var(--color-bg-base);
     color: var(--color-text-secondary);
-    font-family: var(--font-sans);
+    font-family: var(--font-mono);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     scroll-behavior: smooth;

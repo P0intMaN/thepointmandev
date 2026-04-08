@@ -1,0 +1,113 @@
+---
+title: "Course Schedule II"
+description: "Return the ordering of courses to finish all of them given prerequisites, or an empty array if impossible."
+date: "2026-04-08"
+tags: ["graph", "topological-sort", "dfs", "bfs"]
+category: "Topological Sort"
+difficulty: "medium"
+timeComplexity: "O(V + E)"
+spaceComplexity: "O(V + E)"
+companies: ["Amazon", "Google", "Facebook", "Microsoft", "Uber"]
+leetcodeNumber: 210
+draft: false
+---
+
+## Problem Statement
+
+There are `numCourses` courses labeled `0` to `numCourses - 1`. You are given `prerequisites[i] = [a, b]` meaning you must take `b` before `a`. Return the ordering in which you should take all courses. If impossible (cycle exists), return an empty array.
+
+```
+Input:  numCourses = 2, prerequisites = [[1,0]]
+Output: [0, 1]
+
+Input:  numCourses = 4, prerequisites = [[1,0],[2,0],[3,1],[3,2]]
+Output: [0, 2, 1, 3]  (or [0, 1, 2, 3])
+
+Input:  numCourses = 2, prerequisites = [[1,0],[0,1]]
+Output: []  (cycle)
+```
+
+## Approach 1: Kahn's BFS — O(V + E)
+
+```java
+public int[] findOrder(int numCourses, int[][] prerequisites) {
+    List<List<Integer>> graph = new ArrayList<>();
+    int[] inDegree = new int[numCourses];
+
+    for (int i = 0; i < numCourses; i++) graph.add(new ArrayList<>());
+    for (int[] pre : prerequisites) {
+        graph.get(pre[1]).add(pre[0]); // pre[1] must come before pre[0]
+        inDegree[pre[0]]++;
+    }
+
+    Queue<Integer> queue = new LinkedList<>();
+    for (int i = 0; i < numCourses; i++) {
+        if (inDegree[i] == 0) queue.offer(i);
+    }
+
+    int[] order = new int[numCourses];
+    int idx = 0;
+
+    while (!queue.isEmpty()) {
+        int course = queue.poll();
+        order[idx++] = course;
+        for (int next : graph.get(course)) {
+            if (--inDegree[next] == 0) queue.offer(next);
+        }
+    }
+
+    return idx == numCourses ? order : new int[0];
+}
+```
+
+## Approach 2: DFS Post-Order — O(V + E)
+
+```java
+public int[] findOrder(int numCourses, int[][] prerequisites) {
+    List<List<Integer>> graph = new ArrayList<>();
+    for (int i = 0; i < numCourses; i++) graph.add(new ArrayList<>());
+    for (int[] pre : prerequisites) graph.get(pre[0]).add(pre[1]);
+    // Note: edge is pre[0] → pre[1] (course requires prerequisite)
+    // Post-order will add prerequisites before the course that needs them
+
+    int[] state = new int[numCourses]; // 0=unvisited, 1=in-stack, 2=done
+    int[] order = new int[numCourses];
+    int[] idx = {numCourses - 1}; // fill from the end
+
+    for (int i = 0; i < numCourses; i++) {
+        if (state[i] == 0 && !dfs(graph, state, order, idx, i)) {
+            return new int[0]; // cycle
+        }
+    }
+    return order;
+}
+
+private boolean dfs(List<List<Integer>> graph, int[] state, int[] order, int[] idx, int node) {
+    state[node] = 1;
+    for (int neighbor : graph.get(node)) {
+        if (state[neighbor] == 1) return false; // cycle
+        if (state[neighbor] == 0 && !dfs(graph, state, order, idx, neighbor)) return false;
+    }
+    state[node] = 2;
+    order[idx[0]--] = node; // post-order, fill from end = topological order
+    return true;
+}
+```
+
+## Complexity
+
+| | Time | Space |
+|---|---|---|
+| Kahn's BFS | O(V + E) | O(V + E) |
+| DFS | O(V + E) | O(V + E) |
+
+## Key Insight
+
+Course Schedule II = Course Schedule I (#207) + "also return the order". The only addition is collecting the processed nodes into a result array. Kahn's naturally produces the order in which nodes are dequeued. DFS post-order reversal gives the same result.
+
+## Edge Cases
+
+- **No prerequisites**: any order is valid; Kahn's enqueues all nodes at the start.
+- **Cycle**: Kahn's returns fewer than `numCourses` nodes; DFS returns false. Both return `[]`.
+- **Single course**: return `[0]`.
+- **Multiple valid orders**: any is acceptable. Kahn's order depends on BFS queue processing order.

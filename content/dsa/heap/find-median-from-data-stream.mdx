@@ -1,0 +1,120 @@
+---
+title: "Find Median from Data Stream"
+description: "Design a data structure that supports adding numbers and finding the median in O(log n) and O(1) respectively."
+date: "2026-04-08"
+tags: ["heap", "design", "two-heaps"]
+category: "Heap / Priority Queue"
+difficulty: "hard"
+timeComplexity: "O(log n) addNum, O(1) findMedian"
+spaceComplexity: "O(n)"
+companies: ["Amazon", "Google", "Microsoft", "Apple", "Goldman Sachs"]
+leetcodeNumber: 295
+draft: false
+---
+
+## Problem Statement
+
+The **median** is the middle value in an ordered list. If the size is even, the median is the mean of the two middle values.
+
+Implement the `MedianFinder` class:
+- `void addNum(int num)` — add an integer number from the data stream.
+- `double findMedian()` — return the median of all elements so far.
+
+```
+MedianFinder mf = new MedianFinder();
+mf.addNum(1);    // stream: [1]
+mf.addNum(2);    // stream: [1, 2]
+mf.findMedian(); // returns 1.5
+mf.addNum(3);    // stream: [1, 2, 3]
+mf.findMedian(); // returns 2.0
+```
+
+## The Two-Heap Technique
+
+Split the stream into two halves at the median:
+- `maxHeap` — lower half. The **largest** of the lower half is at the top.
+- `minHeap` — upper half. The **smallest** of the upper half is at the top.
+
+**Invariant:** `maxHeap.size() == minHeap.size()` OR `maxHeap.size() == minHeap.size() + 1`
+(maxHeap holds the extra element when total count is odd)
+
+**Median:**
+- Odd total → `maxHeap.peek()` (the single middle element)
+- Even total → `(maxHeap.peek() + minHeap.peek()) / 2.0`
+
+```java
+class MedianFinder {
+
+    private final PriorityQueue<Integer> maxHeap; // lower half
+    private final PriorityQueue<Integer> minHeap; // upper half
+
+    public MedianFinder() {
+        maxHeap = new PriorityQueue<>(Collections.reverseOrder());
+        minHeap = new PriorityQueue<>();
+    }
+
+    public void addNum(int num) {
+        maxHeap.offer(num);                    // 1. always add to lower half
+        minHeap.offer(maxHeap.poll());         // 2. push max of lower to upper
+        if (minHeap.size() > maxHeap.size()) { // 3. rebalance if upper is larger
+            maxHeap.offer(minHeap.poll());
+        }
+    }
+
+    public double findMedian() {
+        if (maxHeap.size() > minHeap.size()) {
+            return maxHeap.peek();
+        }
+        return (maxHeap.peek() + minHeap.peek()) / 2.0;
+    }
+}
+```
+
+## Why the Three-Step Add?
+
+Step 1 alone would break the invariant: `num` might be larger than `minHeap.peek()` but gets put in the lower half.
+
+Steps 1 + 2 fix this: by polling `maxHeap` after inserting, we push the maximum of the lower half into the upper half. This ensures the two halves remain correctly partitioned (all of lower half ≤ all of upper half).
+
+Step 3 restores the size invariant: if the upper half ended up with more elements, move its minimum back to the lower half.
+
+## Tracing the Example
+
+`addNum(1)`:
+- maxHeap = {1} → minHeap ← poll(1) → minHeap = {1}, maxHeap = {}
+- |minHeap| > |maxHeap| → maxHeap ← poll(1), maxHeap = {1}, minHeap = {}
+
+`addNum(2)`:
+- maxHeap = {1, 2} → poll(2) → minHeap = {2}, maxHeap = {1}
+- |minHeap| == |maxHeap|, no rebalance
+
+`findMedian()`: sizes equal → (1 + 2) / 2.0 = **1.5** ✓
+
+`addNum(3)`:
+- maxHeap = {1, 2, 3} → poll(3) → minHeap = {2, 3}, maxHeap = {1}  
+  Wait — after step 2: maxHeap = {1}, minHeap = {2, 3}? No:
+  Actually: offer 3 to maxHeap → {3,1} (max heap). Poll → 3. Offer 3 to minHeap → {2,3}. minHeap.size(2) > maxHeap.size(1) → offer minHeap.poll(2) to maxHeap → maxHeap={2,1}, minHeap={3}.
+
+`findMedian()`: |maxHeap|=2 > |minHeap|=1 → **maxHeap.peek() = 2** ✓
+
+## Complexity
+
+| | Time | Space |
+|---|---|---|
+| `addNum` | O(log n) | — |
+| `findMedian` | O(1) | — |
+| Total space | — | O(n) |
+
+## Key Insight
+
+The two-heap technique maintains a dynamic sorted partition. The median is always accessible in O(1) from the tops of the heaps — you never need to sort or scan.
+
+The trick generalizes to any problem needing the **boundary between two halves** of a dynamic set:
+- **Sliding Window Median** (#480) — same two-heap structure, but elements enter and leave a fixed window
+- **IPO** (#502) — max profit with capital constraints, similar dual-heap reasoning
+
+## Edge Cases
+
+- **Single element**: maxHeap has 1 element, minHeap is empty → median is `maxHeap.peek()`.
+- **Two equal elements** `[5, 5]`: maxHeap = {5}, minHeap = {5} → median = 5.0.
+- **Integer overflow in median**: use `(double)maxHeap.peek()` before arithmetic, or cast before the division. `(maxHeap.peek() + minHeap.peek()) / 2.0` uses integer addition before division — could overflow for large ints. Safe form: `maxHeap.peek() / 2.0 + minHeap.peek() / 2.0`.

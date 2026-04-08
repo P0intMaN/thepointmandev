@@ -1,0 +1,137 @@
+---
+title: "Subarray Sum Equals K"
+description: "Count the number of contiguous subarrays whose elements sum to k."
+date: "2026-03-17"
+tags: ["array", "prefix-sum", "hash-map"]
+category: "Prefix Sum"
+difficulty: "medium"
+timeComplexity: "O(n)"
+spaceComplexity: "O(n)"
+companies: ["Facebook", "Google", "Amazon", "Microsoft", "Bloomberg"]
+leetcodeNumber: 560
+draft: false
+---
+
+## Problem Statement
+
+Given an integer array `nums` and an integer `k`, return the **total number of subarrays whose sum equals `k`**.
+
+A subarray is a contiguous part of the array.
+
+```
+Input:  nums = [1,1,1], k = 2
+Output: 2
+Explanation: [1,1] at index (0,1) and [1,1] at index (1,2)
+
+Input:  nums = [1,2,3], k = 3
+Output: 2
+Explanation: [3] at index (2,2) and [1,2] at index (0,1)
+```
+
+Note: `nums` may contain **negative numbers** — this rules out the sliding window approach.
+
+## Why Sliding Window Doesn't Work Here
+
+Sliding window relies on a monotonic property: adding an element always increases the window sum (for positive numbers). With negative numbers, that monotonicity breaks — shrinking the window might decrease or increase the sum unpredictably. We need a different tool.
+
+---
+
+## Approach 1: Brute Force — O(n²)
+
+Try every subarray `[i, j]` and check if its sum equals `k`.
+
+```java
+public int subarraySum(int[] nums, int k) {
+    int count = 0;
+    for (int i = 0; i < nums.length; i++) {
+        int sum = 0;
+        for (int j = i; j < nums.length; j++) {
+            sum += nums[j];
+            if (sum == k) count++;
+        }
+    }
+    return count;
+}
+```
+
+O(n²) — correct but too slow for large inputs.
+
+---
+
+## Approach 2: Prefix Sum + HashMap — O(n) ✅ Optimal
+
+**Key observation:** the sum of subarray `nums[i..j]` equals `prefix[j+1] - prefix[i]`. So we want to count pairs where:
+
+```
+prefix[j+1] - prefix[i] == k
+→ prefix[i] == prefix[j+1] - k
+```
+
+For each new prefix sum, we ask: *"how many times have we seen `currentSum - k` before?"* That count is the number of subarrays ending at the current index with sum `k`.
+
+```java
+public int subarraySum(int[] nums, int k) {
+    Map<Integer, Integer> prefixCount = new HashMap<>();
+    prefixCount.put(0, 1);  // base case: empty prefix seen once
+
+    int sum = 0, count = 0;
+
+    for (int num : nums) {
+        sum += num;
+        // How many previous prefix sums equal (sum - k)?
+        count += prefixCount.getOrDefault(sum - k, 0);
+        // Record the current prefix sum
+        prefixCount.merge(sum, 1, Integer::sum);
+    }
+
+    return count;
+}
+```
+
+## Tracing Through the Example
+
+`nums = [1, 1, 1], k = 2`
+
+| i | num | sum | sum-k | prefixCount lookup | count | prefixCount after |
+|---|-----|-----|-------|--------------------|-------|-------------------|
+| — | —   | 0   | —     | —                  | 0     | {0:1}             |
+| 0 | 1   | 1   | -1    | 0 (not found)      | 0     | {0:1, 1:1}        |
+| 1 | 1   | 2   | 0     | 1 (found!)         | 1     | {0:1, 1:1, 2:1}   |
+| 2 | 1   | 3   | 1     | 1 (found!)         | 2     | {0:1, 1:1, 2:1, 3:1} |
+
+Result: **2** ✓
+
+## The Base Case — Why `prefixCount.put(0, 1)`
+
+Without `put(0, 1)`, subarrays that start from index 0 would be missed.
+
+Example: `nums = [3], k = 3`. At index 0, `sum = 3`, `sum - k = 0`. We look up `0` in the map — it must be there. Without the base case the lookup returns 0 and we miss the answer entirely.
+
+The `0 → 1` entry represents the "empty prefix" — the state before we've consumed any element. It's the sentinel that makes the formula work from the very first element.
+
+## Complexity
+
+|              | Time  | Space |
+|--------------|-------|-------|
+| Brute Force  | O(n²) | O(1)  |
+| Prefix + Map | O(n)  | O(n)  |
+
+## Key Insight
+
+This is the **canonical prefix sum + HashMap** problem. The pattern:
+
+> **"Count subarrays with sum = k"** → store running prefix sums in a map, look up `sum - k` at each step.
+
+Whenever you see "count subarrays / substrings satisfying some additive condition", this is the template to reach for. It handles negatives, zeros, and duplicates correctly — all the cases where sliding window breaks down.
+
+Variations you'll see in interviews:
+- **Subarray sum divisible by k** — store `prefix % k` in the map instead of raw sum
+- **Longest subarray with sum k** — store `prefix → first index` instead of count
+- **Binary array: subarrays with equal 0s and 1s** — replace 0 with -1, then find subarrays with sum 0
+
+## Edge Cases
+
+- **`k = 0`** — subarrays that sum to zero, including empty-looking ones. The `put(0,1)` base case handles the single-element `[0]` case correctly.
+- **Negative numbers** `[-1, -1, 1]` — prefix sums go negative; the HashMap handles this without any special treatment.
+- **All zeros** `[0, 0, 0], k = 0` — every subarray sums to 0. Answer is `n*(n+1)/2`. The algorithm counts this correctly via repeated `0` lookups.
+- **Single element equals k** `[5], k = 5` — `sum=5`, `sum-k=0`, found once in the base case. Returns 1.

@@ -1,0 +1,123 @@
+---
+title: "Graphs — BFS"
+description: "Level-by-level graph traversal for shortest paths, minimum steps, and reachability in unweighted graphs."
+signal: "Shortest path in unweighted graph, minimum steps/cost, all nodes at a given distance. Signal: 'shortest path', 'minimum steps', 'level by level', '0-1 BFS'. Multi-source BFS: add all sources to queue initially."
+gotchas: "Mark visited BEFORE enqueuing (not after dequeuing) to avoid re-adding the same node multiple times. Bidirectional BFS halves the search depth. Multi-source BFS: seed all sources at once. BFS on grid: 4 or 8 directions with bounds checking."
+color: "#60a5fa"
+colorDim: "#172554"
+colorBorder: "#3b82f6"
+icon: "graph-bfs"
+order: 11
+tier: 2
+draft: false
+---
+
+## How to Spot This Pattern
+
+BFS is the right choice when:
+- You need the **shortest path** in an unweighted graph (or grid)
+- You need the **minimum number of steps** to reach a target
+- The problem processes nodes **level by level** (layers of distance from source)
+- You need to explore all nodes at distance `d` before distance `d+1`
+
+BFS guarantees that the first time you reach a node, it's via the shortest path.
+
+## BFS Template
+
+```java
+Queue<Integer> queue = new LinkedList<>();
+Set<Integer> visited = new HashSet<>();
+
+queue.offer(start);
+visited.add(start);
+int steps = 0;
+
+while (!queue.isEmpty()) {
+    int size = queue.size(); // process one level at a time
+    for (int i = 0; i < size; i++) {
+        int node = queue.poll();
+        if (node == target) return steps;
+        for (int neighbor : graph.get(node)) {
+            if (!visited.contains(neighbor)) {
+                visited.add(neighbor);   // ← mark BEFORE enqueuing
+                queue.offer(neighbor);
+            }
+        }
+    }
+    steps++;
+}
+return -1; // target unreachable
+```
+
+**Why mark visited before enqueuing?** If you mark after dequeuing, the same node can be enqueued multiple times before being processed — leading to O(V²) time and incorrect shortest path counts.
+
+## BFS on a Grid
+
+Treat each cell as a graph node. Neighbors are adjacent cells (4-directional or 8-directional).
+
+```java
+int[][] dirs = {{0,1},{0,-1},{1,0},{-1,0}}; // 4-directional
+
+Queue<int[]> queue = new LinkedList<>();
+queue.offer(new int[]{startRow, startCol});
+visited[startRow][startCol] = true;
+
+while (!queue.isEmpty()) {
+    int[] cell = queue.poll();
+    int r = cell[0], c = cell[1];
+
+    for (int[] d : dirs) {
+        int nr = r + d[0], nc = c + d[1];
+        if (nr >= 0 && nr < rows && nc >= 0 && nc < cols && !visited[nr][nc] && grid[nr][nc] != BLOCKED) {
+            visited[nr][nc] = true;
+            queue.offer(new int[]{nr, nc});
+        }
+    }
+}
+```
+
+## Multi-Source BFS
+
+When there are multiple starting points, add ALL of them to the queue at the start. The first wave expands all sources simultaneously — each node gets assigned the minimum distance from ANY source.
+
+```java
+// Example: distance from any '1' cell to any '0' cell
+for (int r = 0; r < rows; r++) {
+    for (int c = 0; c < cols; c++) {
+        if (grid[r][c] == 1) {
+            queue.offer(new int[]{r, c});
+            visited[r][c] = true;
+        }
+    }
+}
+// Now run standard BFS — all sources expand together
+```
+
+## 0-1 BFS
+
+For graphs with edge weights of only 0 or 1, use a **deque** instead of a queue. Weight-0 edges go to the front, weight-1 edges go to the back. Achieves Dijkstra-like shortest paths in O(V + E) instead of O((V+E) log V).
+
+```java
+Deque<int[]> deque = new ArrayDeque<>();
+deque.offerFirst(new int[]{start, 0});
+while (!deque.isEmpty()) {
+    int[] curr = deque.pollFirst();
+    int node = curr[0], dist = curr[1];
+    for (int[] edge : graph.get(node)) { // [neighbor, weight]
+        int newDist = dist + edge[1];
+        if (newDist < distance[edge[0]]) {
+            distance[edge[0]] = newDist;
+            if (edge[1] == 0) deque.offerFirst(new int[]{edge[0], newDist});
+            else              deque.offerLast( new int[]{edge[0], newDist});
+        }
+    }
+}
+```
+
+## Common Gotchas
+
+- **Mark visited at enqueue, not dequeue** — prevents duplicate processing and ensures O(V+E) time.
+- **Bounds check on grid** — always verify `0 <= r < rows && 0 <= c < cols` before accessing.
+- **Single-source vs multi-source** — multi-source seeds the queue with all sources before the loop starts.
+- **BFS finds shortest path, DFS does not** — BFS guarantees the first path found is shortest; DFS explores one deep path before others.
+- **Connected vs disconnected graph** — if the graph may have disconnected components, run BFS from every unvisited node.

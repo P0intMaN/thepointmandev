@@ -1,0 +1,83 @@
+---
+title: "Missing Number"
+description: "Find the missing number in an array containing n distinct numbers from 0 to n."
+date: "2026-04-08"
+tags: ["bit-manipulation", "math", "array"]
+category: "Bit Manipulation"
+difficulty: "easy"
+timeComplexity: "O(n)"
+spaceComplexity: "O(1)"
+companies: ["Amazon", "Google", "Microsoft", "Bloomberg"]
+leetcodeNumber: 268
+draft: false
+---
+
+## Problem Statement
+
+Given an array `nums` containing `n` distinct numbers in the range `[0, n]`, return the only number in the range that is missing from the array.
+
+```
+Input:  nums = [3,0,1]
+Output: 2
+
+Input:  nums = [0,1]
+Output: 2
+
+Input:  nums = [9,6,4,2,3,5,7,0,1]
+Output: 8
+```
+
+## Approach 1: XOR — O(n) time, O(1) space
+
+XOR all indices and all values together. Pairs cancel (`i ^ i = 0`), leaving only the missing number.
+
+```java
+public int missingNumber(int[] nums) {
+    int xor = nums.length; // start with n (the "extra" index)
+    for (int i = 0; i < nums.length; i++) {
+        xor ^= i ^ nums[i]; // XOR index and value
+    }
+    return xor;
+}
+```
+
+**Why**: XOR all values [0..n] and all nums[0..n-1]. The missing number appears in [0..n] but not in nums → it doesn't cancel.
+
+## Approach 2: Gauss Sum — O(n) time, O(1) space
+
+Expected sum of [0..n] = `n*(n+1)/2`. Actual sum = sum of array. Difference is the missing number.
+
+```java
+public int missingNumber(int[] nums) {
+    int n = nums.length;
+    int expectedSum = n * (n + 1) / 2;
+    int actualSum = 0;
+    for (int num : nums) actualSum += num;
+    return expectedSum - actualSum;
+}
+```
+
+**Potential issue**: overflow for very large `n`. Use `long` if needed: `(long) n * (n + 1) / 2`.
+
+## Approach 3: Sorting — O(n log n)
+
+Sort the array. The first index where `nums[i] != i` is the missing number.
+
+## Complexity
+
+| Approach | Time | Space | Notes |
+|---|---|---|---|
+| **XOR** | O(n) | O(1) | No overflow risk |
+| **Gauss Sum** | O(n) | O(1) | Simple, intuitive |
+| Sorting | O(n log n) | O(1) | Modifies input |
+
+## Key Insight
+
+Both XOR and Gauss sum exploit the same mathematical property: the expected set [0..n] minus the actual set = missing element. XOR uses cancellation (`a^a=0`); Gauss uses subtraction. Both are O(n) with O(1) space.
+
+## Edge Cases
+
+- **Missing 0**: `nums = [1,2,...,n]` → XOR of [0..n] ^ all nums = 0
+- **Missing n**: `nums = [0,1,...,n-1]` → missing = n
+- **Single element** `nums = [0]`: missing = 1
+- **Single element** `nums = [1]`: missing = 0

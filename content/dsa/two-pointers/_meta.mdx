@@ -1,0 +1,61 @@
+---
+title: "Two Pointers"
+description: "Use two indices moving toward each other to solve pair and symmetry problems in O(n)."
+signal: "Sorted array, find pair with sum, palindrome check, remove duplicates in-place. Signal: sorted input, need O(1) space, O(n) time."
+gotchas: "Pointers must converge — both moving same direction is sliding window. Skip duplicates carefully. For 3Sum: fix one pointer, two-pointer for rest. Off-by-one on palindrome center."
+color: "#fb923c"
+colorDim: "#431407"
+colorBorder: "#c2410c"
+icon: "two-pointers"
+order: 2
+tier: 1
+draft: false
+---
+
+## How to Spot This Pattern
+
+Two pointers work when you can **make a guaranteed safe elimination** at every step based on the current state of both ends. The signal phrases are:
+
+- *"Sorted array"* — sorted order enables greedy decisions at each step
+- *"Find a pair that sums to / equals..."* — classic converging pointers
+- *"Is it a palindrome?"* — compare from both ends inward
+- *"Remove duplicates in-place"* — slow/fast pointer variant
+- *"O(1) extra space"* — no hash map allowed, pointers are your tool
+
+If you see a **sorted** array and a pair/triplet condition, try two pointers before anything else.
+
+## The Core Idea
+
+Place one pointer at each end of the array. At every step, examine the current pair and move whichever pointer **cannot contribute to a valid answer** inward. Because you eliminate at least one element per step, the total work is O(n).
+
+The key question is always: *"Can I prove that moving this pointer inward cannot miss the optimal answer?"* If yes, the greedy move is safe.
+
+## Two Pointer Variants
+
+**Converging (opposite ends)** — start at `left=0`, `right=n-1`, move toward each other. Used for pair sum, palindrome, container with most water.
+
+**Fast / Slow (same direction)** — both start at 0, fast moves ahead. Used for cycle detection in linked lists, remove duplicates in-place, find middle of list.
+
+Don't confuse two pointers with **sliding window** — sliding window always moves both pointers in the *same direction*, maintaining a window between them.
+
+## Key Tools in Java
+
+```java
+int left = 0, right = nums.length - 1;
+while (left < right) {
+    // examine pair (nums[left], nums[right])
+    // move the pointer that cannot lead to a better answer
+}
+
+// Skip duplicates after sorting
+while (left < right && nums[left] == nums[left + 1]) left++;
+while (left < right && nums[right] == nums[right - 1]) right--;
+```
+
+## Common Gotchas
+
+- **Confusing with sliding window** — if both pointers move in the same direction, it's sliding window, not two pointers.
+- **Duplicate skipping in 3Sum** — three independent skip points: the outer fixed element, and both inner pointers after a match.
+- **The `i > 0` guard** — `if (i > 0 && nums[i] == nums[i-1]) continue` — without `i > 0`, you skip the first element.
+- **1-indexed vs 0-indexed** — Two Sum II returns 1-indexed results; don't forget `+1` on both indices.
+- **`left < right` not `left <= right`** — when they meet, you've compared every valid pair. No need to check an element against itself.

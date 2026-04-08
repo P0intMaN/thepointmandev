@@ -1,0 +1,78 @@
+---
+title: "Same Tree"
+description: "Check if two binary trees are structurally identical with the same node values."
+date: "2026-04-08"
+tags: ["tree", "dfs", "recursion"]
+category: "Trees"
+difficulty: "easy"
+timeComplexity: "O(n)"
+spaceComplexity: "O(h)"
+companies: ["Amazon", "Google", "Bloomberg"]
+leetcodeNumber: 100
+draft: false
+---
+
+## Problem Statement
+
+Given the roots of two binary trees `p` and `q`, write a function to check if they are the same or not. Two binary trees are considered the same if they are structurally identical, and the nodes have the same value.
+
+```
+Input:  p = [1,2,3], q = [1,2,3]
+Output: true
+
+Input:  p = [1,2], q = [1,null,2]
+Output: false
+
+Input:  p = [1,2,1], q = [1,1,2]
+Output: false
+```
+
+## Algorithm — DFS Recursion
+
+Compare both trees simultaneously node by node:
+
+1. If both nodes are `null` → same (base case, return true)
+2. If one is `null` and the other isn't → different structures (return false)
+3. If both exist but values differ → return false
+4. Recurse: both left subtrees AND both right subtrees must match
+
+```java
+public boolean isSameTree(TreeNode p, TreeNode q) {
+    // Both null — identical empty subtrees
+    if (p == null && q == null) return true;
+
+    // One null, one not — structural mismatch
+    if (p == null || q == null) return false;
+
+    // Values differ
+    if (p.val != q.val) return false;
+
+    // Both subtrees must match
+    return isSameTree(p.left, q.left) && isSameTree(p.right, q.right);
+}
+```
+
+The `&&` short-circuits — if the left subtrees differ, the right subtrees are never checked.
+
+## Complexity
+
+| | Time | Space |
+|---|---|---|
+| DFS | O(n) | O(h) |
+
+Where `n` = number of nodes and `h` = height of tree. Space is the recursion stack depth — O(log n) for a balanced tree, O(n) worst case for a skewed tree.
+
+## Key Insight
+
+This is the simplest expression of the **simultaneous DFS** pattern: traverse two trees at once, comparing structure and values node by node. The same pattern appears in:
+
+- **#572 Subtree of Another Tree** — check if `q` equals any subtree of `p`, using `isSameTree` as a helper
+- **#951 Flip Equivalent Binary Trees** — same structure check but allows left/right flips
+- **#101 Symmetric Tree** — check if a tree mirrors itself (same tree on mirrored traversal)
+
+## Edge Cases
+
+- **Both empty**: both roots null → true immediately.
+- **One empty**: first check catches `p == null || q == null` asymmetry → false.
+- **Single node equal**: no children to recurse on; both subtrees are null → true.
+- **Same values, different structure**: `[1,2]` vs `[1,null,2]` — left subtree of first is 2, left of second is null → structural mismatch → false.

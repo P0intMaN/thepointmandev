@@ -1,0 +1,71 @@
+---
+title: "Sum of Two Integers"
+description: "Add two integers without using + or - operators, using only bit manipulation."
+date: "2026-04-08"
+tags: ["bit-manipulation", "math"]
+category: "Bit Manipulation"
+difficulty: "medium"
+timeComplexity: "O(1)"
+spaceComplexity: "O(1)"
+companies: ["Amazon", "Google", "Facebook", "Bloomberg"]
+leetcodeNumber: 371
+draft: false
+---
+
+## Problem Statement
+
+Given two integers `a` and `b`, return the sum of the two integers without using the operators `+` and `-`.
+
+```
+Input:  a = 1, b = 2
+Output: 3
+
+Input:  a = 2, b = 3
+Output: 5
+```
+
+## Approach: XOR + AND + Shift
+
+Binary addition has two components:
+- **XOR** (`a ^ b`): sum without carry (each bit added mod 2)
+- **AND + shift** (`(a & b) << 1`): the carry bits shifted left
+
+Repeat until no more carry.
+
+```java
+public int getSum(int a, int b) {
+    while (b != 0) {
+        int carry = (a & b) << 1; // compute carry
+        a = a ^ b;                 // sum without carry
+        b = carry;                 // carry to be added next round
+    }
+    return a;
+}
+```
+
+**Trace** for a=2 (010), b=3 (011):
+- Round 1: carry = (010 & 011) << 1 = 010 << 1 = 100. a = 010 ^ 011 = 001. b = 100.
+- Round 2: carry = (001 & 100) << 1 = 000. a = 001 ^ 100 = 101. b = 000.
+- b=0, return a=101 = 5 ✓
+
+**Termination**: the carry shifts left each round, eventually shifting out of all 32 bits → `b` becomes 0.
+
+## Subtraction via Negation
+
+`a - b = a + (-b)`. Two's complement: `-b = ~b + 1`.
+
+```java
+int subtract(int a, int b) {
+    return getSum(a, getSum(~b, 1)); // a + (-b) = a + (~b + 1)
+}
+```
+
+## Key Insight
+
+XOR performs addition without carry. AND finds where carries occur (both bits are 1). Shifting the carry left by 1 aligns it with the next more significant bit position. The algorithm terminates in at most 32 iterations (one per bit position).
+
+## Edge Cases
+
+- **Both negative**: two's complement handles this naturally
+- **a = b**: XOR gives 0, but carry = (a & a) << 1 = a << 1, then a = 0, b = a<<1. This converges.
+- **Overflow**: Java's 32-bit int arithmetic wraps naturally

@@ -1,0 +1,106 @@
+---
+title: "Linked List"
+description: "Pointer manipulation, two-pointer traversal, and structural transformations on singly and doubly linked lists."
+signal: "Detect cycle, find middle, reverse, merge sorted lists, need O(1) space traversal. Signal: 'linked list', 'detect cycle', 'reverse', 'merge'."
+gotchas: "Always check null before .next. Dummy node simplifies edge cases (empty list, single node). Floyd's cycle: fast=2x, slow=1x — meet point is not the cycle start; a second traversal finds it. Modifying structure while traversing loses your place."
+color: "#818cf8"
+colorDim: "#1e1b4b"
+colorBorder: "#6366f1"
+icon: "linked-list"
+order: 7
+tier: 1
+draft: false
+---
+
+## How to Spot This Pattern
+
+Linked list problems almost always involve one of three operations:
+
+- **Traversal with two pointers** — fast/slow for cycle detection and midpoint finding
+- **Pointer reversal** — in-place structure change without extra memory
+- **Merge / splice** — combining two or more lists
+
+Signal phrases: *"detect a cycle"*, *"find the middle"*, *"reverse"*, *"merge sorted"*, *"remove nth from end"*.
+
+## The Dummy Node Technique
+
+Almost every linked list problem that involves structural changes benefits from a dummy node:
+
+```java
+ListNode dummy = new ListNode(0);
+dummy.next = head;
+ListNode curr = dummy;
+// ... manipulate curr.next ...
+return dummy.next; // real head of result
+```
+
+Without the dummy, you need special handling for an empty list or when the head itself is removed. The dummy node makes both cases identical to the general case.
+
+## Two Pointer Patterns
+
+**Fast/slow (Floyd's algorithm):**
+
+```java
+ListNode slow = head, fast = head;
+while (fast != null && fast.next != null) {
+    slow = slow.next;
+    fast = fast.next.next;
+}
+// slow is now at the midpoint
+```
+
+- **Cycle detection**: if `fast == slow` before `fast` reaches null, a cycle exists.
+- **Midpoint**: when `fast` reaches the end, `slow` is at the middle (for odd length) or second middle (for even length).
+- **Nth from end**: advance `fast` by n first, then move both — when `fast` is null, `slow` is at the target.
+
+**Finding cycle entry point** (after detecting a cycle):
+
+```java
+// After fast == slow, reset one pointer to head
+ListNode p1 = head, p2 = slow;
+while (p1 != p2) {
+    p1 = p1.next;
+    p2 = p2.next;
+}
+return p1; // cycle entry
+```
+
+Mathematical proof: if the cycle start is at distance `F` from head, and the cycle length is `C`, then after the first meeting, advancing both pointers one step at a time will converge at the cycle entry after exactly `F` more steps.
+
+## Pointer Reversal Template
+
+```java
+ListNode prev = null, curr = head;
+while (curr != null) {
+    ListNode next = curr.next; // save next
+    curr.next = prev;          // reverse link
+    prev = curr;               // advance prev
+    curr = next;               // advance curr
+}
+return prev; // new head
+```
+
+Three variables: `prev`, `curr`, `next`. The `next` save is critical — once you reverse `curr.next`, you've lost the path forward.
+
+## Merging Two Sorted Lists
+
+```java
+ListNode dummy = new ListNode(0);
+ListNode curr = dummy;
+while (l1 != null && l2 != null) {
+    if (l1.val <= l2.val) { curr.next = l1; l1 = l1.next; }
+    else                  { curr.next = l2; l2 = l2.next; }
+    curr = curr.next;
+}
+curr.next = (l1 != null) ? l1 : l2; // attach remaining
+return dummy.next;
+```
+
+After the loop, one list may have remaining nodes — attach them in one shot (they're already sorted).
+
+## Common Gotchas
+
+- **Null check before `.next`**: always check `node != null` before `node.next`. In fast/slow: `fast != null && fast.next != null`.
+- **Losing your place**: before reversing `curr.next`, save `curr.next` in a temp variable.
+- **Cycle detection vs cycle entry**: Floyd's detects the cycle at a meeting point that is *not* the entry. A second traversal from `head` and `meetingPoint` simultaneously finds the entry.
+- **Even vs odd length midpoint**: fast/slow gives `n/2` (lower) for even length. For problems needing the upper middle, check `fast.next != null` instead of `fast != null`.

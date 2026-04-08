@@ -1,0 +1,139 @@
+---
+title: "Container With Most Water"
+description: "Find two lines that together with the x-axis forms a container that holds the most water."
+date: "2026-03-16"
+tags: ["array", "two-pointer", "greedy"]
+category: "Two Pointers"
+difficulty: "medium"
+timeComplexity: "O(n)"
+spaceComplexity: "O(1)"
+companies: ["Amazon", "Google", "Bloomberg", "Goldman Sachs"]
+leetcodeNumber: 11
+draft: false
+---
+
+## Problem Statement
+
+You are given an integer array `height` of length `n`. There are `n` vertical lines where the `i`th line has a height of `height[i]`.
+
+Find two lines that, together with the x-axis, form a container that holds the **maximum amount of water**. Return that maximum area.
+
+```
+Input:  height = [1,8,6,2,5,4,8,3,7]
+Output: 49
+Explanation: Lines at index 1 (height 8) and index 8 (height 7)
+             Width = 8 - 1 = 7, Height = min(8, 7) = 7 → Area = 49
+
+Input:  height = [1,1]
+Output: 1
+```
+
+The water level is capped by the **shorter** of the two lines. You cannot tilt the container.
+
+## The Area Formula
+
+For any two lines at indices `left` and `right`:
+
+```
+area = (right - left) * min(height[left], height[right])
+```
+
+Width is the distance between the indices. Height is the shorter line — water spills over it.
+
+---
+
+## Approach 1: Brute Force — O(n²)
+
+Check every pair of lines.
+
+```java
+public int maxArea(int[] height) {
+    int max = 0;
+    for (int i = 0; i < height.length; i++) {
+        for (int j = i + 1; j < height.length; j++) {
+            int area = (j - i) * Math.min(height[i], height[j]);
+            max = Math.max(max, area);
+        }
+    }
+    return max;
+}
+```
+
+Correct but O(n²) — times out on large inputs.
+
+---
+
+## Approach 2: Two Pointers — O(n) ✅ Optimal
+
+Start with the widest possible container: `left = 0`, `right = n - 1`. This gives maximum width. Now we need to see if we can do better by trading width for height.
+
+At each step, move the pointer pointing to the **shorter line** inward. Why? Because:
+
+- Moving the taller line inward can only make things worse — height is still capped by the short line, and width decreases.
+- Moving the shorter line is the **only chance** of finding a taller line that could compensate for the lost width.
+
+```java
+public int maxArea(int[] height) {
+    int left = 0, right = height.length - 1;
+    int max = 0;
+
+    while (left < right) {
+        int area = (right - left) * Math.min(height[left], height[right]);
+        max = Math.max(max, area);
+
+        if (height[left] < height[right]) {
+            left++;
+        } else {
+            right--;  // also handles equal height case — either pointer is fine
+        }
+    }
+
+    return max;
+}
+```
+
+## Complexity
+
+|             | Time  | Space |
+|-------------|-------|-------|
+| Brute Force | O(n²) | O(1)  |
+| Two Pointers| O(n)  | O(1)  |
+
+## Why Moving the Shorter Line is Safe
+
+This is the part that trips people up in interviews. Let's prove it.
+
+Say `height[left] < height[right]`. The current area is:
+
+```
+(right - left) * height[left]
+```
+
+Can we do better by moving `right` inward instead? Any pair `(left, right')` where `right' < right` has:
+
+```
+area = (right' - left) * min(height[left], height[right'])
+     ≤ (right' - left) * height[left]   // capped by height[left] regardless
+     < (right - left) * height[left]    // width is strictly smaller
+```
+
+So **no pair involving `left` and any index to its right (other than the current `right`) can beat the current area**. We can safely eliminate `left` and move it inward. The same argument applies symmetrically for `right`.
+
+The two-pointer approach works because at each step we perform a guaranteed safe elimination — the same principle as Two Sum II, just with a different condition.
+
+## Key Insight
+
+This problem teaches you that two pointers aren't just for "find a pair that sums to target." The pattern is broader:
+
+> Start at the extremes. At each step, eliminate the pointer that **cannot possibly contribute to a better answer**. Move inward.
+
+Whenever you can prove "moving this pointer inward cannot make things worse," two pointers work in O(n).
+
+The proof of correctness is always worth sketching in an interview — it shows you understand *why* the greedy move is safe, not just that it happens to work.
+
+## Edge Cases
+
+- **Two elements** `[1, 1]` → only one pair, area = `1 * 1 = 1`.
+- **Decreasing heights** `[5, 4, 3, 2, 1]` → pointers converge from outside, max area found early.
+- **All same height** `[3, 3, 3, 3]` → area = `(n-1) * 3`, found on the first iteration.
+- **One very tall line** `[1, 10000, 1]` → width matters as much as height; the answer is `1 * 2 = 2`, not `10000`.

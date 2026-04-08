@@ -1,0 +1,104 @@
+---
+title: "Topological Sort"
+description: "Order nodes in a directed acyclic graph such that every edge goes from earlier to later in the order."
+signal: "Ordering with dependencies. Signal: 'prerequisite', 'build order', 'task scheduling', 'alien dictionary'. Only valid for DAGs — a cycle means no valid order exists."
+gotchas: "Topological sort only works on DAGs. Kahn's algorithm: track in-degree, start with 0 in-degree nodes. If result doesn't include all nodes → cycle exists. DFS post-order reversal is the alternative. Used in: course scheduling, build systems, spreadsheet cell ordering."
+color: "#fb7185"
+colorDim: "#1f0a10"
+colorBorder: "#f43f5e"
+icon: "topo-sort"
+order: 13
+tier: 2
+draft: false
+---
+
+## How to Spot This Pattern
+
+Topological sort solves: *"In what order should I process these tasks given dependencies?"*
+
+Signal phrases:
+- *"Prerequisites"* / *"must complete X before Y"*
+- *"Build order"*
+- *"Task scheduling"*
+- *"Derive character ordering"* (alien dictionary)
+- *"Find if a valid ordering exists"* (cycle detection)
+
+A valid topological ordering exists if and only if the graph is a **DAG (Directed Acyclic Graph)**.
+
+## Algorithm 1: Kahn's BFS (In-Degree Method)
+
+1. Compute in-degree for every node.
+2. Enqueue all nodes with in-degree 0 (no dependencies).
+3. Process: dequeue a node, add to result, decrement in-degrees of its neighbors.
+4. If a neighbor's in-degree hits 0, enqueue it.
+5. If result contains all nodes → valid order. Otherwise → cycle.
+
+```java
+List<Integer> topoSort(int n, List<List<Integer>> graph) {
+    int[] inDegree = new int[n];
+    for (int u = 0; u < n; u++)
+        for (int v : graph.get(u)) inDegree[v]++;
+
+    Queue<Integer> queue = new LinkedList<>();
+    for (int i = 0; i < n; i++)
+        if (inDegree[i] == 0) queue.offer(i);
+
+    List<Integer> order = new ArrayList<>();
+    while (!queue.isEmpty()) {
+        int node = queue.poll();
+        order.add(node);
+        for (int neighbor : graph.get(node)) {
+            if (--inDegree[neighbor] == 0) queue.offer(neighbor);
+        }
+    }
+
+    return order.size() == n ? order : List.of(); // empty = cycle
+}
+```
+
+**Advantage**: detects cycles naturally (incomplete result), intuitive, easy to extend with priority queue for lexicographic ordering.
+
+## Algorithm 2: DFS Post-Order Reversal
+
+```java
+List<Integer> order = new ArrayList<>();
+int[] state = new int[n]; // 0=unvisited, 1=in-stack, 2=done
+
+boolean dfs(int node) {
+    state[node] = 1;
+    for (int neighbor : graph.get(node)) {
+        if (state[neighbor] == 1) return false; // cycle
+        if (state[neighbor] == 0 && !dfs(neighbor)) return false;
+    }
+    state[node] = 2;
+    order.add(node); // post-order
+    return true;
+}
+
+// After running dfs on all nodes:
+Collections.reverse(order); // reverse post-order = topological order
+```
+
+**Why reverse?** Post-order adds a node after all its descendants. The first node added (deepest leaf) has no outgoing edges — it should come last in topological order. Reversing fixes the direction.
+
+## Choosing Between Kahn's and DFS
+
+| Scenario | Prefer |
+|---|---|
+| Detect if valid order exists | Either (both detect cycles) |
+| Lexicographically smallest order | Kahn's + min heap instead of queue |
+| Find ALL valid orderings | DFS backtracking |
+| Minimize critical path | Kahn's with DP on the order |
+
+## Key Properties
+
+- **Uniqueness**: a unique topological order exists only if the graph has a Hamiltonian path (exactly one valid ordering). Otherwise multiple valid orderings exist.
+- **Cycle detection**: Kahn's detects cycles via `order.size() < n`. DFS detects via back edges (state=1).
+- **Multiple valid orderings**: problems often accept any valid ordering, so either algorithm suffices.
+
+## Common Gotchas
+
+- **Build the graph correctly**: if "A requires B", the edge is `B → A` (B must come before A).
+- **In-degree initialization**: iterate all edges, not just nodes.
+- **Disconnected graph**: Kahn's handles naturally (seed all 0-in-degree nodes). DFS must iterate all unvisited nodes.
+- **Cycle = impossible**: always check if result contains all nodes after Kahn's.

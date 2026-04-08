@@ -1,0 +1,108 @@
+---
+title: "Binary Search Tree Iterator"
+description: "Implement an iterator over a BST that produces elements in sorted order with O(h) memory."
+date: "2026-04-08"
+tags: ["tree", "bst", "design", "stack", "inorder"]
+category: "Binary Search Tree"
+difficulty: "medium"
+timeComplexity: "O(1) amortized per next()"
+spaceComplexity: "O(h)"
+companies: ["Google", "Facebook", "Microsoft", "Amazon", "LinkedIn"]
+leetcodeNumber: 173
+draft: false
+---
+
+## Problem Statement
+
+Implement the `BSTIterator` class representing an iterator over the inorder traversal of a BST:
+
+- `BSTIterator(TreeNode root)` — initialize the iterator over the BST.
+- `int next()` — return the next smallest number.
+- `boolean hasNext()` — return `true` if there is a next smallest number.
+
+`next()` and `hasNext()` must both run in **O(1) average** time and use **O(h)** memory, where `h` is the height of the tree.
+
+```java
+BSTIterator iterator = new BSTIterator(root);
+iterator.next();    // return 3
+iterator.next();    // return 7
+iterator.hasNext(); // return true
+iterator.next();    // return 9
+iterator.hasNext(); // return true
+iterator.next();    // return 15
+iterator.hasNext(); // return true
+iterator.next();    // return 20
+iterator.hasNext(); // return false
+```
+
+## The Insight
+
+Flatten the iterative inorder traversal template into a class. The **stack** stores the "path to the next node" — it lets us pause between `next()` calls and resume from exactly where we left off.
+
+```java
+class BSTIterator {
+
+    private final Deque<TreeNode> stack = new ArrayDeque<>();
+
+    public BSTIterator(TreeNode root) {
+        pushLeft(root); // push root and all left children
+    }
+
+    public int next() {
+        TreeNode node = stack.pop();      // next inorder node
+        pushLeft(node.right);             // prepare the right subtree
+        return node.val;
+    }
+
+    public boolean hasNext() {
+        return !stack.isEmpty();
+    }
+
+    // Push all left children of node (including node itself)
+    private void pushLeft(TreeNode node) {
+        while (node != null) {
+            stack.push(node);
+            node = node.left;
+        }
+    }
+}
+```
+
+## Why This Works
+
+`pushLeft(node)` pushes a node and all its left descendants. The top of the stack is always the next inorder element.
+
+When `next()` is called:
+1. Pop the top (next smallest).
+2. Call `pushLeft` on its right child — this sets up the left spine of the right subtree for future calls.
+
+The stack size is bounded by the height of the tree (at most h nodes on the left spine at any time).
+
+## Amortized O(1) per next()
+
+Each node is pushed and popped exactly once across all `next()` calls. Total work across n calls = O(n). Per call = O(n/n) = **O(1) amortized**.
+
+Individual calls can take O(h) in the worst case (when `pushLeft` traverses a long left spine), but averaged over all calls it's O(1).
+
+## Complexity
+
+| | Time | Space |
+|---|---|---|
+| `next()` | O(1) amortized | — |
+| `hasNext()` | O(1) | — |
+| Total space | — | O(h) |
+
+## Key Insight
+
+The BST Iterator is the iterative inorder traversal refactored into a resumable stateful object. The stack acts as a "bookmark" — it remembers where in the traversal you are between calls.
+
+This pattern of converting a recursive traversal into a lazy iterator is powerful:
+- **#281 Zigzag Iterator** — interleave two iterators
+- **#1586 Binary Search Tree Iterator II** — add `prev()` (requires doubly-linked traversal)
+- Any streaming / lazy evaluation context where you don't want to precompute all values upfront
+
+## Edge Cases
+
+- **Empty tree**: `pushLeft(null)` does nothing, `stack` is empty, `hasNext()` returns false immediately.
+- **Single node**: constructor pushes just the root. `next()` returns root's value, `pushLeft(root.right = null)` does nothing, stack is empty.
+- **All left children** (skewed left): constructor pushes all n nodes, stack has O(n) entries — but the problem guarantees h-space usage, so this is the expected worst case.

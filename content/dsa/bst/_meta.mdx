@@ -1,0 +1,150 @@
+---
+title: "Binary Search Tree"
+description: "Exploit BST ordering (left < root < right) for O(h) search, insert, delete, and inorder-sorted traversal."
+signal: "Tree is ordered: left < root < right. Signal: 'validate BST', 'kth smallest', 'inorder gives sorted output', 'successor/predecessor'. Inorder traversal = sorted array."
+gotchas: "Validate BST: pass min/max bounds, not just compare with parent — a deeper right subtree value could violate the root's constraint. Successor = leftmost of right subtree. Delete: 3 cases (no child, one child, two children — replace with inorder successor). Unbalanced BST degrades to O(n)."
+color: "#2dd4bf"
+colorDim: "#042f2e"
+colorBorder: "#14b8a6"
+icon: "bst"
+order: 9
+tier: 2
+draft: false
+---
+
+## How to Spot This Pattern
+
+A problem gives you a **Binary Search Tree** (or asks you to validate one) and uses:
+- *"Kth smallest/largest element"*
+- *"Find successor or predecessor"*
+- *"Validate BST"*
+- *"Convert sorted array/list to BST"*
+- *"Inorder gives sorted output"* — the defining BST property
+
+## BST Property
+
+For every node `n`:
+- All values in the **left subtree** < `n.val`
+- All values in the **right subtree** > `n.val`
+- Both subtrees are themselves valid BSTs
+
+This means: **inorder traversal (left → root → right) produces values in ascending sorted order.**
+
+## Search — O(h)
+
+```java
+TreeNode search(TreeNode root, int target) {
+    if (root == null || root.val == target) return root;
+    if (target < root.val) return search(root.left,  target);
+    else                   return search(root.right, target);
+}
+```
+
+Each comparison eliminates one subtree. O(log n) on a balanced tree, O(n) on a skewed one.
+
+## Validate BST
+
+**Wrong approach**: only compare with the direct parent.
+
+```java
+// ❌ This fails for: [5, 1, 4, null, null, 3, 6]
+//    Node 3 is a right child of 4, which is 5's right child.
+//    3 < 5 violates the BST property, but comparing 3 to its parent 4 seems fine.
+boolean isValid(TreeNode node) {
+    if (node == null) return true;
+    if (node.left  != null && node.left.val  >= node.val) return false;
+    if (node.right != null && node.right.val <= node.val) return false;
+    return isValid(node.left) && isValid(node.right);
+}
+```
+
+**Correct approach**: pass bounds down through the recursion.
+
+```java
+boolean isValidBST(TreeNode root) {
+    return validate(root, Long.MIN_VALUE, Long.MAX_VALUE);
+}
+
+boolean validate(TreeNode node, long min, long max) {
+    if (node == null) return true;
+    if (node.val <= min || node.val >= max) return false;
+    return validate(node.left,  min, node.val)
+        && validate(node.right, node.val, max);
+}
+```
+
+Each node must satisfy the constraint imposed by all of its ancestors, not just its parent.
+
+## Inorder Traversal (Iterative)
+
+When you need inorder in O(1) space per step (e.g., for BST Iterator):
+
+```java
+Deque<TreeNode> stack = new ArrayDeque<>();
+TreeNode curr = root;
+
+while (curr != null || !stack.isEmpty()) {
+    while (curr != null) {
+        stack.push(curr);
+        curr = curr.left; // go as far left as possible
+    }
+    curr = stack.pop();   // this is the next inorder node
+    // process curr
+    curr = curr.right;    // move to right subtree
+}
+```
+
+## Kth Smallest
+
+```java
+int k, result;
+
+void inorder(TreeNode node) {
+    if (node == null) return;
+    inorder(node.left);
+    if (--k == 0) { result = node.val; return; }
+    inorder(node.right);
+}
+```
+
+Inorder visits nodes in ascending order — the kth node visited is the kth smallest.
+
+## Delete a Node
+
+Three cases:
+1. **No children** (leaf): remove directly.
+2. **One child**: replace node with its only child.
+3. **Two children**: replace node's value with its **inorder successor** (leftmost node in right subtree), then delete the successor from the right subtree.
+
+```java
+TreeNode deleteNode(TreeNode root, int key) {
+    if (root == null) return null;
+    if (key < root.val) {
+        root.left  = deleteNode(root.left,  key);
+    } else if (key > root.val) {
+        root.right = deleteNode(root.right, key);
+    } else {
+        // Found the node to delete
+        if (root.left  == null) return root.right;
+        if (root.right == null) return root.left;
+        // Two children: replace with inorder successor
+        TreeNode successor = leftmost(root.right);
+        root.val   = successor.val;
+        root.right = deleteNode(root.right, successor.val);
+    }
+    return root;
+}
+
+TreeNode leftmost(TreeNode node) {
+    while (node.left != null) node = node.left;
+    return node;
+}
+```
+
+## Common Gotchas
+
+- **BST validation needs global bounds** — not just parent comparison (see above).
+- **Integer overflow in bounds**: use `Long.MIN_VALUE` / `Long.MAX_VALUE` to handle nodes with `Integer.MIN_VALUE` or `Integer.MAX_VALUE`.
+- **Inorder successor**: leftmost node in the right subtree (smallest value that's still greater).
+- **Inorder predecessor**: rightmost node in the left subtree.
+- **Unbalanced trees**: all operations degrade to O(n) on a skewed tree. Self-balancing trees (AVL, Red-Black) maintain O(log n) but are rarely asked to implement.

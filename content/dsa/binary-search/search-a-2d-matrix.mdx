@@ -1,0 +1,150 @@
+---
+title: "Search a 2D Matrix"
+description: "Search for a target value in a matrix where each row is sorted and each row's first element is greater than the previous row's last."
+date: "2026-04-08"
+tags: ["array", "binary-search", "matrix"]
+category: "Binary Search"
+difficulty: "medium"
+timeComplexity: "O(log(m·n))"
+spaceComplexity: "O(1)"
+companies: ["Amazon", "Google", "Microsoft", "Adobe"]
+leetcodeNumber: 74
+draft: false
+---
+
+## Problem Statement
+
+You are given an `m × n` integer matrix with two properties:
+- Each row is sorted in non-decreasing order.
+- The first integer of each row is greater than the last integer of the previous row.
+
+Given an integer `target`, return `true` if `target` is in the matrix, or `false` otherwise.
+
+```
+Input:  matrix = [[1,3,5,7],[10,11,16,20],[23,30,34,60]], target = 3
+Output: true
+
+Input:  matrix = [[1,3,5,7],[10,11,16,20],[23,30,34,60]], target = 13
+Output: false
+```
+
+## The Key Observation
+
+Because each row's first element is greater than the previous row's last element, the matrix is effectively a **single sorted array** laid out in row-major order. We can flatten it virtually and binary search in O(log(m·n)).
+
+```
+[[ 1,  3,  5,  7],     →    [1, 3, 5, 7, 10, 11, 16, 20, 23, 30, 34, 60]
+ [10, 11, 16, 20],
+ [23, 30, 34, 60]]
+```
+
+The trick: convert a flat index `mid` back to 2D coordinates:
+- **Row** = `mid / cols`
+- **Col** = `mid % cols`
+
+---
+
+## Approach 1: Two Binary Searches — O(log m + log n)
+
+First binary search the correct row, then binary search within that row.
+
+```java
+public boolean searchMatrix(int[][] matrix, int target) {
+    int rows = matrix.length, cols = matrix[0].length;
+
+    // Step 1: find the row where target could live
+    int lo = 0, hi = rows - 1;
+    while (lo < hi) {
+        int mid = lo + (hi - lo + 1) / 2; // upper mid
+        if (matrix[mid][0] <= target) lo = mid;
+        else hi = mid - 1;
+    }
+    int row = lo;
+
+    // Step 2: binary search within that row
+    int left = 0, right = cols - 1;
+    while (left <= right) {
+        int mid = left + (right - left) / 2;
+        if (matrix[row][mid] == target) return true;
+        else if (matrix[row][mid] < target) left = mid + 1;
+        else right = mid - 1;
+    }
+
+    return false;
+}
+```
+
+Clean, easy to reason about. Two separate binary searches, each O(log n) or O(log m). Total: O(log m + log n).
+
+---
+
+## Approach 2: Single Binary Search (Flatten) — O(log(m·n)) ✅ Optimal
+
+Treat the matrix as a flat sorted array of `m × n` elements, binary search once.
+
+```java
+public boolean searchMatrix(int[][] matrix, int target) {
+    int rows = matrix.length, cols = matrix[0].length;
+    int lo = 0, hi = rows * cols - 1;
+
+    while (lo <= hi) {
+        int mid = lo + (hi - lo) / 2;
+        int val = matrix[mid / cols][mid % cols]; // unflatten
+
+        if (val == target) return true;
+        else if (val < target) lo = mid + 1;
+        else hi = mid - 1;
+    }
+
+    return false;
+}
+```
+
+`mid / cols` gives the row, `mid % cols` gives the column. The rest is standard Template 1 exact-match binary search.
+
+**Note:** `log(m·n) = log m + log n`, so both approaches have the same asymptotic complexity. The flat version is simpler to write in an interview — one loop, one index conversion.
+
+## Tracing the Example
+
+`matrix = [[1,3,5,7],[10,11,16,20],[23,30,34,60]]`, `target = 3`
+
+`rows = 3, cols = 4`, search space: indices `[0, 11]`
+
+| lo | hi | mid | row = mid/4 | col = mid%4 | val | decision          |
+|----|-----|-----|-------------|-------------|-----|-------------------|
+| 0  | 11  | 5   | 1           | 1           | 11  | 11 > 3 → hi = 4   |
+| 0  | 4   | 2   | 0           | 2           | 5   | 5 > 3 → hi = 1    |
+| 0  | 1   | 0   | 0           | 0           | 1   | 1 < 3 → lo = 1    |
+| 1  | 1   | 1   | 0           | 1           | 3   | 3 == 3 → **true** |
+
+---
+
+## Complexity
+
+|                    | Time          | Space |
+|--------------------|---------------|-------|
+| Two binary searches| O(log m + log n) | O(1) |
+| Single flat search | O(log(m·n))   | O(1)  |
+
+Both are equivalent since `log(m·n) = log m + log n`. The flat version uses a single loop.
+
+---
+
+## Key Insight
+
+This problem is really asking: *"Can I treat this 2D structure as 1D?"* When the matrix has the strict row-ordering property (each row's first > previous row's last), the answer is yes — it's a sorted array in disguise.
+
+The index conversion `mid / cols` and `mid % cols` is the entire trick. Memorize it — it appears identically in **Koko Eating Bananas** (conceptually), **Spiral Matrix**, and any problem where you need to navigate a matrix linearly.
+
+This differs from **Search a 2D Matrix II** (#240), where rows and columns are individually sorted but the row-ordering property doesn't hold — that problem requires a staircase search from the top-right corner, not binary search.
+
+---
+
+## Edge Cases
+
+- **Single element matrix** `[[5]], target = 5` → `lo = hi = 0`, `mid = 0`, val = 5, return true.
+- **Target smaller than all** → `lo` never advances, `hi` retreats to -1, loop exits false.
+- **Target larger than all** → `lo` advances past `hi`, loop exits false.
+- **Target between rows** `target = 9` in the example → eliminated by binary search, no row contains it.
+- **Single row** `m = 1` → row search is trivial, degenerates to plain array binary search.
+- **Single column** `n = 1` → column binary search, each `mid % 1 == 0` always.

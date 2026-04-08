@@ -1,0 +1,126 @@
+---
+title: "Validate Binary Search Tree"
+description: "Determine if a binary tree is a valid BST where every node satisfies the BST property with respect to all ancestors."
+date: "2026-04-08"
+tags: ["tree", "bst", "dfs"]
+category: "Binary Search Tree"
+difficulty: "medium"
+timeComplexity: "O(n)"
+spaceComplexity: "O(h)"
+companies: ["Amazon", "Google", "Microsoft", "Facebook", "Bloomberg"]
+leetcodeNumber: 98
+draft: false
+---
+
+## Problem Statement
+
+Given the `root` of a binary tree, determine if it is a valid binary search tree (BST).
+
+A valid BST is defined as:
+- The left subtree of a node contains only nodes with keys **less than** the node's key.
+- The right subtree contains only nodes with keys **greater than** the node's key.
+- Both the left and right subtrees must also be valid BSTs.
+
+```
+Input:  root = [2,1,3]
+Output: true
+
+Input:  root = [5,1,4,null,null,3,6]
+Output: false
+Explanation: Node 4 is in the right subtree of 5, but 4 < 5.
+```
+
+## The Wrong Approach
+
+Comparing each node only with its direct parent fails:
+
+```java
+// ❌ Wrong — misses cross-level violations
+boolean validate(TreeNode node) {
+    if (node == null) return true;
+    if (node.left  != null && node.left.val  >= node.val) return false;
+    if (node.right != null && node.right.val <= node.val) return false;
+    return validate(node.left) && validate(node.right);
+}
+```
+
+Counterexample: `[5, 4, 6, null, null, 3, 7]` — node 3 is in the right subtree of 5 (so it must be > 5), but it's only compared to its parent 6 and passes that check.
+
+## Approach 1: DFS with Bounds — O(n) ✅
+
+Pass the valid range `(min, max)` down the tree. Every node must satisfy `min < node.val < max`.
+
+```java
+public boolean isValidBST(TreeNode root) {
+    return validate(root, Long.MIN_VALUE, Long.MAX_VALUE);
+}
+
+private boolean validate(TreeNode node, long min, long max) {
+    if (node == null) return true;
+
+    if (node.val <= min || node.val >= max) return false;
+
+    return validate(node.left,  min,      node.val)
+        && validate(node.right, node.val, max);
+}
+```
+
+When going **left**, the current node's value becomes the new **upper bound** (all left descendants must be < current).
+When going **right**, the current node's value becomes the new **lower bound** (all right descendants must be > current).
+
+**Why `Long.MIN_VALUE` / `Long.MAX_VALUE`?** Node values can be `Integer.MIN_VALUE` or `Integer.MAX_VALUE`. If you used `int` bounds, the initial bound would equal a valid node value and the check `node.val <= min` would incorrectly fail.
+
+## Approach 2: Inorder Traversal — O(n)
+
+A valid BST's inorder traversal produces strictly increasing values. Track the previous inorder value and fail if any value is not strictly greater.
+
+```java
+private long prev = Long.MIN_VALUE;
+
+public boolean isValidBST(TreeNode root) {
+    if (root == null) return true;
+
+    if (!isValidBST(root.left)) return false;
+
+    if (root.val <= prev) return false; // not strictly increasing
+    prev = root.val;
+
+    return isValidBST(root.right);
+}
+```
+
+**Note**: `prev` is a class field (or use `long[]` as a wrapper) because Java doesn't allow passing primitives by reference.
+
+## Tracing the Bounds Approach
+
+`root = [5, 1, 4, null, null, 3, 6]`
+
+```
+validate(5, -∞, +∞)    → 5 in (-∞, +∞) ✓
+  validate(1, -∞, 5)   → 1 in (-∞, 5)  ✓
+    validate(null) → true
+    validate(null) → true
+  validate(4, 5, +∞)   → 4 <= 5 ✗ → return false
+```
+
+Returns false at node 4, because 4 must be > 5 (it's in 5's right subtree). ✓
+
+## Complexity
+
+| | Time | Space |
+|---|---|---|
+| Bounds DFS | O(n) | O(h) |
+| Inorder | O(n) | O(h) |
+
+## Key Insight
+
+BST validation requires **global constraint propagation** — every node must satisfy the combined constraints of all its ancestors. The bounds DFS makes this explicit by threading `(min, max)` through every recursive call.
+
+The inorder approach is slightly trickier to implement correctly (class-level state) but is useful when you already need inorder traversal for another reason.
+
+## Edge Cases
+
+- **Single node**: no children, no constraints violated → true.
+- **Node value = Integer.MIN_VALUE**: initial `min = Long.MIN_VALUE` ensures `node.val <= min` is false.
+- **Node value = Integer.MAX_VALUE**: same reasoning for `max`.
+- **Duplicate values**: BST requires *strict* inequalities. `[2, 2]` should return false — `node.val <= min` catches this.

@@ -1,0 +1,111 @@
+---
+title: "Negative Cycle Detection"
+description: "Detect if a graph contains a negative-weight cycle using Bellman-Ford."
+date: "2026-04-08"
+tags: ["bellman-ford", "graph", "negative-cycle"]
+category: "Bellman-Ford"
+difficulty: "medium"
+timeComplexity: "O(V · E)"
+spaceComplexity: "O(V)"
+companies: ["Amazon", "Google", "Facebook"]
+leetcodeNumber: 0
+draft: false
+---
+
+## Problem Statement
+
+Given a directed weighted graph, determine if it contains a **negative-weight cycle** — a cycle whose total edge weight is negative. A negative cycle means shortest paths are undefined (you can always go around the cycle to reduce cost further).
+
+**Classic applications:**
+- Currency arbitrage detection (negative cycle in log-transformed exchange rates)
+- Verifying shortest-path validity before reporting distances
+
+## Algorithm: Bellman-Ford V-th Round Test
+
+Standard Bellman-Ford runs `V-1` rounds to compute all shortest paths. If distances still improve in round `V`, a negative cycle exists.
+
+```java
+public boolean hasNegativeCycle(int V, int[][] edges) {
+    int[] dist = new int[V];
+    // dist[0] = 0, others = INF (starting from node 0)
+    Arrays.fill(dist, Integer.MAX_VALUE / 2); // avoid overflow
+    dist[0] = 0;
+
+    // V-1 normal rounds
+    for (int round = 0; round < V - 1; round++) {
+        for (int[] edge : edges) {
+            int u = edge[0], v = edge[1], w = edge[2];
+            if (dist[u] + w < dist[v]) {
+                dist[v] = dist[u] + w;
+            }
+        }
+    }
+
+    // V-th round: if any improvement, negative cycle exists
+    for (int[] edge : edges) {
+        int u = edge[0], v = edge[1], w = edge[2];
+        if (dist[u] + w < dist[v]) {
+            return true; // negative cycle detected
+        }
+    }
+    return false;
+}
+```
+
+**Caveat**: this detects cycles reachable from the source. To detect any negative cycle in the graph, initialize all distances to 0 (as if there's a virtual source connected to all nodes with weight 0).
+
+```java
+// Detect any negative cycle (not just from source)
+int[] dist = new int[V]; // all zeros — virtual super-source
+```
+
+## Application: Arbitrage Detection
+
+Currency exchange arbitrage: can you start with $1 and end with more than $1 by converting through currencies?
+
+**Key transformation**: take the negative log of exchange rates. An arbitrage cycle = a negative cycle in the log-rate graph.
+
+```java
+public boolean canArbitrage(String[] currencies, double[][] rates) {
+    int n = currencies.length;
+    double[] dist = new double[n];
+    // All zeros = virtual super-source (as if we can start anywhere)
+
+    for (int round = 0; round < n - 1; round++) {
+        double[] temp = dist.clone();
+        for (int u = 0; u < n; u++) {
+            for (int v = 0; v < n; v++) {
+                if (rates[u][v] > 0) {
+                    double w = -Math.log(rates[u][v]); // negate for arbitrage
+                    if (dist[u] + w < temp[v]) temp[v] = dist[u] + w;
+                }
+            }
+        }
+        dist = temp;
+    }
+
+    // V-th round check
+    for (int u = 0; u < n; u++) {
+        for (int v = 0; v < n; v++) {
+            if (rates[u][v] > 0) {
+                double w = -Math.log(rates[u][v]);
+                if (dist[u] + w < dist[v]) return true; // arbitrage!
+            }
+        }
+    }
+    return false;
+}
+```
+
+**Why negative log?** If `r1 * r2 * r3 > 1` (profitable cycle), then `log(r1) + log(r2) + log(r3) > 0`, so `-log(r1) - log(r2) - log(r3) < 0` — a negative cycle.
+
+## Key Insight
+
+Bellman-Ford's `V-1` rounds guarantee that all shortest paths (in graphs without negative cycles) have converged — because any simple path uses at most `V-1` edges. A V-th improvement means the path is getting shorter by going around a cycle, which can only happen if that cycle has negative total weight.
+
+## Edge Cases
+
+- **No negative cycles**: V-th round finds no improvements, return false
+- **Disconnected graph**: initialize all distances to 0 to catch cycles in any component
+- **Self-loop with negative weight** `[u, u, -1]`: this is itself a negative cycle
+- **Zero-weight cycles**: not negative, do not affect Bellman-Ford's V-th round test

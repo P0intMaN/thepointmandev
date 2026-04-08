@@ -1,0 +1,153 @@
+---
+title: "Product of Array Except Self"
+description: "Return an array where each element is the product of all other elements, without using division."
+date: "2026-03-17"
+tags: ["array", "prefix-sum"]
+category: "Prefix Sum"
+difficulty: "medium"
+timeComplexity: "O(n)"
+spaceComplexity: "O(1)"
+companies: ["Amazon", "Apple", "Google", "Meta", "Microsoft"]
+leetcodeNumber: 238
+draft: false
+---
+
+## Problem Statement
+
+Given an integer array `nums`, return an array `answer` such that `answer[i]` is equal to the product of all elements of `nums` **except** `nums[i]`.
+
+You must solve it **without using division** and in O(n) time.
+
+```
+Input:  nums = [1,2,3,4]
+Output: [24,12,8,6]
+
+Input:  nums = [-1,1,0,-3,3]
+Output: [0,0,9,0,0]
+```
+
+The follow-up asks for O(1) extra space (output array doesn't count).
+
+## The Key Observation
+
+For each index `i`, the answer is:
+
+```
+answer[i] = (product of everything to the LEFT of i)
+          × (product of everything to the RIGHT of i)
+```
+
+This is prefix products applied twice — once left-to-right, once right-to-left.
+
+---
+
+## Approach 1: Left and Right Arrays — O(n) time, O(n) space
+
+Build two auxiliary arrays explicitly.
+
+```java
+public int[] productExceptSelf(int[] nums) {
+    int n = nums.length;
+    int[] left  = new int[n];  // left[i]  = product of nums[0..i-1]
+    int[] right = new int[n];  // right[i] = product of nums[i+1..n-1]
+    int[] answer = new int[n];
+
+    left[0] = 1;
+    for (int i = 1; i < n; i++) left[i] = left[i-1] * nums[i-1];
+
+    right[n-1] = 1;
+    for (int i = n-2; i >= 0; i--) right[i] = right[i+1] * nums[i+1];
+
+    for (int i = 0; i < n; i++) answer[i] = left[i] * right[i];
+
+    return answer;
+}
+```
+
+For `nums = [1, 2, 3, 4]`:
+
+```
+left  = [1, 1, 2, 6]    (prefix products from the left)
+right = [24, 12, 4, 1]  (prefix products from the right)
+answer= [24, 12, 8, 6]  ✓
+```
+
+---
+
+## Approach 2: O(1) Extra Space ✅ Optimal
+
+Instead of two separate arrays, reuse the `answer` array for the left pass, then accumulate the right product in a single variable during the right pass.
+
+```java
+public int[] productExceptSelf(int[] nums) {
+    int n = nums.length;
+    int[] answer = new int[n];
+
+    // Pass 1: fill answer with left products
+    answer[0] = 1;
+    for (int i = 1; i < n; i++) {
+        answer[i] = answer[i-1] * nums[i-1];
+    }
+
+    // Pass 2: multiply in right products using a running variable
+    int rightProduct = 1;
+    for (int i = n-1; i >= 0; i--) {
+        answer[i] *= rightProduct;
+        rightProduct *= nums[i];
+    }
+
+    return answer;
+}
+```
+
+After pass 1, `answer[i]` holds the product of everything to the left of `i`. Pass 2 walks right-to-left: at each step, `answer[i]` is multiplied by `rightProduct` (the product of everything to its right so far), then `rightProduct` is updated to include `nums[i]` for the next iteration.
+
+## Tracing Pass 2
+
+`nums = [1, 2, 3, 4]`, `answer` after pass 1 = `[1, 1, 2, 6]`
+
+| i | rightProduct before | answer[i] = answer[i] × right | rightProduct after |
+|---|---------------------|-------------------------------|--------------------|
+| 3 | 1                   | 6 × 1 = **6**                 | 1 × 4 = 4          |
+| 2 | 4                   | 2 × 4 = **8**                 | 4 × 3 = 12         |
+| 1 | 12                  | 1 × 12 = **12**               | 12 × 2 = 24        |
+| 0 | 24                  | 1 × 24 = **24**               | 24 × 1 = 24        |
+
+Final: `[24, 12, 8, 6]` ✓
+
+## Complexity
+
+|                    | Time | Space        |
+|--------------------|------|--------------|
+| Two arrays         | O(n) | O(n)         |
+| Running variable   | O(n) | O(1) *       |
+
+\* Output array not counted toward space complexity per the problem statement.
+
+## Why No Division?
+
+Division seems like the obvious shortcut: compute the total product, then divide by `nums[i]` for each index. The problem forbids it for two reasons:
+
+1. **Zeros** — if any element is zero, dividing by the total product fails. You'd need special-case logic for one zero vs two zeros.
+2. **Integer division** — `6 / 2 = 3` works, but `5 / 2 = 2` in integer arithmetic, silently losing precision.
+
+The prefix product approach sidesteps both issues entirely.
+
+## Key Insight
+
+This problem is prefix sums in disguise — just with multiplication instead of addition. The same pattern applies:
+
+> Build a "prefix accumulation" from the left. Then make a second pass from the right, combining with a running accumulation.
+
+Any time you need "everything except the current element" for an associative operation (sum, product, XOR, min, max), this two-pass technique works. You'll see it again in:
+
+- **Trapping Rain Water** — left max and right max arrays, then combine
+- **Jump Game** — reachability prefix
+- **Stock problems** — left min, right max passes
+
+## Edge Cases
+
+- **Contains zero** `[1, 0, 3]` → `answer = [0, 3, 0]`. The zero element gets the product of the rest; all others get 0. Handled correctly — no division needed.
+- **Two zeros** `[0, 0, 3]` → `answer = [0, 0, 0]`. Every position includes at least one zero in its product.
+- **Single negative** `[-1, 2, 3]` → `answer = [6, -3, -2]`. Sign handling is automatic.
+- **All ones** `[1, 1, 1, 1]` → `answer = [1, 1, 1, 1]`.

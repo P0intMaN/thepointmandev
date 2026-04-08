@@ -1,0 +1,134 @@
+---
+title: "Minimum Window Substring"
+description: "Find the smallest substring of s that contains all characters of t, including duplicates."
+date: "2026-03-17"
+tags: ["string", "sliding-window", "hash-map"]
+category: "Sliding Window"
+difficulty: "hard"
+timeComplexity: "O(|s| + |t|)"
+spaceComplexity: "O(|t|)"
+companies: ["Amazon", "Google", "Meta", "LinkedIn", "Uber"]
+leetcodeNumber: 76
+draft: false
+---
+
+## Problem Statement
+
+Given two strings `s` and `t`, return the **minimum window substring** of `s` such that every character in `t` (including duplicates) is included in the window. If no such window exists, return `""`.
+
+```
+Input:  s = "ADOBECODEBANC", t = "ABC"
+Output: "BANC"
+Explanation: "BANC" is the smallest window containing A, B, and C
+
+Input:  s = "a", t = "a"
+Output: "a"
+
+Input:  s = "a", t = "aa"
+Output: ""
+Explanation: t requires two 'a's but s only has one
+```
+
+## The Challenge
+
+This is a harder sliding window problem because the "window is valid" condition isn't just about uniqueness — it's about **satisfying a frequency requirement** for every character in `t`. You need to track not just *which* characters are present, but *how many* of each.
+
+The key insight: maintain a frequency map for `t` and a running count of how many distinct character requirements have been **fully satisfied**. This turns an O(|s| · |t|) validity check into an O(1) check per window move.
+
+---
+
+## Solution
+
+```java
+public String minWindow(String s, String t) {
+    if (s.isEmpty() || t.isEmpty()) return "";
+
+    // Frequency of each character needed from t
+    Map<Character, Integer> need = new HashMap<>();
+    for (char c : t.toCharArray()) need.merge(c, 1, Integer::sum);
+
+    int required = need.size();  // number of distinct chars that must be satisfied
+    int formed = 0;              // how many are currently satisfied in the window
+
+    Map<Character, Integer> window = new HashMap<>();
+    int left = 0;
+    int minLen = Integer.MAX_VALUE;
+    int minLeft = 0;
+
+    for (int right = 0; right < s.length(); right++) {
+        // 1. Expand: add s[right] to window
+        char c = s.charAt(right);
+        window.merge(c, 1, Integer::sum);
+
+        // Check if this character's requirement is now fully met
+        if (need.containsKey(c) && window.get(c).equals(need.get(c))) {
+            formed++;
+        }
+
+        // 2. Shrink: while window satisfies all requirements, try to minimise it
+        while (formed == required) {
+            // Record if this is the smallest valid window so far
+            if (right - left + 1 < minLen) {
+                minLen = right - left + 1;
+                minLeft = left;
+            }
+
+            // Remove s[left] from window
+            char leftChar = s.charAt(left);
+            window.merge(leftChar, -1, Integer::sum);
+            if (need.containsKey(leftChar) && window.get(leftChar) < need.get(leftChar)) {
+                formed--;  // requirement no longer satisfied
+            }
+            left++;
+        }
+    }
+
+    return minLen == Integer.MAX_VALUE ? "" : s.substring(minLeft, minLeft + minLen);
+}
+```
+
+## How `formed` Works
+
+`formed` is the count of characters whose window frequency **exactly meets or exceeds** the required frequency. We only increment `formed` when `window.get(c) == need.get(c)` — the moment we tip from "not enough" to "just enough". Subsequent extras don't increment it again.
+
+When shrinking, we only decrement `formed` when `window.get(leftChar)` drops **below** `need.get(leftChar)` — we've lost a satisfied requirement.
+
+This gives us an O(1) validity check: `formed == required`.
+
+## Complexity
+
+| | Time | Space |
+|---|---|---|
+| Solution | O(\|s\| + \|t\|) | O(\|t\|) |
+
+Both `left` and `right` only ever move forward — at most `|s|` moves each. Building `need` is O(|t|). Total: O(|s| + |t|).
+
+## The Integer Comparison Trap
+
+```java
+// ❌ Wrong — Integer cache only covers -128 to 127
+if (window.get(c) == need.get(c)) { ... }
+
+// ✅ Correct — use .equals() for Integer objects
+if (window.get(c).equals(need.get(c))) { ... }
+```
+
+`HashMap.get()` returns `Integer` (boxed), not `int`. Java caches `Integer` objects only for values `-128` to `127`. For values outside this range, `==` compares references and will return `false` even when the values are equal. Always use `.equals()` when comparing boxed integers from maps.
+
+This is one of the most common silent bugs in Java sliding window solutions.
+
+## Key Insight
+
+The `formed` / `required` counter pattern is the generalisation of sliding window to **multi-character frequency constraints**. Instead of "does the window contain this character?", you ask "does the window satisfy all frequency requirements?" — and you track the answer as a single integer.
+
+You'll reuse this exact pattern in:
+- **Find All Anagrams in a String** (#438) — fixed window, same `formed` logic
+- **Permutation in String** (#567) — same idea, fixed window size
+- **Substring with Concatenation of All Words** (#30) — word-level version
+
+## Edge Cases
+
+- **`t` has duplicates** `t = "AA"` — `need` stores `{A: 2}`. `formed` only increments when `window.get('A') == 2`, not at 1. This correctly enforces the duplicate requirement.
+- **`s` shorter than `t`** — `formed` never reaches `required`, returns `""`.
+- **`s == t`** — window expands to full `s`, then shrinks to nothing as left catches up, but the full-string answer is recorded first.
+- **No valid window** — `minLen` stays `Integer.MAX_VALUE`, returns `""`.

@@ -1,0 +1,122 @@
+---
+title: "String Algorithms"
+description: "Pattern matching (KMP, Rabin-Karp), palindromes (Manacher's), and anagram/substring problems using sliding windows and hashing."
+signal: "Substring search in O(n). Longest palindromic substring. Find all anagram positions. DNA sequence repeats. Signal: 'find pattern in text', 'longest palindrome', 'all occurrences of anagram', 'implement strStr'."
+gotchas: "KMP builds a failure function (prefix = suffix table) in O(m), then matches in O(n). Rabin-Karp: rolling hash in O(n+m) average but O(nm) worst case (hash collisions). Manacher's: expand around center in O(n) total using previously computed palindromes. Anagram problems: use fixed-size int[26] frequency array, not HashMap — faster and cleaner."
+color: "#f59e0b"
+colorDim: "#1a0f00"
+colorBorder: "#d97706"
+icon: "string-algorithms"
+order: 28
+tier: 3
+draft: false
+---
+
+## Pattern Matching Algorithms
+
+### KMP (Knuth-Morris-Pratt) — O(n + m)
+
+Build a **failure function** (LPS array): `lps[i]` = length of the longest proper prefix of `pattern[0..i]` that is also a suffix.
+
+```java
+int[] buildLPS(String pattern) {
+    int m = pattern.length();
+    int[] lps = new int[m];
+    int len = 0, i = 1;
+
+    while (i < m) {
+        if (pattern.charAt(i) == pattern.charAt(len)) {
+            lps[i++] = ++len;
+        } else if (len > 0) {
+            len = lps[len - 1]; // don't increment i
+        } else {
+            lps[i++] = 0;
+        }
+    }
+    return lps;
+}
+
+List<Integer> kmpSearch(String text, String pattern) {
+    int[] lps = buildLPS(pattern);
+    List<Integer> matches = new ArrayList<>();
+    int i = 0, j = 0;
+
+    while (i < text.length()) {
+        if (text.charAt(i) == pattern.charAt(j)) {
+            i++; j++;
+            if (j == pattern.length()) {
+                matches.add(i - j); // match found at position i-j
+                j = lps[j - 1];    // look for next match
+            }
+        } else if (j > 0) {
+            j = lps[j - 1]; // use failure function
+        } else {
+            i++;
+        }
+    }
+    return matches;
+}
+```
+
+### Rabin-Karp — O(n + m) average
+
+Rolling hash: slide a hash window of size m over the text.
+
+```java
+List<Integer> rabinKarp(String text, String pattern) {
+    int n = text.length(), m = pattern.length();
+    int base = 26, mod = 1_000_000_007;
+    List<Integer> result = new ArrayList<>();
+
+    long patHash = 0, winHash = 0, power = 1;
+
+    for (int i = 0; i < m - 1; i++) power = power * base % mod;
+    for (int i = 0; i < m; i++) {
+        patHash = (patHash * base + pattern.charAt(i)) % mod;
+        winHash = (winHash * base + text.charAt(i)) % mod;
+    }
+
+    for (int i = 0; i <= n - m; i++) {
+        if (winHash == patHash && text.substring(i, i+m).equals(pattern))
+            result.add(i);
+        if (i < n - m) {
+            winHash = (winHash - text.charAt(i) * power % mod + mod) % mod;
+            winHash = (winHash * base + text.charAt(i + m)) % mod;
+        }
+    }
+    return result;
+}
+```
+
+## Palindrome: Expand Around Center
+
+```java
+// Expand around center for both odd and even length palindromes
+int expandAroundCenter(String s, int left, int right) {
+    while (left >= 0 && right < s.length() && s.charAt(left) == s.charAt(right)) {
+        left--; right++;
+    }
+    return right - left - 1; // palindrome length
+}
+
+// Call for each center
+for (int i = 0; i < n; i++) {
+    int odd = expandAroundCenter(s, i, i);
+    int even = expandAroundCenter(s, i, i+1);
+}
+```
+
+## Anagram Detection
+
+Use a fixed-size `int[26]` frequency array for lowercase letters — faster than HashMap:
+
+```java
+boolean isAnagram(String s, String t) {
+    if (s.length() != t.length()) return false;
+    int[] freq = new int[26];
+    for (char c : s.toCharArray()) freq[c - 'a']++;
+    for (char c : t.toCharArray()) freq[c - 'a']--;
+    for (int f : freq) if (f != 0) return false;
+    return true;
+}
+```

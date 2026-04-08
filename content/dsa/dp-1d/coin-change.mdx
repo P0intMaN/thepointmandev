@@ -1,0 +1,111 @@
+---
+title: "Coin Change"
+description: "Find the minimum number of coins needed to make up a given amount."
+date: "2026-04-08"
+tags: ["dp", "array", "bfs"]
+category: "Dynamic Programming — 1D"
+difficulty: "medium"
+timeComplexity: "O(amount · n)"
+spaceComplexity: "O(amount)"
+companies: ["Amazon", "Google", "Facebook", "Microsoft", "Goldman Sachs"]
+leetcodeNumber: 322
+draft: false
+---
+
+## Problem Statement
+
+You are given an integer array `coins` representing coin denominations and an integer `amount`. Return the **fewest number of coins** needed to make up that amount. If that amount cannot be made up, return `-1`. You may use an unlimited number of each coin denomination.
+
+```
+Input:  coins = [1,5,11], amount = 15
+Output: 3  (5+5+5 or 5+11-... wait: 11+1+1+1+1=5 coins. But wait: 5+5+5=3 ✓)
+
+Input:  coins = [1,2,5], amount = 11
+Output: 3  (5+5+1)
+
+Input:  coins = [2], amount = 3
+Output: -1
+```
+
+## State Definition
+
+`dp[i]` = minimum number of coins to make amount `i`.
+
+For each amount `i`, try every coin `c`. If `i - c >= 0` and `dp[i-c]` is reachable, then `dp[i] = 1 + dp[i-c]`.
+
+**Recurrence**: `dp[i] = min(dp[i], 1 + dp[i - c])` for each coin `c`
+
+**Base case**: `dp[0] = 0` (0 coins needed to make amount 0)
+
+**Initialization**: `dp[i] = amount + 1` (serves as "infinity" — more coins than possible)
+
+## Bottom-Up DP — O(amount · n)
+
+```java
+public int coinChange(int[] coins, int amount) {
+    int[] dp = new int[amount + 1];
+    Arrays.fill(dp, amount + 1); // "infinity"
+    dp[0] = 0;
+
+    for (int i = 1; i <= amount; i++) {
+        for (int coin : coins) {
+            if (coin <= i) {
+                dp[i] = Math.min(dp[i], 1 + dp[i - coin]);
+            }
+        }
+    }
+
+    return dp[amount] > amount ? -1 : dp[amount];
+}
+```
+
+**Why `amount + 1` as infinity?** The maximum possible coins is `amount` (using all 1-cent coins). Any value above `amount` means unreachable.
+
+## Tracing the Example
+
+`coins = [1, 2, 5]`, `amount = 11`
+
+| i | dp[i] (initial ∞=12) | try coin=1 | try coin=2 | try coin=5 |
+|---|---|---|---|---|
+| 0 | 0 | — | — | — |
+| 1 | 1+dp[0]=**1** | | 1>1 skip | 5>1 skip |
+| 2 | 1+dp[1]=2 | | 1+dp[0]=**1** | 5>2 skip |
+| 5 | 1+dp[4]=3 | | 1+dp[3]=2 | 1+dp[0]=**1** |
+| 11| min(1+dp[10],1+dp[9],1+dp[6]) = min(2+1,3+1,1+2) = **3** | | | |
+
+Return `dp[11] = 3` ✓
+
+## Why Not Greedy?
+
+Greedy (always take the largest coin ≤ remaining) fails for non-canonical coin systems:
+
+`coins = [1, 3, 4]`, `amount = 6`:
+- Greedy: 4+1+1 = 3 coins
+- Optimal: 3+3 = 2 coins
+
+DP considers all coins at every amount, finding the true minimum.
+
+## Complexity
+
+| | Time | Space |
+|---|---|---|
+| Bottom-up DP | O(amount · n) | O(amount) |
+
+n = number of coin denominations.
+
+## Key Insight
+
+Coin Change is the canonical **unbounded knapsack** problem — each item (coin) can be used unlimited times. The "unbounded" part means the inner loop iterates over ALL coins at each amount (not just the ones not yet used).
+
+The pattern `dp[i] = min/max(dp[i-x] + cost)` for each valid `x` is fundamental:
+
+- **#279 Perfect Squares** — same structure, coins are perfect squares {1, 4, 9, 16, ...}
+- **#377 Combination Sum IV** — count ordered ways (order matters → different DP direction)
+- **#139 Word Break** — `dp[i] = any(dp[i-len(word)] && s[i-len..i] == word)`
+
+## Edge Cases
+
+- **amount = 0**: `dp[0] = 0`, return 0.
+- **No valid combination**: `dp[amount]` stays at `amount + 1`, return -1.
+- **Coin denomination = amount**: `dp[amount] = 1`.
+- **Coin = 1 always exists**: guarantees a solution for any amount (but may not be optimal).

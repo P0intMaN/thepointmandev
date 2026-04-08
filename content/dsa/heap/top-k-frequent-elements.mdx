@@ -1,0 +1,115 @@
+---
+title: "Top K Frequent Elements"
+description: "Return the k most frequent elements in an array using a heap for O(n log k) time."
+date: "2026-04-08"
+tags: ["array", "heap", "hash-map", "bucket-sort"]
+category: "Heap / Priority Queue"
+difficulty: "medium"
+timeComplexity: "O(n log k)"
+spaceComplexity: "O(n)"
+companies: ["Amazon", "Google", "Facebook", "Microsoft", "Apple"]
+leetcodeNumber: 347
+draft: false
+---
+
+## Problem Statement
+
+Given an integer array `nums` and an integer `k`, return the `k` most frequent elements. You may return the answer in any order. You must solve it in better than O(n log n) time.
+
+```
+Input:  nums = [1,1,1,2,2,3], k = 2
+Output: [1,2]
+
+Input:  nums = [1], k = 1
+Output: [1]
+```
+
+## Approach 1: Min Heap — O(n log k)
+
+Count frequencies with a HashMap. Maintain a min heap of size `k` — evict the least-frequent element when size exceeds `k`. After processing all elements, the heap contains the `k` most frequent.
+
+```java
+public int[] topKFrequent(int[] nums, int k) {
+    // Count frequencies
+    Map<Integer, Integer> freq = new HashMap<>();
+    for (int n : nums) freq.merge(n, 1, Integer::sum);
+
+    // Min heap by frequency — smallest frequency at top (eviction candidate)
+    PriorityQueue<Integer> heap = new PriorityQueue<>(
+        (a, b) -> freq.get(a) - freq.get(b)
+    );
+
+    for (int num : freq.keySet()) {
+        heap.offer(num);
+        if (heap.size() > k) heap.poll(); // evict least frequent
+    }
+
+    int[] result = new int[k];
+    for (int i = 0; i < k; i++) result[i] = heap.poll();
+    return result;
+}
+```
+
+## Approach 2: Bucket Sort — O(n)
+
+The maximum frequency any element can have is `n`. Use an array of `n+1` buckets where `bucket[i]` holds all elements with frequency `i`. Collect elements from the highest-frequency buckets.
+
+```java
+public int[] topKFrequent(int[] nums, int k) {
+    Map<Integer, Integer> freq = new HashMap<>();
+    for (int n : nums) freq.merge(n, 1, Integer::sum);
+
+    // Bucket by frequency
+    List<Integer>[] buckets = new List[nums.length + 1];
+    for (int num : freq.keySet()) {
+        int f = freq.get(num);
+        if (buckets[f] == null) buckets[f] = new ArrayList<>();
+        buckets[f].add(num);
+    }
+
+    // Collect top k from highest frequency
+    int[] result = new int[k];
+    int idx = 0;
+    for (int f = nums.length; f >= 1 && idx < k; f--) {
+        if (buckets[f] != null) {
+            for (int num : buckets[f]) {
+                result[idx++] = num;
+                if (idx == k) break;
+            }
+        }
+    }
+    return result;
+}
+```
+
+## Complexity Comparison
+
+| | Time | Space |
+|---|---|---|
+| Min heap size k | O(n log k) | O(n) |
+| Bucket sort | O(n) | O(n) |
+
+Bucket sort is O(n) but requires O(n) bucket space. The heap approach is more general and works when `k` is much smaller than `n` (smaller heap operations).
+
+## Key Insight
+
+**Min heap for top-k** is counter-intuitive but correct: keep the k most frequent by evicting the least frequent. The heap's minimum is always the "weakest" of the k candidates.
+
+**Bucket sort insight**: if frequency is bounded by `n`, you can avoid heap operations entirely — just index directly into a frequency bucket. This generalizes whenever you can bound the sort key.
+
+Both approaches appear in **#692 Top K Frequent Words** — the only change is the comparator (frequency descending, then lexicographic ascending for ties):
+
+```java
+PriorityQueue<String> heap = new PriorityQueue<>((a, b) ->
+    freq.get(a).equals(freq.get(b))
+        ? b.compareTo(a)        // lexicographic desc in min heap = lex asc in result
+        : freq.get(a) - freq.get(b)
+);
+```
+
+## Edge Cases
+
+- **k = 1**: return the single most frequent element.
+- **k = number of unique elements**: return all unique elements.
+- **All elements same frequency**: any k of them are valid.
+- **Single element**: return `[nums[0]]`.

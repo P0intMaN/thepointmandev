@@ -1,0 +1,121 @@
+---
+title: "Implement Trie (Prefix Tree)"
+description: "Design a trie data structure supporting insert, search, and prefix lookup in O(L) time."
+date: "2026-04-08"
+tags: ["trie", "design", "string"]
+category: "Trie"
+difficulty: "medium"
+timeComplexity: "O(L) per operation"
+spaceComplexity: "O(N · L)"
+companies: ["Google", "Amazon", "Microsoft", "Apple", "Facebook"]
+leetcodeNumber: 208
+draft: false
+---
+
+## Problem Statement
+
+Implement the `Trie` class:
+- `Trie()` — initialize the trie object.
+- `void insert(String word)` — insert `word` into the trie.
+- `boolean search(String word)` — return `true` if `word` is in the trie.
+- `boolean startsWith(String prefix)` — return `true` if any previously inserted word has the prefix `prefix`.
+
+```java
+Trie trie = new Trie();
+trie.insert("apple");
+trie.search("apple");   // returns true
+trie.search("app");     // returns false
+trie.startsWith("app"); // returns true
+trie.insert("app");
+trie.search("app");     // returns true
+```
+
+## Implementation
+
+```java
+class Trie {
+
+    private static class TrieNode {
+        TrieNode[] children = new TrieNode[26];
+        boolean isEndOfWord = false;
+    }
+
+    private final TrieNode root;
+
+    public Trie() {
+        root = new TrieNode();
+    }
+
+    public void insert(String word) {
+        TrieNode node = root;
+        for (char c : word.toCharArray()) {
+            int idx = c - 'a';
+            if (node.children[idx] == null) {
+                node.children[idx] = new TrieNode();
+            }
+            node = node.children[idx];
+        }
+        node.isEndOfWord = true;
+    }
+
+    public boolean search(String word) {
+        TrieNode node = traverse(word);
+        return node != null && node.isEndOfWord; // must be a complete word
+    }
+
+    public boolean startsWith(String prefix) {
+        return traverse(prefix) != null; // prefix path just needs to exist
+    }
+
+    // Traverse the trie following the characters; return null if path doesn't exist
+    private TrieNode traverse(String s) {
+        TrieNode node = root;
+        for (char c : s.toCharArray()) {
+            int idx = c - 'a';
+            if (node.children[idx] == null) return null;
+            node = node.children[idx];
+        }
+        return node;
+    }
+}
+```
+
+## Trie Structure Visualization
+
+Inserting "apple" and "app":
+
+```
+root
+ └── a
+      └── p
+           └── p [isEnd=true] ← "app"
+                └── l
+                     └── e [isEnd=true] ← "apple"
+```
+
+`search("app")` traverses to the node at 'p' and checks `isEndOfWord = true` → true.
+`search("appl")` traverses to the node at 'l' and checks `isEndOfWord = false` → false.
+`startsWith("appl")` traverses to 'l' and returns not-null → true.
+
+## Complexity
+
+| Operation | Time | Space |
+|---|---|---|
+| `insert` | O(L) | O(L) worst case (new nodes) |
+| `search` | O(L) | O(1) |
+| `startsWith` | O(L) | O(1) |
+
+L = word length. Building a trie from N words of average length L costs O(N·L) time and space.
+
+## Key Insight
+
+The Trie's power is **shared prefixes**. "apple" and "application" share the path "appli" — stored once, not twice. This makes prefix queries O(L) regardless of how many words share that prefix.
+
+The single difference between `search` and `startsWith` is the `isEndOfWord` check — the traversal code is identical. The `traverse` helper makes this DRY.
+
+## Edge Cases
+
+- **Empty string**: `insert("")` marks root's `isEndOfWord = true`. `search("")` and `startsWith("")` both return true.
+- **Prefix of inserted word**: `insert("apple")`, `search("app")` → false (`isEndOfWord` at 'p' is false).
+- **Word that is a prefix**: `insert("app")`, then `insert("apple")`. Both are valid words — `isEndOfWord` is set at both 'p' (for "app") and 'e' (for "apple").
+- **Lowercase only**: `'c' - 'a'` requires all characters to be lowercase letters a-z. For other alphabets, use a HashMap.

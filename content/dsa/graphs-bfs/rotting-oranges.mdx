@@ -1,0 +1,116 @@
+---
+title: "Rotting Oranges"
+description: "Find the minimum number of minutes until no fresh orange remains, given that rotten oranges spread each minute."
+date: "2026-04-08"
+tags: ["graph", "bfs", "grid", "multi-source"]
+category: "Graphs — BFS"
+difficulty: "medium"
+timeComplexity: "O(m · n)"
+spaceComplexity: "O(m · n)"
+companies: ["Amazon", "Google", "Facebook", "DoorDash"]
+leetcodeNumber: 994
+draft: false
+---
+
+## Problem Statement
+
+You are given an `m x n` grid where each cell has one of three values:
+- `0` — empty
+- `1` — fresh orange
+- `2` — rotten orange
+
+Every minute, any fresh orange 4-directionally adjacent to a rotten orange becomes rotten. Return the **minimum number of minutes** that must elapse until no cell has a fresh orange. Return `-1` if this is impossible.
+
+```
+Input:  grid = [[2,1,1],[1,1,0],[0,1,1]]
+Output: 4
+
+Input:  grid = [[2,1,1],[0,1,1],[1,0,1]]
+Output: -1  (bottom-left orange is isolated)
+
+Input:  grid = [[0,2]]
+Output: 0   (no fresh oranges)
+```
+
+## Why Multi-Source BFS?
+
+All rotten oranges spread simultaneously each minute. This is exactly multi-source BFS: seed the queue with ALL rotten oranges at time 0, then expand level by level. Each level = one minute.
+
+```java
+public int orangesRotting(int[][] grid) {
+    int rows = grid.length, cols = grid[0].length;
+    int[][] dirs = {{0,1},{0,-1},{1,0},{-1,0}};
+
+    Queue<int[]> queue = new LinkedList<>();
+    int fresh = 0;
+
+    // Seed all rotten oranges; count fresh
+    for (int r = 0; r < rows; r++) {
+        for (int c = 0; c < cols; c++) {
+            if (grid[r][c] == 2) queue.offer(new int[]{r, c});
+            else if (grid[r][c] == 1) fresh++;
+        }
+    }
+
+    if (fresh == 0) return 0; // no fresh oranges to wait for
+
+    int minutes = 0;
+
+    while (!queue.isEmpty() && fresh > 0) {
+        int size = queue.size();
+        minutes++;
+        for (int i = 0; i < size; i++) {
+            int[] cell = queue.poll();
+            for (int[] d : dirs) {
+                int nr = cell[0] + d[0], nc = cell[1] + d[1];
+                if (nr >= 0 && nr < rows && nc >= 0 && nc < cols && grid[nr][nc] == 1) {
+                    grid[nr][nc] = 2;      // mark rotten
+                    fresh--;
+                    queue.offer(new int[]{nr, nc});
+                }
+            }
+        }
+    }
+
+    return fresh == 0 ? minutes : -1;
+}
+```
+
+## Tracing the Example
+
+`grid = [[2,1,1],[1,1,0],[0,1,1]]`
+
+```
+Initial: queue = {(0,0)}, fresh = 6
+Minute 1: (0,0) spreads → (0,1), (1,0). fresh=4
+Minute 2: (0,1), (1,0) spread → (0,2), (1,1). fresh=2
+Minute 3: (0,2), (1,1) spread → (2,1). fresh=1
+Minute 4: (2,1) spreads → (2,2). fresh=0
+Return 4 ✓
+```
+
+## Complexity
+
+| | Time | Space |
+|---|---|---|
+| Multi-source BFS | O(m·n) | O(m·n) |
+
+Every cell is enqueued at most once.
+
+## Key Insight
+
+Multi-source BFS is the answer to any problem where **multiple sources spread simultaneously** and you need the **minimum time until all targets are reached** (or detect if any target is unreachable).
+
+The only difference from single-source BFS: seed the queue with all sources at the start. The level counter (minutes) naturally represents the time elapsed.
+
+Pattern appears in:
+- **#286 Walls and Gates** — fill distance from nearest gate
+- **#542 01 Matrix** — minimum distance from each cell to nearest 0
+- **#1162 As Far from Land as Possible** — maximum BFS distance from all land cells
+
+## Edge Cases
+
+- **No fresh oranges**: return 0 immediately (check before BFS).
+- **Isolated fresh orange**: BFS terminates with `fresh > 0`, return -1.
+- **No rotten oranges but fresh exist**: queue starts empty, loop never runs, return -1.
+- **Grid is all empty**: `fresh = 0`, return 0 before BFS.

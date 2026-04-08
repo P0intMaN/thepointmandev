@@ -1,0 +1,174 @@
+---
+title: "LRU Cache"
+description: "Design a data structure that follows the Least Recently Used cache eviction policy."
+date: "2026-04-08"
+tags: ["linked-list", "hash-map", "design"]
+category: "Linked List"
+difficulty: "medium"
+timeComplexity: "O(1)"
+spaceComplexity: "O(capacity)"
+companies: ["Amazon", "Google", "Microsoft", "Facebook", "Apple", "Netflix"]
+leetcodeNumber: 146
+draft: false
+---
+
+## Problem Statement
+
+Design a data structure that follows the **Least Recently Used (LRU)** cache eviction policy:
+
+- `LRUCache(int capacity)` — initialize with positive size `capacity`.
+- `int get(int key)` — return the value if the key exists, else return `-1`. Mark the key as recently used.
+- `void put(int key, int value)` — insert or update the key-value pair. If the cache is at capacity, evict the **least recently used** key before inserting.
+
+Both operations must run in **O(1) average** time.
+
+```
+LRUCache cache = new LRUCache(2);
+cache.put(1, 1);   // cache: {1=1}
+cache.put(2, 2);   // cache: {1=1, 2=2}
+cache.get(1);      // returns 1, cache: {2=2, 1=1}  (1 is now most recent)
+cache.put(3, 3);   // evicts key 2, cache: {1=1, 3=3}
+cache.get(2);      // returns -1 (not found)
+cache.put(4, 4);   // evicts key 1, cache: {3=3, 4=4}
+cache.get(1);      // returns -1
+cache.get(3);      // returns 3
+cache.get(4);      // returns 4
+```
+
+## The Data Structure
+
+To achieve O(1) for both operations you need two structures working together:
+
+- **HashMap** `key → Node` — O(1) lookup by key
+- **Doubly linked list** — O(1) insertion and removal anywhere, once you have a pointer to the node
+
+The list maintains recency order: **head = most recently used**, **tail = least recently used**.
+
+On `get`: move the accessed node to the head in O(1).
+On `put`: add new node at head. If over capacity, remove the tail in O(1).
+
+**Why doubly linked?** Removing a node from a singly linked list requires the *previous* node. Since the HashMap gives you a direct pointer to the node — not its predecessor — you need backward pointers to remove it in O(1).
+
+---
+
+## Implementation
+
+```java
+class LRUCache {
+
+    private static class Node {
+        int key, val;
+        Node prev, next;
+        Node(int k, int v) { key = k; val = v; }
+    }
+
+    private final int capacity;
+    private final Map<Integer, Node> map;
+    private final Node head, tail; // sentinel nodes
+
+    public LRUCache(int capacity) {
+        this.capacity = capacity;
+        map = new HashMap<>();
+
+        // Sentinel head (most recent) and tail (least recent)
+        head = new Node(0, 0);
+        tail = new Node(0, 0);
+        head.next = tail;
+        tail.prev = head;
+    }
+
+    public int get(int key) {
+        if (!map.containsKey(key)) return -1;
+        Node node = map.get(key);
+        moveToHead(node); // mark as recently used
+        return node.val;
+    }
+
+    public void put(int key, int value) {
+        if (map.containsKey(key)) {
+            Node node = map.get(key);
+            node.val = value;
+            moveToHead(node);
+        } else {
+            Node node = new Node(key, value);
+            map.put(key, node);
+            addToHead(node);
+            if (map.size() > capacity) {
+                Node lru = removeTail();
+                map.remove(lru.key); // must store key in node for this
+            }
+        }
+    }
+
+    private void addToHead(Node node) {
+        node.prev = head;
+        node.next = head.next;
+        head.next.prev = node;
+        head.next = node;
+    }
+
+    private void removeNode(Node node) {
+        node.prev.next = node.next;
+        node.next.prev = node.prev;
+    }
+
+    private void moveToHead(Node node) {
+        removeNode(node);
+        addToHead(node);
+    }
+
+    private Node removeTail() {
+        Node lru = tail.prev; // node just before sentinel tail
+        removeNode(lru);
+        return lru;
+    }
+}
+```
+
+**Sentinel nodes**: `head` and `tail` are dummy nodes that never hold real data. They eliminate the need for null checks in `addToHead` and `removeNode`. Without sentinels, you'd need if-else for inserting into an empty list and removing the last real node.
+
+**Why store `key` in the Node?** When evicting `tail.prev`, you need to call `map.remove(lru.key)`. If the node only stored `val`, you'd have no way to clean up the map.
+
+## Visualizing the State
+
+After the example sequence:
+
+```
+put(1,1): HEAD ↔ [1,1] ↔ TAIL
+put(2,2): HEAD ↔ [2,2] ↔ [1,1] ↔ TAIL
+get(1):   HEAD ↔ [1,1] ↔ [2,2] ↔ TAIL   (1 moved to front)
+put(3,3): HEAD ↔ [3,3] ↔ [1,1] ↔ [2,2] ↔ TAIL  →  evict 2
+          HEAD ↔ [3,3] ↔ [1,1] ↔ TAIL
+put(4,4): HEAD ↔ [4,4] ↔ [3,3] ↔ [1,1] ↔ TAIL  →  evict 1
+          HEAD ↔ [4,4] ↔ [3,3] ↔ TAIL
+```
+
+## Complexity
+
+| Operation | Time | Space |
+|-----------|------|-------|
+| `get`     | O(1) | —     |
+| `put`     | O(1) | —     |
+| Overall   | —    | O(capacity) |
+
+Every operation is a constant number of HashMap lookups and pointer updates.
+
+---
+
+## Key Insight
+
+LRU cache is the classic example of **combining two data structures** to achieve O(1) for operations that neither can do alone:
+
+- HashMap alone: O(1) lookup, but no ordering → can't find the LRU.
+- Doubly linked list alone: O(1) reorder given a pointer, but O(n) lookup → can't find the node.
+
+Together: HashMap gives the pointer, doubly linked list does the reorder. This combination (HashMap + doubly linked list) appears in:
+- **#460 LFU Cache** — Least Frequently Used, adds a frequency layer
+- Browser history, OS page replacement, CDN cache management
+
+## Edge Cases
+
+- **`get` on missing key**: return -1 immediately, no list change.
+- **`put` existing key**: update value and move to head — do NOT evict.
+- **`put` when `capacity == 1`**: every put after the first evicts the previous entry.
+- **`get` followed by `put` of the same key**: the `get` moves it to head, then `put` updates the value and moves it to head again — no eviction.

@@ -30,13 +30,13 @@ export function CourseSidebar({ lessons, courseSlug, courseTitle }: CourseSideba
             key={lesson.slug}
             href={href}
             className={cn(
-              "flex items-start gap-2 rounded px-2 py-2 text-sm no-underline transition-colors hover:no-underline",
+              "flex items-start gap-2 rounded-r py-2 pr-2 text-sm no-underline transition-all hover:no-underline border-l-2",
               active
-                ? "bg-[var(--color-accent-dim)] text-[var(--color-accent)]"
-                : "text-[var(--color-text-muted)] hover:bg-[var(--color-bg-muted)] hover:text-[var(--color-text-primary)]"
+                ? "border-[var(--color-accent)] bg-[var(--color-accent)]/[0.07] text-[var(--color-accent)] pl-[6px]"
+                : "border-transparent pl-2 text-[var(--color-text-muted)] hover:border-[var(--color-bg-muted)] hover:bg-[var(--color-bg-muted)] hover:text-[var(--color-text-primary)]"
             )}
           >
-            <span className="mt-0.5 shrink-0 font-mono text-xs text-[var(--color-text-faint)]">
+            <span className="mt-0.5 shrink-0 font-mono text-xs opacity-60">
               {String(lesson.frontmatter.lessonNumber).padStart(2, "0")}
             </span>
             <span className="leading-snug">{lesson.frontmatter.title}</span>

@@ -1,0 +1,140 @@
+---
+title: "Linked List Cycle"
+description: "Detect whether a linked list contains a cycle using Floyd's two-pointer algorithm."
+date: "2026-04-08"
+tags: ["linked-list", "two-pointers", "fast-slow"]
+category: "Linked List"
+difficulty: "easy"
+timeComplexity: "O(n)"
+spaceComplexity: "O(1)"
+companies: ["Amazon", "Google", "Microsoft", "Apple", "Bloomberg"]
+leetcodeNumber: 141
+draft: false
+---
+
+## Problem Statement
+
+Given the `head` of a linked list, determine if the linked list has a cycle in it.
+
+A cycle exists if some node in the list can be reached again by continuously following the `next` pointer.
+
+```
+Input:  head = [3,2,0,-4], pos = 1  (tail connects to index 1)
+Output: true
+
+Input:  head = [1,2], pos = 0  (tail connects to index 0)
+Output: true
+
+Input:  head = [1], pos = -1  (no cycle)
+Output: false
+```
+
+## Approach 1: HashSet — O(n) time, O(n) space
+
+Track every visited node. If you see one twice, there's a cycle.
+
+```java
+public boolean hasCycle(ListNode head) {
+    Set<ListNode> visited = new HashSet<>();
+    ListNode curr = head;
+    while (curr != null) {
+        if (visited.contains(curr)) return true;
+        visited.add(curr);
+        curr = curr.next;
+    }
+    return false;
+}
+```
+
+Correct but uses O(n) extra space.
+
+---
+
+## Approach 2: Floyd's Cycle Detection — O(n) time, O(1) space ✅ Optimal
+
+Use two pointers: `slow` moves one step at a time, `fast` moves two steps. If a cycle exists, `fast` will lap `slow` and they'll meet inside the cycle. If no cycle, `fast` reaches null.
+
+```java
+public boolean hasCycle(ListNode head) {
+    ListNode slow = head, fast = head;
+
+    while (fast != null && fast.next != null) {
+        slow = slow.next;
+        fast = fast.next.next;
+
+        if (slow == fast) return true; // pointers met — cycle detected
+    }
+
+    return false; // fast reached end — no cycle
+}
+```
+
+**Why `fast != null && fast.next != null`?**
+- `fast != null` — `fast` itself might be null (even-length list, fast lands on null)
+- `fast.next != null` — `fast.next.next` would throw NullPointerException if `fast.next` is null
+
+Both checks are required.
+
+## Why Does Floyd's Algorithm Work?
+
+Imagine the list as two sections: a straight "stem" of length `F`, then a cycle of length `C`.
+
+When `slow` enters the cycle, `fast` is already somewhere inside it. From that point, both pointers are in the cycle. `fast` gains one step on `slow` per iteration. Since the cycle has length `C`, `fast` will catch `slow` in at most `C` iterations.
+
+Total iterations: at most `F + C` — which is O(n).
+
+## Tracing the Example
+
+`head = 3 → 2 → 0 → -4 → (back to 2)`
+
+| step | slow | fast |
+|------|------|------|
+| start | 3 | 3 |
+| 1 | 2 | 0 |
+| 2 | 0 | 2 |
+| 3 | -4 | -4 |
+| slow == fast → **true** |
+
+---
+
+## Bonus: Finding the Cycle Entry (LeetCode #142)
+
+After detecting the meeting point, finding *where* the cycle starts requires one more insight:
+
+```java
+// After slow == fast at meeting point:
+ListNode p1 = head, p2 = slow;
+while (p1 != p2) {
+    p1 = p1.next;
+    p2 = p2.next;
+}
+return p1; // cycle entry node
+```
+
+**Why does this work?** Let `F` = steps from head to cycle entry, `C` = cycle length, `D` = steps from cycle entry to meeting point. When they meet: `fast` traveled `F + D + nC`, `slow` traveled `F + D`. Since fast moves 2x: `2(F + D) = F + D + nC`, so `F = nC - D`. Moving `F` steps from `head` and `F` steps from the meeting point (which is `D` into the cycle) both land at the cycle entry.
+
+## Complexity
+
+|                    | Time  | Space |
+|--------------------|-------|-------|
+| HashSet            | O(n)  | O(n)  |
+| Floyd's (detect)   | O(n)  | O(1)  |
+| Floyd's (entry)    | O(n)  | O(1)  |
+
+## Key Insight
+
+Floyd's algorithm is the canonical O(1) space cycle detection. The fast/slow pattern recurs throughout linked list problems:
+
+- **#142 Linked List Cycle II** — find cycle entry (bonus above)
+- **#876 Middle of the Linked List** — when fast reaches end, slow is at middle
+- **#234 Palindrome Linked List** — find middle, reverse second half, compare
+- **#143 Reorder List** — find middle, reverse second half, merge
+
+Whenever you need to know *something about position* in a linked list without knowing its length, reach for fast/slow.
+
+## Edge Cases
+
+- **Empty list** `head = null` → `fast = null`, loop condition `fast != null` fails immediately, return false.
+- **Single node, no cycle** `[1]` → `fast.next = null`, loop condition fails, return false.
+- **Single node, self-loop** → `fast.next.next = fast`, they meet on the first iteration.
+- **Two nodes, cycle** → `slow = 2`, `fast = 1 → 2`, they meet at node 2 on iteration 2.

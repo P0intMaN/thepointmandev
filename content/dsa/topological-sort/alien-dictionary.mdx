@@ -1,0 +1,128 @@
+---
+title: "Alien Dictionary"
+description: "Derive the character ordering of an alien language from a sorted list of alien words."
+date: "2026-04-08"
+tags: ["graph", "topological-sort", "string"]
+category: "Topological Sort"
+difficulty: "hard"
+timeComplexity: "O(C)"
+spaceComplexity: "O(1)"
+companies: ["Google", "Facebook", "Amazon", "Airbnb", "Twitter"]
+leetcodeNumber: 269
+draft: false
+---
+
+## Problem Statement
+
+You are given a list of strings `words` from the vocabulary of an alien language, where the strings are sorted lexicographically according to the rules of this new language. Return a string of the unique characters in the alien language sorted in lexicographically increasing order by the rules of this language. If there is no solution, return `""`. If there are multiple valid solutions, return any.
+
+```
+Input:  words = ["wrt","wrf","er","ett","rftt"]
+Output: "wertf"
+
+Input:  words = ["z","x"]
+Output: "zx"
+
+Input:  words = ["z","x","z"]
+Output: ""  (cycle: z < x < z)
+```
+
+## Deriving the Graph
+
+Compare adjacent words character by character. The first position where they differ tells you the ordering of those two characters.
+
+`"wrt"` vs `"wrf"` → `t` comes before `f` → edge `t → f`
+`"wrf"` vs `"er"` → `w` comes before `e` → edge `w → e`
+`"er"` vs `"ett"` → `r` comes before `t` → edge `r → t`
+`"ett"` vs `"rftt"` → `e` comes before `r` → edge `e → r`
+
+Graph: `w → e → r → t → f`
+
+Then topological sort gives: `w e r t f` ✓
+
+## Implementation
+
+```java
+public String alienOrder(String[] words) {
+    // Initialize: all unique characters present (even isolated ones)
+    Map<Character, Set<Character>> graph = new HashMap<>();
+    Map<Character, Integer> inDegree = new HashMap<>();
+    for (String word : words) {
+        for (char c : word.toCharArray()) {
+            graph.putIfAbsent(c, new HashSet<>());
+            inDegree.putIfAbsent(c, 0);
+        }
+    }
+
+    // Build graph from adjacent word pairs
+    for (int i = 0; i < words.length - 1; i++) {
+        String w1 = words[i], w2 = words[i + 1];
+        int minLen = Math.min(w1.length(), w2.length());
+        boolean found = false;
+
+        // Invalid: longer word is prefix of shorter word (e.g., ["abc","ab"])
+        if (w1.length() > w2.length() && w1.startsWith(w2)) return "";
+
+        for (int j = 0; j < minLen; j++) {
+            if (w1.charAt(j) != w2.charAt(j)) {
+                char from = w1.charAt(j), to = w2.charAt(j);
+                if (!graph.get(from).contains(to)) {
+                    graph.get(from).add(to);
+                    inDegree.put(to, inDegree.get(to) + 1);
+                }
+                found = true;
+                break; // only the first difference gives ordering info
+            }
+        }
+    }
+
+    // Kahn's topological sort
+    Queue<Character> queue = new LinkedList<>();
+    for (char c : inDegree.keySet()) {
+        if (inDegree.get(c) == 0) queue.offer(c);
+    }
+
+    StringBuilder result = new StringBuilder();
+    while (!queue.isEmpty()) {
+        char c = queue.poll();
+        result.append(c);
+        for (char neighbor : graph.get(c)) {
+            inDegree.put(neighbor, inDegree.get(neighbor) - 1);
+            if (inDegree.get(neighbor) == 0) queue.offer(neighbor);
+        }
+    }
+
+    // If result doesn't contain all characters, there's a cycle
+    return result.length() == inDegree.size() ? result.toString() : "";
+}
+```
+
+## Complexity
+
+C = total characters across all words, U = unique characters.
+
+- Building graph: O(C) — compare each adjacent pair character by character
+- Topological sort: O(U + edges) = O(U²) worst case, O(U) typical
+- Total: **O(C)**
+
+Space: O(U + edges) = O(U²) worst case, but U ≤ 26 for standard alphabets → O(1).
+
+## The Two Invalid Cases
+
+1. **Cycle in the ordering**: e.g., `["z","x","z"]` → `z < x` and `x < z` → cycle → return `""`.
+2. **Longer word is a prefix of an earlier shorter word**: e.g., `["ab","a"]` → `"a"` should come before `"ab"` but it appears after → invalid → return `""`.
+
+## Key Insight
+
+Alien Dictionary is a two-phase problem:
+1. **Graph construction** — extract ordering constraints from adjacent word pairs
+2. **Topological sort** — produce the order, detect cycles
+
+The graph construction is the tricky part. The key rule: **only the first differing character between two adjacent words gives ordering information** — all subsequent characters tell you nothing about relative ordering.
+
+## Edge Cases
+
+- **Single word**: no adjacent pairs to compare, return all unique characters in any order.
+- **All words same**: no ordering info, return characters in any order.
+- **Longer word before its prefix** `["abc","ab"]`: `w1.startsWith(w2)` with `w1.length() > w2.length()` → return `""`.
+- **Isolated characters**: characters that appear in words but have no ordering constraints must still be included in the result.

@@ -1,0 +1,119 @@
+---
+title: "Accounts Merge"
+description: "Merge accounts that share at least one common email address."
+date: "2026-04-08"
+tags: ["graph", "union-find", "dfs", "string"]
+category: "Union-Find"
+difficulty: "medium"
+timeComplexity: "O(N · K · α(N·K))"
+spaceComplexity: "O(N · K)"
+companies: ["Amazon", "Google", "Facebook", "Microsoft"]
+leetcodeNumber: 721
+draft: false
+---
+
+## Problem Statement
+
+Given a list of `accounts` where `accounts[i] = [name, email1, email2, ...]`, merge accounts that share at least one email. Two accounts belong to the same person if they share a common email. Return the merged accounts in any order, with emails sorted and the name first.
+
+```
+Input:
+accounts = [
+  ["John","johnsmith@mail.com","john_newyork@mail.com"],
+  ["John","johnsmith@mail.com","john00@mail.com"],
+  ["Mary","mary@mail.com"],
+  ["John","johnnybravo@mail.com"]
+]
+Output:
+[
+  ["John","john00@mail.com","john_newyork@mail.com","johnsmith@mail.com"],
+  ["Mary","mary@mail.com"],
+  ["John","johnnybravo@mail.com"]
+]
+```
+
+## Algorithm — Union-Find on Emails
+
+Two emails should be in the same account if they appear in the same input account. Union all emails within the same account, using the first email as the representative for that account's owner.
+
+```java
+public List<List<String>> accountsMerge(List<List<String>> accounts) {
+    Map<String, String> parent = new HashMap<>(); // email → root email
+    Map<String, String> owner  = new HashMap<>(); // email → account name
+
+    // Initialize: each email is its own root
+    for (List<String> account : accounts) {
+        String name = account.get(0);
+        for (int i = 1; i < account.size(); i++) {
+            String email = account.get(i);
+            parent.putIfAbsent(email, email);
+            owner.put(email, name);
+        }
+    }
+
+    // Union all emails in the same account
+    for (List<String> account : accounts) {
+        String first = account.get(1);
+        for (int i = 2; i < account.size(); i++) {
+            union(parent, first, account.get(i));
+        }
+    }
+
+    // Group emails by root
+    Map<String, List<String>> groups = new HashMap<>();
+    for (String email : parent.keySet()) {
+        String root = find(parent, email);
+        groups.computeIfAbsent(root, k -> new ArrayList<>()).add(email);
+    }
+
+    // Build result
+    List<List<String>> result = new ArrayList<>();
+    for (Map.Entry<String, List<String>> entry : groups.entrySet()) {
+        List<String> emails = entry.getValue();
+        Collections.sort(emails);
+        emails.add(0, owner.get(entry.getKey())); // prepend name
+        result.add(emails);
+    }
+    return result;
+}
+
+private String find(Map<String, String> parent, String x) {
+    if (!parent.get(x).equals(x)) {
+        parent.put(x, find(parent, parent.get(x))); // path compression
+    }
+    return parent.get(x);
+}
+
+private void union(Map<String, String> parent, String x, String y) {
+    String px = find(parent, x), py = find(parent, y);
+    if (!px.equals(py)) parent.put(px, py);
+}
+```
+
+## Complexity
+
+N = number of accounts, K = average emails per account.
+
+| | Time | Space |
+|---|---|---|
+| Union-Find | O(N·K·α(N·K)) | O(N·K) |
+
+The dominant cost is sorting the merged email lists: O(N·K·log(N·K)) total. The Union-Find operations are nearly linear.
+
+## Key Insight
+
+Accounts Merge is a **connected components** problem where the "nodes" are email addresses and the "edges" are accounts (any two emails in the same account are connected).
+
+Union-Find is ideal here because:
+- Edges arrive in groups (per account)
+- We need to group nodes by component afterward
+- The HashMap-based Union-Find handles string keys cleanly
+
+Alternative: DFS — build an adjacency list from shared emails, then DFS to collect components. Same complexity, slightly more code.
+
+## Edge Cases
+
+- **Single email per account**: no unions within account; separate components unless emails are shared across accounts.
+- **All accounts share one email**: all merge into one giant account.
+- **Same name, different people**: emails are the identity, not names. Accounts with the same name but no shared emails remain separate.
+- **Duplicate emails in one account**: `union(first, email)` is idempotent — `find(email) == find(email)`, no-op.

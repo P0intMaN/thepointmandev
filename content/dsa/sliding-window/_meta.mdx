@@ -1,0 +1,81 @@
+---
+title: "Sliding Window"
+description: "Maintain a dynamic window over a sequence to find optimal subarrays or substrings in O(n)."
+signal: "Contiguous subarray or substring with a constraint. Signal: 'longest/shortest subarray with condition', 'fixed window size', 'substring containing'."
+gotchas: "Expand right first, then shrink left when constraint violated. Distinguish from two pointers — sliding window always moves in the same direction. Window validity check before recording answer."
+color: "#38bdf8"
+colorDim: "#0c1a2e"
+colorBorder: "#0284c7"
+icon: "sliding-window"
+order: 3
+tier: 1
+draft: false
+---
+
+## How to Spot This Pattern
+
+Sliding window is the go-to whenever the problem asks about a **contiguous subarray or substring** with some constraint. The signal phrases are:
+
+- *"Longest/shortest subarray that..."*
+- *"Minimum window containing..."*
+- *"Maximum sum subarray of size k"*
+- *"Substring with at most k distinct characters"*
+- *"Find a subarray/substring satisfying some condition"*
+
+If you find yourself writing a nested loop to check every subarray, sliding window probably brings it down to O(n).
+
+## Two Window Types
+
+**Fixed-size window** — the window size `k` is given. Slide one element at a time: add the new right element, remove the old left element.
+
+```java
+// Fixed window of size k — compute something for each window
+int windowSum = 0;
+for (int i = 0; i < k; i++) windowSum += nums[i];  // seed first window
+int max = windowSum;
+
+for (int i = k; i < nums.length; i++) {
+    windowSum += nums[i] - nums[i - k];              // slide: add right, drop left
+    max = Math.max(max, windowSum);
+}
+```
+
+**Variable-size window** — expand right freely, shrink left when the constraint is violated.
+
+```java
+int left = 0;
+for (int right = 0; right < n; right++) {
+    // 1. Expand: include nums[right] in the window
+    // 2. Shrink: while window is invalid, move left forward
+    while (/* window invalid */) {
+        // remove nums[left] from window state
+        left++;
+    }
+    // 3. Window is now valid — record answer
+    result = Math.max(result, right - left + 1);
+}
+```
+
+This template is the skeleton for almost every variable sliding window problem. Memorise it.
+
+## The Expand-then-Shrink Order Matters
+
+Always **expand right first**, then shrink left. Never shrink before you've tried the new element — you'd miss the window that includes it. The inner `while` only runs when the constraint is broken, so the total number of left-pointer moves across the entire loop is at most `n`, giving O(n) overall.
+
+## Sliding Window vs Two Pointers
+
+They look similar but have a key difference:
+
+| | Two Pointers | Sliding Window |
+|---|---|---|
+| Direction | Converge (opposite) | Same direction (both →) |
+| Use case | Pairs, palindromes, sorted arrays | Subarrays, substrings |
+| Shrink trigger | Comparison result | Constraint violation |
+
+## Common Gotchas
+
+- **Using `if` instead of `while` to shrink** — a single `if` only removes one element; you may need to shrink multiple steps before the window is valid again.
+- **Recording the answer before shrinking** — always check validity *after* the shrink loop, not before.
+- **Off-by-one on window size** — `right - left + 1` is the current window length (both inclusive).
+- **HashMap vs array for character frequency** — for lowercase letters only, `int[26]` is faster than `HashMap<Character, Integer>`. For arbitrary characters, use the map.
+- **Forgetting to restore state when shrinking** — whatever you added to your window state when expanding right, you must undo it symmetrically when shrinking left.

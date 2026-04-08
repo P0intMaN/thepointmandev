@@ -1,0 +1,98 @@
+---
+title: "Add and Search Words Data Structure"
+description: "Design a word dictionary supporting search with '.' wildcard that matches any single character."
+date: "2026-04-08"
+tags: ["trie", "dfs", "design", "string"]
+category: "Trie"
+difficulty: "medium"
+timeComplexity: "O(M · 26^N) worst case search"
+spaceComplexity: "O(N · L)"
+companies: ["Google", "Facebook", "Amazon", "Microsoft"]
+leetcodeNumber: 211
+draft: false
+---
+
+## Problem Statement
+
+Design a data structure that supports:
+- `void addWord(String word)` — adds `word` to the data structure.
+- `boolean search(String word)` — returns `true` if any string in the structure matches `word`. `word` may contain `'.'` which matches any character.
+
+```java
+WordDictionary wd = new WordDictionary();
+wd.addWord("bad");
+wd.addWord("dad");
+wd.addWord("mad");
+wd.search("pad"); // false
+wd.search("bad"); // true
+wd.search(".ad"); // true
+wd.search("b.."); // true
+```
+
+## Algorithm — Trie + DFS for Wildcards
+
+`addWord` is identical to Trie insert. `search` with `'.'` wildcards requires DFS — when `'.'` is encountered, try all 26 possible children.
+
+```java
+class WordDictionary {
+
+    private static class TrieNode {
+        TrieNode[] children = new TrieNode[26];
+        boolean isEndOfWord = false;
+    }
+
+    private final TrieNode root = new TrieNode();
+
+    public void addWord(String word) {
+        TrieNode node = root;
+        for (char c : word.toCharArray()) {
+            int idx = c - 'a';
+            if (node.children[idx] == null) node.children[idx] = new TrieNode();
+            node = node.children[idx];
+        }
+        node.isEndOfWord = true;
+    }
+
+    public boolean search(String word) {
+        return dfs(root, word, 0);
+    }
+
+    private boolean dfs(TrieNode node, String word, int idx) {
+        if (idx == word.length()) return node.isEndOfWord;
+
+        char c = word.charAt(idx);
+
+        if (c == '.') {
+            // Wildcard: try every existing child
+            for (TrieNode child : node.children) {
+                if (child != null && dfs(child, word, idx + 1)) return true;
+            }
+            return false;
+        } else {
+            int i = c - 'a';
+            return node.children[i] != null && dfs(node.children[i], word, idx + 1);
+        }
+    }
+}
+```
+
+## Complexity Analysis
+
+`addWord`: O(L) — same as Trie insert.
+
+`search` worst case: `"....."` (all dots, length N) with M words of length N. Each dot tries all 26 children, so complexity is O(M · 26^N) in the absolute worst case — but the Trie structure prunes paths that don't exist, making the practical performance much better.
+
+For typical inputs (few wildcards, short patterns), search is O(L) like a regular Trie.
+
+## Key Insight
+
+This is Implement Trie (#208) with one addition: the `'.'` wildcard forces DFS branching. Regular character → follow one edge; wildcard → follow all edges.
+
+The `dfs` function is a clean pattern for any Trie problem with variable matching — the `idx` parameter tracks position in the query word, and the recursion naturally handles backtracking.
+
+## Edge Cases
+
+- **No wildcards**: degenerates to standard Trie search — O(L).
+- **All wildcards** `"....."`: tries all Trie paths of the given length — potentially slow with many words.
+- **Wildcard at start**: must try all 26 roots → most expensive position for a wildcard.
+- **Empty word `""`**: returns `root.isEndOfWord`. True only if `addWord("")` was called.

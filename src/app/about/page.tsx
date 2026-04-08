@@ -80,10 +80,10 @@ export default function AboutPage() {
               className="flex gap-4 rounded-[var(--radius-lg)] border border-[var(--color-bg-border)] bg-[var(--color-bg-elevated)] p-5 no-underline transition-colors hover:border-[var(--color-text-faint)] hover:no-underline"
             >
               <div>
-                <p className="mb-1 font-mono text-sm font-semibold text-[var(--color-accent)]">
+                <p className="mb-1 font-mono text-base font-semibold text-[var(--color-accent)]">
                   {title}
                 </p>
-                <p className="text-sm text-[var(--color-text-muted)]">{desc}</p>
+                <p className="text-base text-[var(--color-text-muted)]">{desc}</p>
               </div>
             </Link>
           ))}
@@ -101,8 +101,8 @@ export default function AboutPage() {
               key={item.href}
               className="rounded-[var(--radius-lg)] border border-[var(--color-bg-border)] bg-[var(--color-bg-elevated)] p-5"
             >
-              <p className="mb-1 font-mono text-xs text-[var(--color-text-faint)]">{item.category}</p>
-              <p className="mb-3 text-sm text-[var(--color-text-muted)]">{item.description}</p>
+              <p className="mb-1 font-mono text-sm text-[var(--color-text-faint)]">{item.category}</p>
+              <p className="mb-3 text-base text-[var(--color-text-muted)]">{item.description}</p>
               <Link
                 href={item.href}
                 className="font-mono text-sm text-[var(--color-accent)] no-underline hover:text-[var(--color-accent-muted)] hover:no-underline"

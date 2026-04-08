@@ -1,0 +1,100 @@
+---
+title: "Minimum Spanning Tree"
+description: "Find the minimum-weight set of edges that connects all vertices. Kruskal's uses Union-Find; Prim's uses a min heap."
+signal: "Connect all nodes with minimum total edge weight. Build a network. Minimize infrastructure cost. Signal: 'connect all points with minimum cost', 'minimum total weight to connect all nodes'."
+gotchas: "A spanning tree has exactly V-1 edges. Kruskal's: sort edges by weight, add edge if it doesn't form a cycle (use Union-Find). Prim's: greedy from any starting node, always add the minimum-weight edge to a new node (use min heap). For dense graphs, Prim's is better O(E log V); for sparse, Kruskal's O(E log E) works well. Both give the same MST weight but possibly different edge sets."
+color: "#10b981"
+colorDim: "#001a0d"
+colorBorder: "#059669"
+icon: "mst"
+order: 27
+tier: 3
+draft: false
+---
+
+## When to Use
+
+- **Connect all nodes** with minimum total weight
+- **Network design**: laying cables, pipelines, roads between cities
+- **Clustering**: MST weight = min cost to split into k clusters
+
+## Kruskal's Algorithm — O(E log E)
+
+Sort all edges by weight. Add edges greedily, skipping any that would form a cycle.
+
+```java
+int kruskal(int n, int[][] edges) {
+    // Sort edges by weight
+    Arrays.sort(edges, (a, b) -> a[2] - b[2]);
+
+    int[] parent = new int[n], rank = new int[n];
+    for (int i = 0; i < n; i++) parent[i] = i;
+
+    int totalCost = 0, edgesUsed = 0;
+
+    for (int[] edge : edges) {
+        int u = edge[0], v = edge[1], w = edge[2];
+        if (find(parent, u) != find(parent, v)) { // no cycle
+            union(parent, rank, u, v);
+            totalCost += w;
+            if (++edgesUsed == n - 1) break; // MST has n-1 edges
+        }
+    }
+    return edgesUsed == n - 1 ? totalCost : -1; // -1 if not connected
+}
+
+int find(int[] parent, int x) {
+    if (parent[x] != x) parent[x] = find(parent, parent[x]);
+    return parent[x];
+}
+
+void union(int[] parent, int[] rank, int x, int y) {
+    int px = find(parent, x), py = find(parent, y);
+    if (rank[px] < rank[py]) { int t = px; px = py; py = t; }
+    parent[py] = px;
+    if (rank[px] == rank[py]) rank[px]++;
+}
+```
+
+## Prim's Algorithm — O(E log V)
+
+Start from any node. Greedily pick the minimum-weight edge connecting a visited node to an unvisited one.
+
+```java
+int prim(int n, List<int[]>[] graph) {
+    boolean[] inMST = new boolean[n];
+    PriorityQueue<int[]> pq = new PriorityQueue<>((a, b) -> a[0] - b[0]);
+    pq.offer(new int[]{0, 0}); // {cost, node}
+
+    int totalCost = 0, nodesAdded = 0;
+
+    while (!pq.isEmpty() && nodesAdded < n) {
+        int[] curr = pq.poll();
+        int cost = curr[0], u = curr[1];
+        if (inMST[u]) continue;
+
+        inMST[u] = true;
+        totalCost += cost;
+        nodesAdded++;
+
+        for (int[] neighbor : graph[u]) {
+            int v = neighbor[0], w = neighbor[1];
+            if (!inMST[v]) pq.offer(new int[]{w, v});
+        }
+    }
+    return nodesAdded == n ? totalCost : -1;
+}
+```
+
+## Kruskal's vs Prim's
+
+| | Kruskal's | Prim's |
+|---|---|---|
+| Approach | Sort edges, Union-Find | Greedy from node, min heap |
+| Time | O(E log E) | O(E log V) |
+| Best for | Sparse graphs | Dense graphs |
+| Implementation | Simpler (sort + UF) | Slightly more complex |
+
+## Key Insight
+
+Both algorithms exploit the **cut property**: the minimum-weight edge crossing any cut (partition of vertices into two sets) is always in the MST. Kruskal's processes all edges globally; Prim's grows the MST one node at a time from a seed.

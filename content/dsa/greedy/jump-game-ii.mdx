@@ -1,0 +1,83 @@
+---
+title: "Jump Game II"
+description: "Find the minimum number of jumps to reach the last index."
+date: "2026-04-08"
+tags: ["greedy", "array", "dynamic-programming"]
+category: "Greedy"
+difficulty: "medium"
+timeComplexity: "O(n)"
+spaceComplexity: "O(1)"
+companies: ["Amazon", "Google", "Facebook", "Bloomberg"]
+leetcodeNumber: 45
+draft: false
+---
+
+## Problem Statement
+
+Given an integer array `nums` where `nums[i]` is the maximum jump length from index `i`, return the **minimum number of jumps** to reach the last index. The input is guaranteed reachable.
+
+```
+Input:  nums = [2,3,1,1,4]
+Output: 2   (jump 1→3, then 3→4 or jump to end in 2 jumps)
+
+Input:  nums = [2,3,0,1,4]
+Output: 2
+```
+
+## Approach: Greedy — O(n), O(1)
+
+Track the **current jump's reach** (`curEnd`) and the **farthest reachable** from this jump (`farthest`). When we reach `curEnd`, we must take another jump — we jump to wherever gets us farthest.
+
+```java
+public int jump(int[] nums) {
+    int jumps = 0;
+    int curEnd = 0;    // end of current jump's range
+    int farthest = 0;  // farthest we can reach with one more jump
+
+    for (int i = 0; i < nums.length - 1; i++) {
+        farthest = Math.max(farthest, i + nums[i]);
+
+        if (i == curEnd) {
+            // Must jump here — take the jump that reaches farthest
+            jumps++;
+            curEnd = farthest;
+
+            if (curEnd >= nums.length - 1) break;
+        }
+    }
+    return jumps;
+}
+```
+
+**Loop to `nums.length - 1`** (not `nums.length`): if we're already at the last index, no more jumps needed.
+
+**Trace** `[2,3,1,1,4]`:
+- i=0: farthest=max(0,0+2)=2. i==curEnd(0) → jumps=1, curEnd=2.
+- i=1: farthest=max(2,1+3)=4. 
+- i=2: farthest=max(4,2+1)=4. i==curEnd(2) → jumps=2, curEnd=4. 4>=4 → break.
+- Return 2 ✓
+
+## Why Greedy Works
+
+At each "boundary" (`curEnd`), we've explored all positions reachable in the current number of jumps. The farthest we can reach from any of those positions is the best we can do in one more jump. This is the BFS-level structure: `jumps` = levels, `[curEnd+1, farthest]` = next level.
+
+## Comparison: Jump Game I vs II
+
+| | Jump Game I (#55) | Jump Game II (#45) |
+|---|---|---|
+| Question | Can we reach the end? | Min jumps to reach end? |
+| Track | maxReach | farthest + curEnd boundary |
+| Return | maxReach >= n-1 | jumps count |
+
+## Complexity
+
+| | Time | Space |
+|---|---|---|
+| DP | O(n²) | O(n) |
+| **Greedy** | **O(n)** | **O(1)** |
+
+## Edge Cases
+
+- **Single element**: already at end → 0 jumps
+- **Each element = 1**: must take exactly n-1 jumps
+- **First element jumps over end**: one jump suffices

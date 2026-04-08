@@ -11,7 +11,7 @@ export function TagBadge({ tag, className }: TagBadgeProps) {
     <Link
       href={`/tags/${encodeURIComponent(tag)}`}
       className={cn(
-        "inline-flex items-center rounded border border-[var(--color-bg-border)] bg-[var(--color-bg-muted)] px-2 py-0.5 font-mono text-xs text-[var(--color-text-faint)] transition-colors no-underline hover:border-[var(--color-text-faint)] hover:text-[var(--color-text-muted)] hover:no-underline",
+        "inline-flex items-center rounded border border-[var(--color-bg-border)] bg-[var(--color-bg-muted)] px-2 py-0.5 font-mono text-sm text-[var(--color-text-faint)] transition-colors no-underline hover:border-[var(--color-text-faint)] hover:text-[var(--color-text-muted)] hover:no-underline",
         className
       )}
     >

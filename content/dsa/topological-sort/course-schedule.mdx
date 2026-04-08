@@ -1,0 +1,105 @@
+---
+title: "Course Schedule"
+description: "Determine if all courses can be finished — detecting cycles via Kahn's topological sort."
+date: "2026-04-08"
+tags: ["graph", "topological-sort", "bfs", "cycle-detection"]
+category: "Topological Sort"
+difficulty: "medium"
+timeComplexity: "O(V + E)"
+spaceComplexity: "O(V + E)"
+companies: ["Amazon", "Google", "Facebook", "Microsoft", "Apple"]
+leetcodeNumber: 207
+draft: false
+---
+
+## Problem Statement
+
+There are `numCourses` courses labeled `0` to `numCourses-1`. Given `prerequisites[i] = [a, b]` meaning course `b` must be taken before course `a`, return `true` if you can finish all courses, or `false` if a circular dependency makes it impossible.
+
+```
+Input:  numCourses = 2, prerequisites = [[1,0]]
+Output: true
+
+Input:  numCourses = 2, prerequisites = [[1,0],[0,1]]
+Output: false
+```
+
+## Topological Sort Perspective
+
+A valid course ordering exists if and only if the prerequisite graph is a **DAG** — it can be topologically sorted. Kahn's algorithm attempts this sort: if it processes all `numCourses` nodes, the graph is a DAG. If some nodes remain unprocessed (in-degree > 0 even after removing all others), they form a cycle.
+
+```java
+public boolean canFinish(int numCourses, int[][] prerequisites) {
+    List<List<Integer>> graph = new ArrayList<>();
+    int[] inDegree = new int[numCourses];
+
+    for (int i = 0; i < numCourses; i++) graph.add(new ArrayList<>());
+    for (int[] pre : prerequisites) {
+        graph.get(pre[1]).add(pre[0]); // pre[1] unlocks pre[0]
+        inDegree[pre[0]]++;
+    }
+
+    // Start with all courses that have no prerequisites
+    Queue<Integer> queue = new LinkedList<>();
+    for (int i = 0; i < numCourses; i++) {
+        if (inDegree[i] == 0) queue.offer(i);
+    }
+
+    int processed = 0;
+    while (!queue.isEmpty()) {
+        int course = queue.poll();
+        processed++;
+        for (int next : graph.get(course)) {
+            if (--inDegree[next] == 0) queue.offer(next);
+        }
+    }
+
+    return processed == numCourses; // all processed = no cycle
+}
+```
+
+## Kahn's vs DFS for Cycle Detection
+
+| | Kahn's (BFS) | DFS (3-state) |
+|---|---|---|
+| How cycle detected | `processed < n` at the end | Back edge (state=1 neighbor) |
+| Returns order? | Yes — the processing order IS the topological order | Yes — post-order reversed |
+| Intuition | "Peel off dependency-free nodes" | "No path revisits a node currently on the stack" |
+
+Both are O(V + E). Kahn's is often preferred in interviews for its clarity.
+
+## The Topological Order
+
+This same algorithm with a minor addition returns the actual course order (see **#210 Course Schedule II**):
+
+```java
+int[] order = new int[numCourses];
+int idx = 0;
+while (!queue.isEmpty()) {
+    int course = queue.poll();
+    order[idx++] = course; // ← collect the order
+    // ... rest same
+}
+return idx == numCourses ? order : new int[0];
+```
+
+## Complexity
+
+| | Time | Space |
+|---|---|---|
+| Kahn's BFS | O(V + E) | O(V + E) |
+
+V = numCourses, E = prerequisites.length.
+
+## Key Insight
+
+**Kahn's insight**: if a node has in-degree 0, it has no unmet prerequisites — safe to take. After "taking" it, remove its outgoing edges (decrement neighbors' in-degrees). Newly freed nodes enter the queue. Courses stuck in a cycle will always have in-degree > 0 and never enter the queue.
+
+The cycle detection is implicit: nodes in a cycle can never have in-degree reach 0 because they depend on each other. They never get processed, so `processed < numCourses` at the end.
+
+## Edge Cases
+
+- **No prerequisites**: all in-degrees are 0 → all courses queued immediately → all processed → true.
+- **Self-loop** `[0,0]`: in-degree of course 0 is 1. It never enters the queue. `processed < numCourses` → false.
+- **Chain** `0→1→2→...→n-1`: processes in order, no cycle.
+- **Disconnected courses**: multiple chains, all start with in-degree 0 — handled correctly.

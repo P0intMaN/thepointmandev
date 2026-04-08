@@ -1,0 +1,78 @@
+---
+title: "Stack"
+description: "Use LIFO order for matching brackets, tracking history, and finding next greater/smaller elements."
+signal: "Matching brackets, nearest greater/smaller element, expression evaluation, backtracking history. Signal: 'valid parentheses', 'nearest greater element', LIFO needed."
+gotchas: "Use ArrayDeque, not Stack class (legacy, synchronized). Monotonic stack: pop elements that violate monotonicity. Don't forget to handle remaining stack elements after the loop."
+color: "#fbbf24"
+colorDim: "#1c1917"
+colorBorder: "#d97706"
+icon: "stack"
+order: 5
+tier: 1
+draft: false
+---
+
+## How to Spot This Pattern
+
+Reach for a stack when the problem involves **reversing order**, **matching pairs**, or **tracking the most recent state**. The signal phrases are:
+
+- *"Valid parentheses / brackets"* — classic stack matching
+- *"Next greater / smaller element"* — monotonic stack
+- *"Evaluate expression"* — operator and operand stacks
+- *"Undo / history / backtracking"* — LIFO naturally models this
+- *"Largest rectangle / trapped water"* — monotonic stack on indices
+
+If you find yourself needing to "remember what came before" in a way that reverses order, a stack is the right structure.
+
+## Two Stack Modes
+
+**Matching stack** — push opening elements, pop and verify when a closing element arrives. Used for bracket validation, expression parsing.
+
+```java
+Deque<Character> stack = new ArrayDeque<>();
+for (char c : s.toCharArray()) {
+    if (c == '(') stack.push(c);
+    else if (c == ')') {
+        if (stack.isEmpty()) return false;
+        stack.pop();
+    }
+}
+return stack.isEmpty();
+```
+
+**Monotonic stack** — maintain elements in sorted order by popping anything that violates the invariant when a new element arrives. Used for next greater element, largest rectangle, trapping rain water.
+
+```java
+Deque<Integer> stack = new ArrayDeque<>(); // stores indices
+for (int i = 0; i < nums.length; i++) {
+    // Pop while current element breaks the monotonic property
+    while (!stack.isEmpty() && nums[stack.peek()] < nums[i]) {
+        int idx = stack.pop();
+        // nums[i] is the "next greater element" for idx
+    }
+    stack.push(i);
+}
+// Remaining elements in stack have no next greater element
+```
+
+## ArrayDeque vs Stack
+
+Always use `ArrayDeque`, never `java.util.Stack`:
+
+```java
+Deque<Integer> stack = new ArrayDeque<>();
+stack.push(x);      // push to top
+stack.pop();        // remove from top
+stack.peek();       // view top without removing
+stack.isEmpty();
+```
+
+`Stack` is a legacy class that extends `Vector` — it's synchronized (unnecessary overhead) and has inconsistent method naming. `ArrayDeque` is faster, unsynchronized, and is the recommended replacement for all stack use cases in Java.
+
+## Common Gotchas
+
+- **Using `Stack` instead of `ArrayDeque`** — synchronized overhead, deprecated patterns.
+- **Not checking `isEmpty()` before `pop()`/`peek()`** — throws `NoSuchElementException`.
+- **Forgetting to process remaining stack elements** — after the main loop, elements still in a monotonic stack haven't found their answer yet (often means "no next greater element exists").
+- **Storing values instead of indices** — for problems that need position information (e.g. width of rectangle), always store indices in the monotonic stack.
+- **Confusing monotonically increasing vs decreasing** — increasing stack → pop when current is *smaller*; decreasing stack → pop when current is *larger*.

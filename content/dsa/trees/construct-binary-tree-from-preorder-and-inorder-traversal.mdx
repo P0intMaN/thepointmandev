@@ -1,0 +1,111 @@
+---
+title: "Construct Binary Tree from Preorder and Inorder Traversal"
+description: "Reconstruct a binary tree given its preorder and inorder traversal arrays."
+date: "2026-04-08"
+tags: ["tree", "dfs", "divide-and-conquer", "hash-map"]
+category: "Trees"
+difficulty: "medium"
+timeComplexity: "O(n)"
+spaceComplexity: "O(n)"
+companies: ["Amazon", "Google", "Facebook", "Microsoft"]
+leetcodeNumber: 105
+draft: false
+---
+
+## Problem Statement
+
+Given two integer arrays `preorder` and `inorder` where `preorder` is the preorder traversal and `inorder` is the inorder traversal of the same binary tree, construct and return the binary tree.
+
+```
+Input:  preorder = [3,9,20,15,7], inorder = [9,3,15,20,7]
+Output: Tree: 3 → left:9, right:20(left:15, right:7)
+
+Input:  preorder = [-1], inorder = [-1]
+Output: -1 (single node)
+```
+
+## Key Insight
+
+- **Preorder**: root is always the **first** element
+- **Inorder**: root divides the array into **left subtree** and **right subtree**
+
+```
+preorder: [root | left subtree | right subtree]
+inorder:  [left subtree | root | right subtree]
+```
+
+Find root in `inorder` → everything left of it is the left subtree, everything right is the right subtree. Then recurse.
+
+## Approach: Recursion with HashMap — O(n)
+
+Use a HashMap to find the root's index in `inorder` in O(1) instead of O(n) linear scan.
+
+```java
+public TreeNode buildTree(int[] preorder, int[] inorder) {
+    Map<Integer, Integer> inorderMap = new HashMap<>();
+    for (int i = 0; i < inorder.length; i++) {
+        inorderMap.put(inorder[i], i);
+    }
+    return build(preorder, 0, preorder.length - 1,
+                 inorder, 0, inorder.length - 1, inorderMap);
+}
+
+private TreeNode build(int[] pre, int preL, int preR,
+                       int[] in, int inL, int inR,
+                       Map<Integer, Integer> inMap) {
+    if (preL > preR) return null;
+
+    int rootVal = pre[preL]; // first element of preorder range is root
+    TreeNode root = new TreeNode(rootVal);
+
+    int rootInIdx = inMap.get(rootVal); // root's position in inorder
+    int leftSize = rootInIdx - inL;     // number of nodes in left subtree
+
+    // Left subtree: next leftSize elements in preorder
+    root.left = build(pre, preL + 1, preL + leftSize,
+                      in, inL, rootInIdx - 1, inMap);
+
+    // Right subtree: remaining elements in preorder
+    root.right = build(pre, preL + leftSize + 1, preR,
+                       in, rootInIdx + 1, inR, inMap);
+
+    return root;
+}
+```
+
+## Index Math
+
+If root is at `preL` in preorder and at `rootInIdx` in inorder:
+- Left subtree size = `rootInIdx - inL`
+- Left preorder range: `[preL+1, preL+leftSize]`
+- Right preorder range: `[preL+leftSize+1, preR]`
+- Left inorder range: `[inL, rootInIdx-1]`
+- Right inorder range: `[rootInIdx+1, inR]`
+
+## Related: Construct from Postorder and Inorder (#106)
+
+Same approach, but root is the **last** element of postorder:
+
+```java
+int rootVal = post[postR]; // last element of postorder range
+// Left: post[postL..postL+leftSize-1], Right: post[postL+leftSize..postR-1]
+```
+
+## Complexity
+
+| | Time | Space |
+|---|---|---|
+| **With HashMap** | **O(n)** | **O(n)** |
+| Without HashMap (linear search) | O(n²) | O(n) |
+
+## Key Insight
+
+The combination of preorder (gives root) and inorder (gives subtree boundaries) uniquely determines the binary tree. The HashMap eliminates the O(n) linear search per recursive call, giving O(n) total.
+
+This pattern — "preorder root, inorder split" — is the canonical tree construction technique.
+
+## Edge Cases
+
+- **Single node**: base case `preL > preR` handles this
+- **Skewed tree (only left or right children)**: one subtree is always empty (preL > preR)
+- **Duplicate values**: problem guarantees no duplicates (HashMap requires unique keys)

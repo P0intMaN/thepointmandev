@@ -1,0 +1,124 @@
+---
+title: "Single Number"
+description: "Find the one element that appears once while all others appear twice."
+date: "2026-04-08"
+tags: ["bit-manipulation", "array"]
+category: "Bit Manipulation"
+difficulty: "easy"
+timeComplexity: "O(n)"
+spaceComplexity: "O(1)"
+companies: ["Amazon", "Google", "Facebook", "Bloomberg"]
+leetcodeNumber: 136
+draft: false
+---
+
+## Problem Statement
+
+Given a non-empty array of integers where every element appears **twice** except for one element which appears **once**, find the single element. Must run in O(n) time and O(1) extra space.
+
+```
+Input:  nums = [2,2,1]
+Output: 1
+
+Input:  nums = [4,1,2,1,2]
+Output: 4
+```
+
+## Approach: XOR — O(n) time, O(1) space
+
+XOR every element together. Pairs cancel out (`a ^ a = 0`), leaving only the single element.
+
+```java
+public int singleNumber(int[] nums) {
+    int result = 0;
+    for (int num : nums) {
+        result ^= num;
+    }
+    return result;
+}
+```
+
+**Why it works:**
+```
+[4, 1, 2, 1, 2]
+= 4 ^ 1 ^ 2 ^ 1 ^ 2
+= 4 ^ (1 ^ 1) ^ (2 ^ 2)
+= 4 ^ 0 ^ 0
+= 4
+```
+
+XOR is commutative and associative — order doesn't matter.
+
+## Variant: Single Number II (LeetCode #137)
+
+Every element appears **three times** except one. Find the single element in O(n) time and O(1) space.
+
+**Approach: Bit counting modulo 3**
+
+For each of the 32 bits, count how many numbers have that bit set. If the count is not divisible by 3, the single number has that bit set.
+
+```java
+public int singleNumberII(int[] nums) {
+    int result = 0;
+    for (int i = 0; i < 32; i++) {
+        int bitSum = 0;
+        for (int num : nums) {
+            bitSum += (num >> i) & 1;
+        }
+        if (bitSum % 3 != 0) {
+            result |= (1 << i);
+        }
+    }
+    return result;
+}
+```
+
+**Two-variable trick (O(1) space, no loop over 32 bits):**
+
+```java
+public int singleNumberII(int[] nums) {
+    int ones = 0, twos = 0;
+    for (int num : nums) {
+        ones = (ones ^ num) & ~twos; // bit in ones if seen 1 or 4 times (not in twos)
+        twos = (twos ^ num) & ~ones; // bit in twos if seen 2 or 5 times (not in ones)
+    }
+    return ones; // bits that appeared exactly once (mod 3)
+}
+```
+
+## Variant: Single Number III (LeetCode #260)
+
+Two elements appear once, all others appear twice. Find both.
+
+```java
+public int[] singleNumberIII(int[] nums) {
+    int xor = 0;
+    for (int num : nums) xor ^= num; // xor = a ^ b (two singles)
+
+    // Find any differing bit between a and b
+    int diff = xor & (-xor); // isolate lowest set bit
+
+    int a = 0;
+    for (int num : nums) {
+        if ((num & diff) != 0) a ^= num; // partition: XOR group with this bit set
+    }
+    return new int[]{a, xor ^ a}; // b = xor ^ a
+}
+```
+
+## Complexity
+
+| | Time | Space |
+|---|---|---|
+| XOR (Single Number I) | O(n) | O(1) |
+| Bit counting mod 3 (II) | O(32n) = O(n) | O(1) |
+| Partition XOR (III) | O(n) | O(1) |
+
+## Key Insight
+
+XOR is the fundamental "parity" operation — it cancels duplicates automatically. For "appears k times except one" problems, bit counting modulo k generalizes the XOR approach.
+
+## Edge Cases
+
+- **Single element array**: that element is the answer
+- **Negative numbers**: XOR works on the bit representation, handles negatives correctly

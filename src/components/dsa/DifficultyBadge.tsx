@@ -17,7 +17,7 @@ export function DifficultyBadge({ difficulty, className }: DifficultyBadgeProps)
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded border px-2 py-0.5 font-mono text-xs uppercase",
+        "inline-flex items-center rounded border px-2 py-0.5 font-mono text-sm uppercase",
         styles[difficulty],
         className
       )}

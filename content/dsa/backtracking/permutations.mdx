@@ -1,0 +1,131 @@
+---
+title: "Permutations"
+description: "Generate all possible permutations of a distinct integer array."
+date: "2026-04-08"
+tags: ["backtracking", "array"]
+category: "Backtracking"
+difficulty: "medium"
+timeComplexity: "O(n · n!)"
+spaceComplexity: "O(n · n!)"
+companies: ["Amazon", "Google", "Facebook", "Microsoft", "Apple"]
+leetcodeNumber: 46
+draft: false
+---
+
+## Problem Statement
+
+Given an array `nums` of distinct integers, return all the possible permutations. You can return the answer in any order.
+
+```
+Input:  nums = [1,2,3]
+Output: [[1,2,3],[1,3,2],[2,1,3],[2,3,1],[3,1,2],[3,2,1]]
+
+Input:  nums = [0,1]
+Output: [[0,1],[1,0]]
+
+Input:  nums = [1]
+Output: [[1]]
+```
+
+## Approach 1: Backtracking with `used` Array — O(n · n!)
+
+Unlike subsets (which use a `start` index), permutations can use any remaining element at each position. Track which elements are already in the current permutation with a boolean `used` array.
+
+```java
+public List<List<Integer>> permute(int[] nums) {
+    List<List<Integer>> result = new ArrayList<>();
+    backtrack(nums, new boolean[nums.length], new ArrayList<>(), result);
+    return result;
+}
+
+private void backtrack(int[] nums, boolean[] used, List<Integer> current, List<List<Integer>> result) {
+    if (current.size() == nums.length) {
+        result.add(new ArrayList<>(current));
+        return;
+    }
+
+    for (int i = 0; i < nums.length; i++) {
+        if (used[i]) continue;          // already in current permutation
+        used[i] = true;
+        current.add(nums[i]);           // choose
+        backtrack(nums, used, current, result);
+        current.remove(current.size() - 1); // unchoose
+        used[i] = false;
+    }
+}
+```
+
+## Approach 2: Swap-Based — O(n · n!)
+
+Instead of a `used` array, swap elements to partition "available" from "chosen".
+
+```java
+public List<List<Integer>> permute(int[] nums) {
+    List<List<Integer>> result = new ArrayList<>();
+    backtrack(nums, 0, result);
+    return result;
+}
+
+private void backtrack(int[] nums, int start, List<List<Integer>> result) {
+    if (start == nums.length) {
+        List<Integer> perm = new ArrayList<>();
+        for (int n : nums) perm.add(n);
+        result.add(perm);
+        return;
+    }
+
+    for (int i = start; i < nums.length; i++) {
+        swap(nums, start, i);           // choose: put nums[i] at position start
+        backtrack(nums, start + 1, result);
+        swap(nums, start, i);           // unchoose: restore
+    }
+}
+
+private void swap(int[] nums, int i, int j) {
+    int tmp = nums[i]; nums[i] = nums[j]; nums[j] = tmp;
+}
+```
+
+The swap-based approach avoids the `used` array. `nums[0..start-1]` = chosen elements, `nums[start..n-1]` = remaining.
+
+## Decision Tree for [1,2,3]
+
+```
+start=0: try placing each of [1,2,3] at position 0
+  swap(0,0)=[1,2,3]: start=1
+    swap(1,1)=[1,2,3]: start=2 → [1,2,3] ✓
+    swap(1,2)=[1,3,2]: start=2 → [1,3,2] ✓
+  swap(0,1)=[2,1,3]: start=1
+    → [2,1,3], [2,3,1] ✓
+  swap(0,2)=[3,2,1]: start=1
+    → [3,2,1], [3,1,2] ✓
+```
+
+6 permutations = 3! ✓
+
+## Complexity
+
+| | Time | Space |
+|---|---|---|
+| Both approaches | O(n · n!) | O(n · n!) |
+
+n! permutations, each of length n to copy → O(n · n!). The recursion tree has O(n!) leaves.
+
+## Key Insight
+
+**Subsets use `start` index** (each element chosen at most once, order doesn't matter → advance start).
+**Permutations use `used` array** (each element chosen at most once, order matters → scan all from 0).
+
+For **permutations with duplicates** (#47): sort first, then skip a number if it equals the previous and the previous is not used. This avoids generating duplicate permutations.
+
+```java
+// In permutations with duplicates:
+Arrays.sort(nums);
+if (i > 0 && nums[i] == nums[i-1] && !used[i-1]) continue;
+```
+
+## Edge Cases
+
+- **Single element**: one permutation `[[1]]`.
+- **Two elements**: two permutations `[[a,b],[b,a]]`.
+- **Duplicates**: not present in this problem (guaranteed distinct). See #47 for duplicates.

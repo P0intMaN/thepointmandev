@@ -1,0 +1,102 @@
+---
+title: "Pow(x, n)"
+description: "Implement fast power x^n using binary exponentiation."
+date: "2026-04-08"
+tags: ["math", "recursion", "binary-exponentiation"]
+category: "Math"
+difficulty: "medium"
+timeComplexity: "O(log n)"
+spaceComplexity: "O(log n)"
+companies: ["Amazon", "Google", "Facebook", "Bloomberg", "Apple"]
+leetcodeNumber: 50
+draft: false
+---
+
+## Problem Statement
+
+Implement `pow(x, n)` which calculates `x` raised to the power `n` (i.e., `xⁿ`).
+
+```
+Input:  x = 2.00000, n = 10
+Output: 1024.00000
+
+Input:  x = 2.10000, n = 3
+Output: 9.26100
+
+Input:  x = 2.00000, n = -2
+Output: 0.25000   (1/2² = 0.25)
+```
+
+## Approach: Binary (Fast) Exponentiation — O(log n)
+
+Halve the exponent each step:
+- `x^n = (x²)^(n/2)` if n is even
+- `x^n = x * (x²)^((n-1)/2)` if n is odd
+
+```java
+public double myPow(double x, int n) {
+    long N = n; // use long to handle Integer.MIN_VALUE: -(-2^31) overflows int
+    if (N < 0) {
+        x = 1.0 / x;
+        N = -N;
+    }
+    return fastPow(x, N);
+}
+
+private double fastPow(double x, long n) {
+    if (n == 0) return 1.0;
+    double half = fastPow(x, n / 2);
+    if (n % 2 == 0) {
+        return half * half;
+    } else {
+        return half * half * x;
+    }
+}
+```
+
+## Iterative Version (O(1) space)
+
+```java
+public double myPow(double x, int n) {
+    long N = n;
+    if (N < 0) { x = 1.0 / x; N = -N; }
+
+    double result = 1.0;
+    double currentProduct = x;
+
+    while (N > 0) {
+        if ((N & 1) == 1) {         // if current bit is set
+            result *= currentProduct; // include this power of x
+        }
+        currentProduct *= currentProduct; // x, x², x⁴, x⁸, ...
+        N >>= 1;
+    }
+    return result;
+}
+```
+
+**How it works for n=13 (1101 in binary = 8+4+1):**
+- Bit 0 (1): result *= x¹ → x¹
+- Bit 1 (0): skip x²
+- Bit 2 (1): result *= x⁴ → x⁵
+- Bit 3 (1): result *= x⁸ → x¹³ ✓
+
+## Complexity
+
+| Approach | Time | Space |
+|---|---|---|
+| Brute force (loop n times) | O(n) | O(1) |
+| **Recursive binary exp** | **O(log n)** | **O(log n)** (call stack) |
+| **Iterative binary exp** | **O(log n)** | **O(1)** |
+
+## Key Insight
+
+Binary exponentiation exploits the binary representation of `n`. Each bit of `n` corresponds to a power of `x` (x¹, x², x⁴, x⁸, ...). Include a term only if the corresponding bit is set. The result is a product of at most log₂(n) terms.
+
+## Edge Cases
+
+- **n = 0**: any `x^0 = 1` (including `x = 0`)
+- **n = Integer.MIN_VALUE**: `-(-2^31)` overflows 32-bit int → use `long N = n`
+- **n negative**: `x^(-n) = (1/x)^n`
+- **x = 0, n > 0**: 0^n = 0
+- **x = 1 or x = -1**: result is always ±1 regardless of n (handle naturally)

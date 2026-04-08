@@ -1,0 +1,114 @@
+---
+title: "Unique Paths"
+description: "Count the number of unique paths from the top-left to the bottom-right of an m×n grid, moving only right or down."
+date: "2026-04-08"
+tags: ["dp", "math", "combinatorics"]
+category: "Dynamic Programming — 2D"
+difficulty: "medium"
+timeComplexity: "O(m · n)"
+spaceComplexity: "O(m · n)"
+companies: ["Amazon", "Google", "Microsoft", "Apple", "Bloomberg"]
+leetcodeNumber: 62
+draft: false
+---
+
+## Problem Statement
+
+There is a robot on an `m × n` grid starting at the top-left corner. The robot can only move **right** or **down**. How many unique paths are there to reach the bottom-right corner?
+
+```
+Input:  m = 3, n = 7
+Output: 28
+
+Input:  m = 3, n = 2
+Output: 3  (R→D→D, D→R→D, D→D→R)
+```
+
+## State Definition
+
+`dp[i][j]` = number of unique paths to reach cell `(i, j)`.
+
+You can only arrive from above `(i-1, j)` or from the left `(i, j-1)`:
+`dp[i][j] = dp[i-1][j] + dp[i][j-1]`
+
+Base cases: `dp[0][j] = 1` (entire top row) and `dp[i][0] = 1` (entire left column) — only one way to reach any border cell.
+
+## Bottom-Up DP — O(m·n)
+
+```java
+public int uniquePaths(int m, int n) {
+    int[][] dp = new int[m][n];
+
+    // Base cases: first row and first column are all 1
+    for (int i = 0; i < m; i++) dp[i][0] = 1;
+    for (int j = 0; j < n; j++) dp[0][j] = 1;
+
+    for (int i = 1; i < m; i++) {
+        for (int j = 1; j < n; j++) {
+            dp[i][j] = dp[i-1][j] + dp[i][j-1];
+        }
+    }
+
+    return dp[m-1][n-1];
+}
+```
+
+## Space-Optimized — O(n)
+
+Each row only depends on the previous row and the current row's left neighbor:
+
+```java
+public int uniquePaths(int m, int n) {
+    int[] dp = new int[n];
+    Arrays.fill(dp, 1); // first row: all 1s
+
+    for (int i = 1; i < m; i++) {
+        for (int j = 1; j < n; j++) {
+            dp[j] += dp[j-1]; // dp[j] (above) + dp[j-1] (left)
+        }
+    }
+
+    return dp[n-1];
+}
+```
+
+`dp[j]` holds the value from the row above; `dp[j-1]` is the already-updated left neighbor in the current row.
+
+## Mathematical Formula — O(1)
+
+The robot takes exactly `(m-1)` down moves and `(n-1)` right moves, in some order. Total moves = `m+n-2`. The number of ways to arrange them is:
+
+**C(m+n-2, m-1)** = (m+n-2)! / ((m-1)! · (n-1)!)
+
+```java
+public int uniquePaths(int m, int n) {
+    long result = 1;
+    for (int i = 1; i < m; i++) {
+        result = result * (n - 1 + i) / i; // compute C(m+n-2, m-1) incrementally
+    }
+    return (int) result;
+}
+```
+
+## Complexity
+
+| | Time | Space |
+|---|---|---|
+| 2D DP | O(m·n) | O(m·n) |
+| 1D DP | O(m·n) | O(n) |
+| Math formula | O(m) | O(1) |
+
+## Key Insight
+
+Unique Paths is the simplest 2D DP — the recurrence `dp[i][j] = dp[i-1][j] + dp[i][j-1]` (sum from above and from left) is the basis for all grid path problems.
+
+Extensions:
+- **#63 Unique Paths II** — obstacles: `dp[i][j] = 0` if obstacle, else standard recurrence
+- **#64 Minimum Path Sum** — replace + with `min` and add the cell cost
+- **#120 Triangle** — bottom-up DP on a triangular grid
+
+## Edge Cases
+
+- **1×1 grid**: only one cell, return 1.
+- **1×n or m×1**: only one path (all right or all down), return 1.
+- **Large m, n**: mathematical formula may overflow with `int` — use `long`.

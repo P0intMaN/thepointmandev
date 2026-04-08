@@ -1,0 +1,111 @@
+---
+title: "Combination Sum"
+description: "Find all unique combinations of candidates that sum to the target, where candidates can be reused."
+date: "2026-04-08"
+tags: ["backtracking", "array"]
+category: "Backtracking"
+difficulty: "medium"
+timeComplexity: "O(n^(t/m))"
+spaceComplexity: "O(t/m)"
+companies: ["Amazon", "Google", "Facebook", "Apple"]
+leetcodeNumber: 39
+draft: false
+---
+
+## Problem Statement
+
+Given an array of distinct integers `candidates` and a target integer `target`, return a list of all **unique combinations** of `candidates` where the chosen numbers sum to `target`. The same number may be chosen from `candidates` an **unlimited number of times**. Two combinations are unique if their frequency of at least one of the chosen numbers is different.
+
+```
+Input:  candidates = [2,3,6,7], target = 7
+Output: [[2,2,3],[7]]
+
+Input:  candidates = [2,3,5], target = 8
+Output: [[2,2,2,2],[2,3,3],[3,5]]
+
+Input:  candidates = [2], target = 1
+Output: []
+```
+
+## Algorithm — Backtracking with Reuse
+
+Unlike subsets, the same element can be reused — pass `i` (not `i+1`) to the recursive call. Unlike permutations, order doesn't matter — use a `start` index to avoid `[2,3]` and `[3,2]` both appearing.
+
+```java
+public List<List<Integer>> combinationSum(int[] candidates, int target) {
+    Arrays.sort(candidates); // sort for pruning
+    List<List<Integer>> result = new ArrayList<>();
+    backtrack(candidates, target, 0, new ArrayList<>(), result);
+    return result;
+}
+
+private void backtrack(int[] candidates, int remaining, int start,
+                        List<Integer> current, List<List<Integer>> result) {
+    if (remaining == 0) {
+        result.add(new ArrayList<>(current));
+        return;
+    }
+
+    for (int i = start; i < candidates.length; i++) {
+        if (candidates[i] > remaining) break; // ← pruning: sorted array
+
+        current.add(candidates[i]);
+        backtrack(candidates, remaining - candidates[i], i, current, result);
+        // ↑ pass i, not i+1 → same element can be reused
+        current.remove(current.size() - 1);
+    }
+}
+```
+
+**Pruning**: after sorting, once `candidates[i] > remaining`, all subsequent candidates are also too large. `break` eliminates those branches entirely.
+
+## Decision Tree for [2,3,6,7], target=7
+
+```
+backtrack(remaining=7, start=0)
+├── add 2 → backtrack(5, 0)
+│   ├── add 2 → backtrack(3, 0)
+│   │   ├── add 2 → backtrack(1, 0)
+│   │   │   └── add 2 → remaining=-1 (pruned by candidates[0]=2 > 1)
+│   │   └── add 3 → backtrack(0, 1) → ✓ [2,2,3]
+│   ├── add 3 → backtrack(2, 1)
+│   │   └── add 3 → remaining=-1 (pruned)
+│   └── add 5 → remaining=-1... (6,7 both > 5, pruned)
+├── add 3 → backtrack(4, 1)
+│   └── ...
+└── add 7 → backtrack(0, 3) → ✓ [7]
+```
+
+## Complexity
+
+t = target, m = minimum candidate value.
+- Max depth of recursion: t/m
+- Branching factor at each node: number of candidates
+- Total nodes: O(n^(t/m)) — exponential but bounded by target/min
+
+Space: O(t/m) recursion depth.
+
+## Key Insight
+
+**Reuse vs no-reuse**:
+- Reuse allowed → pass `i` (current index) to recursive call
+- No reuse → pass `i + 1`
+
+**Avoid duplicates in output** (for **#40 Combination Sum II** where candidates have duplicates):
+1. Sort candidates
+2. Skip `candidates[i]` if `i > start && candidates[i] == candidates[i-1]`
+
+## Variants
+
+| Problem | Difference |
+|---|---|
+| #39 Combination Sum | Candidates reusable, no duplicates in candidates |
+| #40 Combination Sum II | Each candidate used once, may have duplicates → skip duplicates |
+| #216 Combination Sum III | Choose k numbers from 1-9 that sum to n |
+| #377 Combination Sum IV | Count ordered ways (order matters) → DP |
+
+## Edge Cases
+
+- **No valid combination**: if all candidates > target, the pruning breaks immediately and result is empty.
+- **Single candidate equals target**: directly adds `[candidate]`.
+- **Large target, small minimum**: tree can be very deep — O(t/m) depth.

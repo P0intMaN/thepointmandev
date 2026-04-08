@@ -1,0 +1,94 @@
+---
+title: "01 Matrix"
+description: "Find the distance of the nearest 0 for each cell in a binary matrix."
+date: "2026-04-08"
+tags: ["graph", "bfs", "grid", "multi-source"]
+category: "Graphs — BFS"
+difficulty: "medium"
+timeComplexity: "O(m · n)"
+spaceComplexity: "O(m · n)"
+companies: ["Amazon", "Google", "Facebook", "Microsoft"]
+leetcodeNumber: 542
+draft: false
+---
+
+## Problem Statement
+
+Given an `m x n` binary matrix `mat`, return the distance of the nearest `0` for each cell. The distance between two adjacent cells is `1`.
+
+```
+Input:  mat = [[0,0,0],[0,1,0],[0,0,0]]
+Output: [[0,0,0],[0,1,0],[0,0,0]]
+
+Input:  mat = [[0,0,0],[0,1,0],[1,1,1]]
+Output: [[0,0,0],[0,1,0],[1,2,1]]
+```
+
+## Why Multi-Source BFS?
+
+We want the distance from every `1` cell to the **nearest** `0`. Rather than running BFS from every `1` (O(m²n²)), seed the queue with all `0` cells simultaneously and expand outward. Each `1` cell gets assigned the distance when it's first reached — which is guaranteed to be the minimum distance to any `0`.
+
+```java
+public int[][] updateMatrix(int[][] mat) {
+    int rows = mat.length, cols = mat[0].length;
+    int[][] dist = new int[rows][cols];
+    int[][] dirs = {{0,1},{0,-1},{1,0},{-1,0}};
+    Queue<int[]> queue = new LinkedList<>();
+
+    // Seed: all 0 cells have distance 0; all 1 cells start at "infinity"
+    for (int r = 0; r < rows; r++) {
+        for (int c = 0; c < cols; c++) {
+            if (mat[r][c] == 0) {
+                queue.offer(new int[]{r, c});
+                dist[r][c] = 0;
+            } else {
+                dist[r][c] = Integer.MAX_VALUE;
+            }
+        }
+    }
+
+    while (!queue.isEmpty()) {
+        int[] cell = queue.poll();
+        int r = cell[0], c = cell[1];
+        for (int[] d : dirs) {
+            int nr = r + d[0], nc = c + d[1];
+            if (nr >= 0 && nr < rows && nc >= 0 && nc < cols
+                    && dist[nr][nc] > dist[r][c] + 1) {
+                dist[nr][nc] = dist[r][c] + 1;
+                queue.offer(new int[]{nr, nc});
+            }
+        }
+    }
+
+    return dist;
+}
+```
+
+**No explicit visited array needed**: the `dist[nr][nc] > dist[r][c] + 1` condition prevents re-processing cells that already have an optimal distance assigned.
+
+## Why Not DP?
+
+You might think DP would work — scan top-to-bottom then bottom-to-top. It does for this specific problem (min-distance can propagate from 4 directions via two passes). But multi-source BFS is the general solution and handles irregular shapes, obstacles, and weighted variants naturally.
+
+## Complexity
+
+| | Time | Space |
+|---|---|---|
+| Multi-source BFS | O(m·n) | O(m·n) |
+
+Every cell is enqueued at most once.
+
+## Key Insight
+
+01 Matrix = "distance to nearest source" where sources are all `0` cells. This is exactly the multi-source BFS pattern: seed all sources at distance 0, expand outward. The first time BFS reaches a cell, it's via the shortest path.
+
+Same pattern as:
+- **#994 Rotting Oranges** — time for contamination to spread from all sources
+- **#1162 As Far from Land as Possible** — max BFS distance from all land cells
+- **#286 Walls and Gates** — distance from each empty room to nearest gate
+
+## Edge Cases
+
+- **All zeros**: all distances are 0 immediately, queue processes but no `1` cells to update.
+- **All ones except one zero**: BFS expands from that single zero outward — Manhattan distance pattern.
+- **`1` adjacent to `0`**: distance = 1, assigned immediately in first BFS round.

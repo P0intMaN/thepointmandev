@@ -1,0 +1,82 @@
+---
+title: "Redundant Connection"
+description: "Find the edge that, when removed, makes the graph a tree (no cycle) in an undirected graph."
+date: "2026-04-08"
+tags: ["graph", "union-find", "dfs"]
+category: "Union-Find"
+difficulty: "medium"
+timeComplexity: "O(n · α(n))"
+spaceComplexity: "O(n)"
+companies: ["Amazon", "Google", "Facebook"]
+leetcodeNumber: 684
+draft: false
+---
+
+## Problem Statement
+
+In this problem, a tree is an **undirected connected graph with no cycle**. You are given a graph that started as a tree with `n` nodes, then one additional edge was added. Find the redundant edge that can be removed to restore the tree. If there are multiple answers, return the last one in the input.
+
+```
+Input:  edges = [[1,2],[1,3],[2,3]]
+Output: [2,3]
+
+Input:  edges = [[1,2],[2,3],[3,4],[1,4],[1,5]]
+Output: [1,4]
+```
+
+## Algorithm — Union-Find Cycle Detection
+
+Process edges in order. For each edge, attempt to union its two endpoints. The **first edge where both endpoints are already in the same component** creates a cycle — it's the redundant edge.
+
+```java
+public int[] findRedundantConnection(int[][] edges) {
+    int n = edges.length;
+    int[] parent = new int[n + 1], rank = new int[n + 1];
+    for (int i = 1; i <= n; i++) parent[i] = i;
+
+    for (int[] edge : edges) {
+        if (find(parent, edge[0]) == find(parent, edge[1])) {
+            return edge; // cycle found — this is the redundant edge
+        }
+        union(parent, rank, edge[0], edge[1]);
+    }
+    return new int[0]; // shouldn't reach here
+}
+
+private int find(int[] parent, int x) {
+    if (parent[x] != x) parent[x] = find(parent, parent[x]);
+    return parent[x];
+}
+
+private void union(int[] parent, int[] rank, int x, int y) {
+    int px = find(parent, x), py = find(parent, y);
+    if (rank[px] < rank[py]) parent[px] = py;
+    else if (rank[px] > rank[py]) parent[py] = px;
+    else { parent[py] = px; rank[px]++; }
+}
+```
+
+**Why the first such edge?** The problem guarantees exactly one redundant edge. We process edges in order and return the one that closes a cycle. If there were multiple, we'd return the last one — but the early-return approach returns the first cycle-closing edge, which is the correct answer per the problem statement.
+
+## Complexity
+
+| | Time | Space |
+|---|---|---|
+| Union-Find | O(n·α(n)) | O(n) |
+
+`n` edges, each with a `find` and `union` operation.
+
+## Key Insight
+
+Cycle detection in an undirected graph with Union-Find: if `find(u) == find(v)` before unioning edge `(u, v)`, then `u` and `v` are already in the same connected component — adding this edge creates a cycle.
+
+This is cleaner than DFS cycle detection for this problem because:
+- We process edges one by one (online)
+- We need the specific edge that creates the cycle
+- Union-Find identifies it in O(α(n)) per edge
+
+## Edge Cases
+
+- **Minimum tree**: 3 nodes, 3 edges (one redundant). Returns the last edge that closes the triangle.
+- **Long path with shortcut**: the shortcut edge is the redundant one.
+- **Multiple valid answers**: the problem guarantees exactly one redundant edge.

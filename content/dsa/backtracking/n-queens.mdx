@@ -1,0 +1,132 @@
+---
+title: "N-Queens"
+description: "Place N queens on an N×N chessboard such that no two queens attack each other."
+date: "2026-04-08"
+tags: ["backtracking", "array"]
+category: "Backtracking"
+difficulty: "hard"
+timeComplexity: "O(n!)"
+spaceComplexity: "O(n)"
+companies: ["Amazon", "Google", "Microsoft", "Apple"]
+leetcodeNumber: 51
+draft: false
+---
+
+## Problem Statement
+
+The **n-queens** puzzle places `n` queens on an `n × n` chessboard such that no two queens attack each other (no two in the same row, column, or diagonal). Given an integer `n`, return all distinct solutions.
+
+Each solution is represented as a list of strings, where `'Q'` = queen and `'.'` = empty.
+
+```
+Input:  n = 4
+Output: [[".Q..","...Q","Q...","..Q."],["..Q.","Q...","...Q",".Q.."]]
+
+Input:  n = 1
+Output: [["Q"]]
+```
+
+## Algorithm — Backtracking Row by Row
+
+Place exactly one queen per row. At each row, try all columns, checking if the placement is valid (no conflict with previously placed queens). Use sets to track occupied columns and diagonals in O(1).
+
+```java
+public List<List<String>> solveNQueens(int n) {
+    List<List<String>> result = new ArrayList<>();
+    Set<Integer> cols       = new HashSet<>();
+    Set<Integer> diagPos    = new HashSet<>(); // row - col (same for ↘ diagonal)
+    Set<Integer> diagNeg    = new HashSet<>(); // row + col (same for ↙ diagonal)
+    int[] queens = new int[n]; // queens[row] = col
+
+    backtrack(0, n, queens, cols, diagPos, diagNeg, result);
+    return result;
+}
+
+private void backtrack(int row, int n, int[] queens,
+                        Set<Integer> cols, Set<Integer> diagPos, Set<Integer> diagNeg,
+                        List<List<String>> result) {
+    if (row == n) {
+        result.add(buildBoard(queens, n));
+        return;
+    }
+
+    for (int col = 0; col < n; col++) {
+        if (cols.contains(col)
+                || diagPos.contains(row - col)
+                || diagNeg.contains(row + col)) {
+            continue; // conflict — skip this column
+        }
+
+        queens[row] = col;
+        cols.add(col);
+        diagPos.add(row - col);
+        diagNeg.add(row + col);
+
+        backtrack(row + 1, n, queens, cols, diagPos, diagNeg, result);
+
+        cols.remove(col);
+        diagPos.remove(row - col);
+        diagNeg.remove(row + col);
+    }
+}
+
+private List<String> buildBoard(int[] queens, int n) {
+    List<String> board = new ArrayList<>();
+    for (int row = 0; row < n; row++) {
+        char[] line = new char[n];
+        Arrays.fill(line, '.');
+        line[queens[row]] = 'Q';
+        board.add(new String(line));
+    }
+    return board;
+}
+```
+
+## The Diagonal Key Insight
+
+Two queens in the same diagonal attack each other. There are two types of diagonals:
+
+- **Top-left to bottom-right (↘)**: all cells on this diagonal share the same `row - col` value.
+- **Top-right to bottom-left (↙)**: all cells share the same `row + col` value.
+
+These hash keys reduce conflict checking from O(n) to O(1).
+
+## Tracing n=4
+
+```
+Row 0: try col 0,1,2,3
+  col=0: queens=[0,...]. diagPos={-0}={0}, diagNeg={0}
+    Row 1: try col 0,1,2,3
+      col=0: conflict (same col)
+      col=1: diagPos check 1-1=0 ✓ no conflict; diagNeg 1+1=2 ✓. Place.
+        Row 2: try col 0,1,2,3
+          col=0: diagPos 2-0=2, diagNeg 2+0=2 — conflict (diagNeg=2 already)... etc.
+  col=1: queens=[1,...].
+    → leads to solution [".Q..","...Q","Q...","..Q."]
+```
+
+## Complexity
+
+| | Time | Space |
+|---|---|---|
+| Backtracking | O(n!) | O(n) |
+
+n choices at row 0, n-1 at row 1 (one column used), etc. → O(n!). In practice much faster due to diagonal pruning.
+
+## Key Insight
+
+N-Queens is the textbook backtracking problem for **constraint satisfaction with global state**:
+- Place one queen per row (eliminates row conflicts structurally)
+- Track columns and two diagonal families as sets
+- Prune immediately when any constraint is violated
+
+The `row - col` and `row + col` diagonal keys are the elegant piece — they reduce diagonal conflict checking to a set lookup, making the algorithm practical.
+
+**#52 N-Queens II** asks only for the count, not the boards themselves — same algorithm, just count valid placements instead of building boards.
+
+## Edge Cases
+
+- **n = 1**: immediately places queen at (0,0), returns `[["Q"]]`.
+- **n = 2, 3**: no solution exists (impossible to place without attacks). Result is empty.
+- **n = 4**: 2 solutions.
+- **n = 8** (classic 8-queens): 92 solutions.

@@ -1,0 +1,117 @@
+---
+title: "Find Peak Element"
+description: "Find an index where the element is greater than its neighbors in O(log n) time."
+date: "2026-04-08"
+tags: ["array", "binary-search"]
+category: "Binary Search"
+difficulty: "medium"
+timeComplexity: "O(log n)"
+spaceComplexity: "O(1)"
+companies: ["Google", "Facebook", "Microsoft", "Amazon"]
+leetcodeNumber: 162
+draft: false
+---
+
+## Problem Statement
+
+A peak element is an element that is strictly greater than its neighbors. Given a 0-indexed integer array `nums`, find a peak element and return its index. If the array contains multiple peaks, return the index of **any** peak.
+
+You may imagine that `nums[-1] = nums[n] = -∞`. You must write an O(log n) solution.
+
+```
+Input:  nums = [1,2,3,1]
+Output: 2
+Explanation: nums[2] = 3 is a peak (3 > 2 and 3 > 1)
+
+Input:  nums = [1,2,1,3,5,6,4]
+Output: 5
+Explanation: Either index 1 (2 > 1 on both sides) or index 5 (6 > 5 and 6 > 4) is valid
+```
+
+## Why Binary Search Works Here
+
+At first glance, the array isn't globally sorted — how can you binary search it?
+
+The key: look at the **slope** at `mid`. If `nums[mid] < nums[mid + 1]`, we're on an **upward slope**. A peak must exist to the right (the array eventually falls to `-∞` at the boundary, so it must turn around). Similarly, if `nums[mid] > nums[mid + 1]`, we're on a downward slope and a peak must exist to the left (or at `mid` itself).
+
+This is monotonic reasoning — not on the values, but on the **direction of the slope** — and that's enough to binary search.
+
+---
+
+## Algorithm — O(log n)
+
+```java
+public int findPeakElement(int[] nums) {
+    int lo = 0, hi = nums.length - 1;
+
+    while (lo < hi) {
+        int mid = lo + (hi - lo) / 2;
+
+        if (nums[mid] < nums[mid + 1]) {
+            lo = mid + 1; // ascending slope → peak is to the right
+        } else {
+            hi = mid;     // descending slope → peak is at mid or to the left
+        }
+    }
+
+    return lo; // lo == hi, converged to a peak
+}
+```
+
+This is Template 2 (boundary search). The loop exits when `lo == hi`, pointing at a guaranteed peak.
+
+## Tracing the Example
+
+`nums = [1, 2, 1, 3, 5, 6, 4]`
+
+| lo | hi | mid | nums[mid] | nums[mid+1] | slope     | decision  |
+|----|-----|-----|-----------|-------------|-----------|-----------|
+| 0  | 6   | 3   | 3         | 5           | ascending | lo = 4    |
+| 4  | 6   | 5   | 6         | 4           | descending| hi = 5    |
+| 4  | 5   | 4   | 5         | 6           | ascending | lo = 5    |
+| lo == hi == 5 → **return 5** |
+
+---
+
+## Why `hi = mid` (not `hi = mid - 1`)?
+
+When `nums[mid] > nums[mid + 1]` (descending slope), `mid` itself could be the peak. Setting `hi = mid - 1` would skip it. Template 2 always preserves the potentially valid index.
+
+## Why Only Check `nums[mid + 1]`?
+
+We only need the right neighbor because:
+- The problem guarantees `nums[-1] = nums[n] = -∞` — boundaries are always lower.
+- If we're ascending (`nums[mid] < nums[mid+1]`), the right side has potential.
+- If we're descending or at a local max, we already know `nums[mid] > nums[mid+1]`, so `mid` is better than what's to its right.
+
+We never need to check `nums[mid - 1]` explicitly — the direction of the right slope tells us everything.
+
+---
+
+## Complexity
+
+| | Time | Space |
+|---|---|---|
+| Linear scan | O(n) | O(1) |
+| Binary search | O(log n) | O(1) |
+
+---
+
+## Key Insight
+
+This problem teaches you that binary search doesn't require a **sorted array** — it requires a **monotonic decision function**. Here the decision is: *"Which direction should I move to find a peak?"* The slope answer is always unambiguous, so we can eliminate half the array each step.
+
+The same slope-following logic appears in:
+- **#852 Peak Index in a Mountain Array** — same algorithm, guaranteed single peak.
+- **#1095 Find in Mountain Array** — find a target in a mountain by locating the peak first.
+- Convex optimization — gradient descent follows slopes to find minima.
+
+---
+
+## Edge Cases
+
+- **Single element** `[5]` → `lo == hi == 0` immediately, return 0. (5 > -∞ on both sides)
+- **Strictly increasing** `[1,2,3,4]` → always ascending, `lo` advances to `n-1`. Last element is the peak (right boundary is -∞).
+- **Strictly decreasing** `[4,3,2,1]` → `nums[0] > nums[1]`, immediately `hi = 0`. First element is the peak (left boundary is -∞).
+- **Multiple peaks** → any valid peak is acceptable. Binary search finds whichever one the slope leads to.
+- **Plateau (equal neighbors)** — problem guarantees no duplicates (`nums[i] != nums[i+1]`), so slope is never flat.
