@@ -9,7 +9,7 @@ export function SearchUI() {
   const { query, results, loading, search } = useSearch();
 
   function getHref(entry: SearchEntry) {
-    return entry.type === "blog" ? `/blog/${entry.slug}` : `/dsa/${entry.slug}`;
+    return entry.type === "blog" ? `/blog/${entry.slug}` : `/dsa/${entry.patternSlug}/${entry.slug}`;
   }
 
   return (

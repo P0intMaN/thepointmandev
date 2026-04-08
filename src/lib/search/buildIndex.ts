@@ -10,6 +10,7 @@ import { getAllBlogPosts, getAllDSAProblems } from "@/lib/mdx/getAllContent";
 export interface SearchEntry {
   type: "blog" | "dsa";
   slug: string;
+  patternSlug?: string;
   title: string;
   description: string;
   tags: string[];
@@ -34,6 +35,7 @@ export function buildSearchIndex(): SearchEntry[] {
     entries.push({
       type: "dsa",
       slug: problem.slug,
+      patternSlug: problem.patternSlug,
       title: problem.frontmatter.title,
       description: problem.frontmatter.description,
       tags: problem.frontmatter.tags,
