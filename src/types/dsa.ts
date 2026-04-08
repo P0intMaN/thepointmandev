@@ -11,6 +11,7 @@ export const DSAFrontmatterSchema = z.object({
   spaceComplexity: z.string(),
   companies: z.array(z.string()).optional(),
   leetcodeNumber: z.number().optional(),
+  leetcodeSlug: z.string().optional(),
   draft: z.boolean().default(false),
 });
 

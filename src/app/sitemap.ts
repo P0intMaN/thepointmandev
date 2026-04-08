@@ -2,6 +2,8 @@ import type { MetadataRoute } from "next";
 import { getAllBlogPosts, getAllCourses, getCourseLessons, getAllDSAProblems, getAllTags } from "@/lib/mdx/getAllContent";
 import { getAllSeries } from "@/lib/mdx/getSeriesPosts";
 
+export const dynamic = "force-static";
+
 const BASE_URL = "https://thepointman.dev";
 
 export default function sitemap(): MetadataRoute.Sitemap {

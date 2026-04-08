@@ -44,9 +44,12 @@ public int getSum(int a, int b) {
 ```
 
 **Trace** for a=2 (010), b=3 (011):
-- Round 1: carry = (010 & 011) << 1 = 010 << 1 = 100. a = 010 ^ 011 = 001. b = 100.
-- Round 2: carry = (001 & 100) << 1 = 000. a = 001 ^ 100 = 101. b = 000.
-- b=0, return a=101 = 5 ✓
+
+```
+Round 1: carry = (010 & 011) << 1 = 010 << 1 = 100. a = 010 ^ 011 = 001. b = 100.
+Round 2: carry = (001 & 100) << 1 = 000. a = 001 ^ 100 = 101. b = 000.
+b=0, return a=101 = 5 ✓
+```
 
 **Termination**: the carry shifts left each round, eventually shifting out of all 32 bits → `b` becomes 0.
 
@@ -67,5 +70,5 @@ XOR performs addition without carry. AND finds where carries occur (both bits ar
 ## Edge Cases
 
 - **Both negative**: two's complement handles this naturally
-- **a = b**: XOR gives 0, but carry = (a & a) << 1 = a << 1, then a = 0, b = a<<1. This converges.
+- **a = b**: XOR gives 0, but carry = `(a & a) << 1` = `a << 1`, then a = 0, b = `a<<1`. This converges.
 - **Overflow**: Java's 32-bit int arithmetic wraps naturally

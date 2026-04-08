@@ -1,26 +1,15 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { getAllDSAPatterns } from "@/lib/mdx/getAllContent";
-import { PatternCard } from "@/components/dsa/PatternCard";
-import { TierFilter } from "@/components/dsa/TierFilter";
+import { DSAPatterns } from "@/components/dsa/DSAPatterns";
 
 export const metadata: Metadata = {
   title: "DSA",
   description: "Data structures and algorithms — organized by pattern. Learn to recognize signals, not memorize solutions.",
 };
 
-interface DSAPageProps {
-  searchParams: Promise<{ tier?: string }>;
-}
-
-export default async function DSAPage({ searchParams }: DSAPageProps) {
-  const { tier } = await searchParams;
+export default function DSAPage() {
   const allPatterns = getAllDSAPatterns();
-
-  const filtered = tier
-    ? allPatterns.filter((p) => p.frontmatter.tier === Number(tier))
-    : allPatterns;
-
   const totalProblems = allPatterns.reduce((sum, p) => sum + p.problemCount, 0);
 
   return (
@@ -35,22 +24,9 @@ export default async function DSAPage({ searchParams }: DSAPageProps) {
         </p>
       </div>
 
-      {/* Tier filter */}
-      <div className="mb-8">
-        <Suspense>
-          <TierFilter current={tier} />
-        </Suspense>
-      </div>
-
-      {filtered.length === 0 ? (
-        <p className="text-[var(--color-text-faint)]">No patterns in this tier yet.</p>
-      ) : (
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {filtered.map((pattern) => (
-            <PatternCard key={pattern.slug} pattern={pattern} />
-          ))}
-        </div>
-      )}
+      <Suspense>
+        <DSAPatterns patterns={allPatterns} />
+      </Suspense>
     </div>
   );
 }

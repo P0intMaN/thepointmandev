@@ -61,7 +61,7 @@ export default async function DSAProblemPage({ params }: Props) {
                 </span>
                 {frontmatter.leetcodeNumber && (
                   <a
-                    href={`https://leetcode.com/problems/${slug}/`}
+                    href={`https://leetcode.com/problems/${frontmatter.leetcodeSlug ?? slug}/`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-1 font-mono text-xs text-[var(--color-text-faint)] no-underline transition-colors hover:text-[#67e8f9] hover:no-underline"

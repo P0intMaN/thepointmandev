@@ -1,0 +1,102 @@
+---
+title: "Meeting Rooms II"
+description: "Find the minimum number of conference rooms required to schedule all meetings."
+date: "2026-04-08"
+tags: ["intervals", "heap", "greedy", "sorting"]
+category: "Intervals"
+difficulty: "medium"
+timeComplexity: "O(n log n)"
+spaceComplexity: "O(n)"
+companies: ["Amazon", "Google", "Microsoft", "Facebook", "Bloomberg"]
+leetcodeNumber: 253
+leetcodeSlug: "meeting-rooms-ii"
+draft: false
+---
+
+## Problem Statement
+
+Given an array of meeting time intervals `intervals` where `intervals[i] = [start_i, end_i]`, return the minimum number of conference rooms required.
+
+```
+Input:  intervals = [[0,30],[5,10],[15,20]]
+Output: 2
+
+Input:  intervals = [[7,10],[2,4]]
+Output: 1
+```
+
+## Approach 1: Min Heap — O(n log n)
+
+Sort by start time. Use a min heap to track the **earliest ending meeting**. For each new meeting:
+- If the earliest-ending room is free (its end ≤ current start), reuse it.
+- Otherwise, allocate a new room.
+
+```java
+public int minMeetingRooms(int[][] intervals) {
+    Arrays.sort(intervals, (a, b) -> a[0] - b[0]); // sort by start time
+
+    PriorityQueue<Integer> endTimes = new PriorityQueue<>(); // min heap of end times
+
+    for (int[] interval : intervals) {
+        // If earliest-ending room is free, reuse it
+        if (!endTimes.isEmpty() && endTimes.peek() <= interval[0]) {
+            endTimes.poll(); // remove the freed room
+        }
+        endTimes.offer(interval[1]); // add new meeting's end time
+    }
+
+    return endTimes.size(); // rooms currently in use = total rooms needed
+}
+```
+
+**Why heap size = answer**: at the end, the heap contains one entry per room in use. The maximum simultaneous overlap equals the peak heap size, which equals the final heap size when we always reuse freed rooms greedily.
+
+## Approach 2: Coordinate Sweep — O(n log n)
+
+Treat starts as +1 events and ends as -1 events. Sort all events. The maximum running count is the answer.
+
+```java
+public int minMeetingRooms(int[][] intervals) {
+    int n = intervals.length;
+    int[] starts = new int[n], ends = new int[n];
+    for (int i = 0; i < n; i++) {
+        starts[i] = intervals[i][0];
+        ends[i] = intervals[i][1];
+    }
+    Arrays.sort(starts);
+    Arrays.sort(ends);
+
+    int rooms = 0, maxRooms = 0;
+    int j = 0; // pointer into ends array
+
+    for (int i = 0; i < n; i++) {
+        if (starts[i] < ends[j]) {
+            rooms++; // new overlap
+        } else {
+            j++; // one meeting ended, reuse the room
+        }
+        maxRooms = Math.max(maxRooms, rooms);
+    }
+    return maxRooms;
+}
+```
+
+Note: use `starts[i] < ends[j]` (strict less-than) because a meeting starting exactly when another ends does NOT overlap — the room is free.
+
+## Complexity
+
+| Approach | Time | Space |
+|---|---|---|
+| **Min heap** | **O(n log n)** | **O(n)** |
+| Coordinate sweep | O(n log n) | O(n) |
+
+## Key Insight
+
+The minimum number of rooms = the maximum number of simultaneously overlapping meetings. The min heap approach greedily assigns each meeting to the earliest-freed room, minimizing the total count. The coordinate sweep is arguably cleaner: just count how many meetings are active at the peak.
+
+## Edge Cases
+
+- **No overlaps**: each meeting gets its own room, freed before the next starts → answer = 1
+- **All same time**: all overlap → answer = n
+- **Back-to-back** `[1,3], [3,5]`: end = 3, start = 3 → `starts[i] < ends[j]` is false → reuse → answer = 1
+- **Single meeting**: answer = 1

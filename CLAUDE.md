@@ -292,7 +292,11 @@ for row in ws.rows:
 ## Key Decisions
 
 - **Custom `lib/mdx/` layer** — contentlayer2 is broken on Windows + Next.js 15
-- **URL search params for filtering** — server-rendered, bookmarkable, SEO-friendly
+- **URL search params for filtering** — client-side via `useSearchParams()` in `BlogPosts`, `DSAPatterns`, `PatternProblems` components wrapped in `<Suspense>`. Server-side `searchParams` is incompatible with `output: export`.
+- **`output: export` constraints** — static HTML export for GitHub Pages. All API routes need `export const dynamic = "force-static"`. No edge runtime routes. `sitemap.ts` and `robots.ts` also need `force-static`.
+- **No `/api/og`** — dynamic OG image generation removed (incompatible with static export). Blog pages use `/og-default.png` fallback.
+- **Search** — `/api/search` route with `dynamic = "force-static"` calls `buildSearchIndex()` at build time. Client fetches `/api/search` via `useSearch()` hook.
+- **LeetCode URLs** — use `frontmatter.leetcodeSlug ?? slug` in `DSACard.tsx` and `[slug]/page.tsx`. Add `leetcodeSlug` frontmatter field when filename doesn't match LeetCode's slug.
 - **No `@tailwindcss/typography`** — replaced by custom `Prose.tsx`
 - **Active sidebar state** — left border accent (`border-l-2`) + subtle 7% opacity tint. No solid background fills. This pattern applies to all nav/sidebar active states.
 - **Card text sizes** — metadata/labels: `text-sm`, descriptions/excerpts: `text-base`, tags: `text-sm`. Do not go below `text-sm` for any user-readable card content.

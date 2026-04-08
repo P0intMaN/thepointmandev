@@ -31,7 +31,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       type: "article",
       publishedTime: frontmatter.date,
       modifiedTime: frontmatter.updated,
-      images: [{ url: `/api/og?title=${encodeURIComponent(frontmatter.title)}&type=blog` }],
+      images: [{ url: "/og-default.png" }],
     },
     alternates: {
       canonical: frontmatter.canonicalUrl,

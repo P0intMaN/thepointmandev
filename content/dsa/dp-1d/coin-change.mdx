@@ -99,7 +99,7 @@ Coin Change is the canonical **unbounded knapsack** problem — each item (coin)
 
 The pattern `dp[i] = min/max(dp[i-x] + cost)` for each valid `x` is fundamental:
 
-- **#279 Perfect Squares** — same structure, coins are perfect squares {1, 4, 9, 16, ...}
+- **#279 Perfect Squares** — same structure, coins are perfect squares `[1, 4, 9, 16, ...]`
 - **#377 Combination Sum IV** — count ordered ways (order matters → different DP direction)
 - **#139 Word Break** — `dp[i] = any(dp[i-len(word)] && s[i-len..i] == word)`
 

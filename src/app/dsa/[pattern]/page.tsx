@@ -5,12 +5,10 @@ import Link from "next/link";
 import { getAllDSAPatterns, getAllDSAProblems } from "@/lib/mdx/getAllContent";
 import { getDSAPatternBySlug } from "@/lib/mdx/getBySlug";
 import { MDXContent } from "@/components/mdx/MDXContent";
-import { DSACard } from "@/components/dsa/DSACard";
-import { CategoryFilter } from "@/components/blog/CategoryFilter";
+import { PatternProblems } from "@/components/dsa/PatternProblems";
 
 interface Props {
   params: Promise<{ pattern: string }>;
-  searchParams: Promise<{ tag?: string }>;
 }
 
 export async function generateStaticParams() {
@@ -27,9 +25,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default async function PatternPage({ params, searchParams }: Props) {
+export default async function PatternPage({ params }: Props) {
   const { pattern } = await params;
-  const { tag } = await searchParams;
 
   const result = getDSAPatternBySlug(pattern);
   if (!result) notFound();
@@ -37,8 +34,6 @@ export default async function PatternPage({ params, searchParams }: Props) {
   const { frontmatter, content } = result;
 
   const allProblems = getAllDSAProblems().filter((p) => p.patternSlug === pattern);
-  const filtered = tag ? allProblems.filter((p) => p.frontmatter.difficulty === tag) : allProblems;
-  const difficulties = ["easy", "medium", "hard"];
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
@@ -116,26 +111,9 @@ export default async function PatternPage({ params, searchParams }: Props) {
           </h2>
         </div>
 
-        {/* Difficulty filter */}
-        <div className="mb-6">
-          <Suspense>
-            <CategoryFilter
-              categories={[]}
-              tags={difficulties}
-              currentTag={tag}
-            />
-          </Suspense>
-        </div>
-
-        {filtered.length === 0 ? (
-          <p className="text-[var(--color-text-faint)]">No problems match this filter.</p>
-        ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {filtered.map((problem) => (
-              <DSACard key={problem.slug} problem={problem} />
-            ))}
-          </div>
-        )}
+        <Suspense>
+          <PatternProblems problems={allProblems} />
+        </Suspense>
       </div>
     </div>
   );

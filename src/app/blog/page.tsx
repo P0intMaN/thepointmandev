@@ -1,28 +1,15 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { getAllBlogPosts } from "@/lib/mdx/getAllContent";
-import { ArticleCard } from "@/components/blog/ArticleCard";
-import { CategoryFilter } from "@/components/blog/CategoryFilter";
+import { BlogPosts } from "@/components/blog/BlogPosts";
 
 export const metadata: Metadata = {
   title: "Blog",
   description: "In-depth articles on software engineering, Java, system design, and more.",
 };
 
-interface BlogPageProps {
-  searchParams: Promise<{ category?: string; tag?: string; page?: string }>;
-}
-
-export default async function BlogPage({ searchParams }: BlogPageProps) {
-  const { category, tag } = await searchParams;
+export default function BlogPage() {
   const allPosts = getAllBlogPosts();
-
-  const filtered = allPosts.filter((post) => {
-    if (category && post.frontmatter.category !== category) return false;
-    if (tag && !post.frontmatter.tags.includes(tag)) return false;
-    return true;
-  });
-
   const categories = [...new Set(allPosts.map((p) => p.frontmatter.category))].sort();
   const popularTags = [...new Set(allPosts.flatMap((p) => p.frontmatter.tags))]
     .slice(0, 12)
@@ -40,28 +27,9 @@ export default async function BlogPage({ searchParams }: BlogPageProps) {
         </p>
       </div>
 
-      {/* Filters */}
-      <div className="mb-8">
-        <Suspense>
-          <CategoryFilter
-            categories={categories}
-            tags={popularTags}
-            currentCategory={category}
-            currentTag={tag}
-          />
-        </Suspense>
-      </div>
-
-      {/* Results */}
-      {filtered.length === 0 ? (
-        <p className="text-[var(--color-text-faint)]">No articles match this filter.</p>
-      ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {filtered.map((post) => (
-            <ArticleCard key={post.slug} post={post} />
-          ))}
-        </div>
-      )}
+      <Suspense>
+        <BlogPosts posts={allPosts} categories={categories} popularTags={popularTags} />
+      </Suspense>
     </div>
   );
 }

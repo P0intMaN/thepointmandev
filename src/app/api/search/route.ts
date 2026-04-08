@@ -1,12 +1,10 @@
 import { NextResponse } from "next/server";
 import { buildSearchIndex } from "@/lib/search/buildIndex";
 
-// Cache the index at the module level during build
-let cachedIndex: ReturnType<typeof buildSearchIndex> | null = null;
+// Force static generation so this route works with `output: export`
+export const dynamic = "force-static";
 
 export async function GET() {
-  if (!cachedIndex) {
-    cachedIndex = buildSearchIndex();
-  }
-  return NextResponse.json(cachedIndex);
+  const index = buildSearchIndex();
+  return NextResponse.json(index);
 }
