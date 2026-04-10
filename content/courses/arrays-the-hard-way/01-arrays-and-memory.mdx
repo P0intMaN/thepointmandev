@@ -1,0 +1,83 @@
+---
+title: "01 — Arrays and Memory"
+courseSlug: "arrays-the-hard-way"
+lessonNumber: 1
+description: "How arrays are laid out in memory, what cache lines are, and why sequential access is dramatically faster than random access."
+date: "2026-02-05"
+draft: false
+---
+
+## What an Array Actually Is
+
+An array is a **contiguous block of memory** where every element is the same size. That's it. The entire data structure is just a base address and a length.
+
+```java
+int[] arr = {10, 20, 30, 40, 50};
+//  addr:   0x100 0x104 0x108 0x10C 0x110
+//  value:    10   20   30   40   50
+```
+
+Each `int` is 4 bytes. `arr[i]` computes `base_address + i * 4`. This is O(1) random access — not because of any algorithmic cleverness, but because it's a single multiplication and memory load.
+
+## Cache Lines
+
+Modern CPUs don't fetch one byte at a time from RAM. They fetch 64 bytes at a time — a **cache line**. When you access `arr[0]`, the CPU loads bytes at addresses 0x100 through 0x13F into L1 cache. That includes `arr[0]` through `arr[15]` (64 bytes / 4 bytes per int = 16 elements).
+
+When you access `arr[1]` immediately after, it's already in cache. **Zero additional memory latency.**
+
+```
+Cache line loaded on arr[0] access:
+[10][20][30][40][50][...][...][...][...][...][...][...][...][...][...][...]
+  0   1   2   3   4   5   6   7   8   9  10  11  12  13  14  15
+```
+
+This is **spatial locality** — the principle that memory accessed close together in address space is likely to be accessed close together in time.
+
+## Sequential vs Random Access
+
+```java
+// Sequential — cache-friendly
+int sum = 0;
+for (int i = 0; i < arr.length; i++) {
+    sum += arr[i];  // Every access is in the next cache line or already loaded
+}
+
+// Random — cache-unfriendly
+Random rng = new Random();
+for (int i = 0; i < arr.length; i++) {
+    sum += arr[rng.nextInt(arr.length)];  // Each access may be a cache miss
+}
+```
+
+On a large array (say, 10 million ints), the sequential version can be **5-10x faster** than the random version — both are O(n) algorithmically, but the hardware behavior is completely different.
+
+## ArrayList vs Array
+
+`ArrayList<Integer>` stores `Integer` objects — boxed primitives. Each `Integer` is a separate heap object. The `ArrayList` internally holds an array of **references** (pointers) to those objects.
+
+```
+ArrayList backing array:   [ptr1][ptr2][ptr3]...
+Heap objects:               Integer(10) somewhere, Integer(20) somewhere else...
+```
+
+Following each pointer to fetch the value is a potential cache miss. `int[]` stores values inline — no pointers, perfect spatial locality.
+
+**For performance-critical numeric work, always prefer `int[]` over `ArrayList<Integer>`.**
+
+## Dynamic Arrays and Amortized O(1)
+
+Java's `ArrayList` doubles its backing array when full. If current capacity is `n`, it allocates a new array of size `2n` and copies all elements. This copy is O(n) — expensive.
+
+But amortized over all insertions, it's O(1). To insert n elements total:
+- Copies happen at sizes 1, 2, 4, 8, ... n
+- Total copy work: 1 + 2 + 4 + ... + n = 2n - 1 = O(n)
+- Divided over n insertions: O(1) per insertion
+
+The doubling strategy guarantees that expensive copies happen exponentially rarely.
+
+## Key Takeaways
+
+- Array element access is O(1) due to direct address computation, not magic
+- Sequential access exploits cache lines — it's hardware-accelerated
+- Prefer `int[]` over `ArrayList<Integer>` for performance-sensitive numeric code
+- `ArrayList` append is amortized O(1) due to capacity doubling

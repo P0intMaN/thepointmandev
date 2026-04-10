@@ -1,0 +1,80 @@
+---
+title: "01 — Binary Trees and Memory"
+courseSlug: "trees-in-depth"
+lessonNumber: 1
+description: "How trees are represented in memory, the cost of pointer chasing, and why trees behave the way they do at a hardware level."
+date: "2026-02-01"
+draft: false
+---
+
+## What a Tree Actually Is
+
+A tree is a connected, acyclic graph with a designated root. That's the formal definition. In practice, a binary tree is a node that holds a value and two pointers — left and right.
+
+```java
+class TreeNode {
+    int val;
+    TreeNode left;
+    TreeNode right;
+
+    TreeNode(int val) {
+        this.val = val;
+    }
+}
+```
+
+This looks simple. The cost is hidden in those two pointers.
+
+## How Nodes Live in Memory
+
+When you allocate `new TreeNode(5)`, the JVM places the object somewhere on the heap. When you then allocate `new TreeNode(3)`, it goes somewhere else — potentially megabytes away in physical memory.
+
+```
+Heap (simplified):
+  Address 0x1000: [val=5, left=0x2400, right=0x3800]
+  ...
+  Address 0x2400: [val=3, left=null, right=null]
+  ...
+  Address 0x3800: [val=8, left=null, right=null]
+```
+
+Following `root.left` means the CPU has to load a value from `0x1000`, read the pointer `0x2400`, then load from `0x2400`. These addresses are unlikely to be in the same cache line (64 bytes). Each hop is a potential **cache miss**.
+
+## Cache Misses Are Expensive
+
+A cache miss to main memory costs ~100 CPU cycles. An L1 cache hit costs ~4 cycles. On a 1-million-node tree, a traversal touches every node — that's potentially 1 million cache misses.
+
+This is why **arrays beat trees at raw traversal speed** even when the algorithmic complexity is identical. An array traversal is sequential memory access — the hardware prefetcher loads the next cache line before you need it.
+
+Trees trade spatial locality for structural flexibility.
+
+## When the Trade-off Is Worth It
+
+| Operation | Sorted Array | BST (balanced) |
+|-----------|-------------|----------------|
+| Search    | O(log n)    | O(log n)       |
+| Insert    | O(n)        | O(log n)       |
+| Delete    | O(n)        | O(log n)       |
+
+The array wins on search (same complexity, better cache). The BST wins decisively on insert and delete — reshuffling a sorted array to maintain order is O(n) due to the shift. The tree just relinks pointers.
+
+**Use a tree when you need fast inserts and deletes alongside fast lookup.**
+
+## Height Is Everything
+
+The performance of every tree operation depends on height. A balanced tree with n nodes has height `O(log n)`. A degenerate tree (every node has only a right child, like a linked list) has height `O(n)`.
+
+```
+Balanced (height = 3):        Degenerate (height = 7):
+        4                     1
+      /   \                    \
+     2     6                    2
+    / \   / \                    \
+   1   3 5   7                    3
+                                   \
+                                    ...
+```
+
+Same 7 nodes. Search on the balanced tree: 3 comparisons. Degenerate: up to 7.
+
+In the next lesson we'll look at how to traverse these structures efficiently before learning how to keep them balanced.

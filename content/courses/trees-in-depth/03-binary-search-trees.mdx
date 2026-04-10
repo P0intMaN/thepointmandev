@@ -1,0 +1,126 @@
+---
+title: "03 — Binary Search Trees"
+courseSlug: "trees-in-depth"
+lessonNumber: 3
+description: "The BST invariant, search/insert/delete implementation, and where BSTs break down in practice."
+date: "2026-02-03"
+draft: false
+---
+
+## The BST Invariant
+
+A Binary Search Tree enforces one rule at every node:
+
+> All values in the **left subtree** are strictly less than the node's value. All values in the **right subtree** are strictly greater.
+
+```
+        8
+       / \
+      3   10
+     / \    \
+    1   6    14
+       / \   /
+      4   7 13
+```
+
+This invariant is what makes O(log n) search possible — at each node you eliminate half the remaining tree.
+
+## Search
+
+```java
+TreeNode search(TreeNode root, int target) {
+    if (root == null || root.val == target) return root;
+    if (target < root.val) return search(root.left, target);
+    return search(root.right, target);
+}
+```
+
+Each comparison discards one subtree. On a balanced BST: O(log n). On a degenerate BST: O(n).
+
+## Insert
+
+```java
+TreeNode insert(TreeNode root, int val) {
+    if (root == null) return new TreeNode(val);
+    if (val < root.val) root.left  = insert(root.left,  val);
+    else if (val > root.val) root.right = insert(root.right, val);
+    // val == root.val: duplicate, ignore (or handle per requirements)
+    return root;
+}
+```
+
+Always inserts at a leaf — no restructuring needed. The BST invariant is maintained because we follow the exact same comparison logic as search.
+
+## Delete — The Tricky One
+
+Deletion has three cases:
+
+**Case 1 — Node is a leaf:** Remove it directly.
+
+**Case 2 — Node has one child:** Replace the node with its child.
+
+**Case 3 — Node has two children:** Replace the node's value with its **inorder successor** (smallest value in the right subtree), then delete that successor from the right subtree.
+
+```java
+TreeNode delete(TreeNode root, int key) {
+    if (root == null) return null;
+
+    if (key < root.val) {
+        root.left = delete(root.left, key);
+    } else if (key > root.val) {
+        root.right = delete(root.right, key);
+    } else {
+        // Found the node to delete
+        if (root.left == null)  return root.right;  // Case 1 & 2
+        if (root.right == null) return root.left;   // Case 2
+
+        // Case 3: find inorder successor (min of right subtree)
+        TreeNode successor = findMin(root.right);
+        root.val = successor.val;
+        root.right = delete(root.right, successor.val);
+    }
+    return root;
+}
+
+TreeNode findMin(TreeNode node) {
+    while (node.left != null) node = node.left;
+    return node;
+}
+```
+
+Why the inorder successor? It's the smallest value larger than the deleted node — guaranteed to maintain the BST invariant when placed in the deleted node's position.
+
+## Where BSTs Break Down
+
+Insert sorted data (1, 2, 3, 4, 5 ...) into a BST and you get a linked list — every node goes to the right child of the previous. Height becomes O(n), destroying all O(log n) guarantees.
+
+```
+1
+ \
+  2
+   \
+    3
+     \
+      4
+```
+
+This is why raw BSTs aren't used in production. The next lesson covers **AVL trees** — self-balancing BSTs that enforce O(log n) height after every operation.
+
+## Validating a BST
+
+A common interview trap: checking only that `node.left.val < node.val < node.right.val` is **wrong**. The constraint must hold for the entire subtree.
+
+```java
+boolean isValidBST(TreeNode root) {
+    return validate(root, Long.MIN_VALUE, Long.MAX_VALUE);
+}
+
+boolean validate(TreeNode node, long min, long max) {
+    if (node == null) return true;
+    if (node.val <= min || node.val >= max) return false;
+    return validate(node.left,  min,      node.val) &&
+           validate(node.right, node.val, max);
+}
+```
+
+The `min`/`max` bounds tighten as you descend — every node is validated against the constraints imposed by all its ancestors.

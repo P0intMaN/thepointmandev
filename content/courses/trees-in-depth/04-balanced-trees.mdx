@@ -1,0 +1,114 @@
+---
+title: "04 — Balanced Trees and When to Use Them"
+courseSlug: "trees-in-depth"
+lessonNumber: 4
+description: "AVL trees, Red-Black trees, and how Java's TreeMap and TreeSet use them under the hood."
+date: "2026-02-04"
+draft: false
+---
+
+## The Balance Problem
+
+A plain BST's worst case is O(n) — when it degenerates into a linked list. Balanced trees solve this by enforcing a height invariant after every insert and delete, keeping height at O(log n) unconditionally.
+
+Two dominant approaches: **AVL trees** (strict balance) and **Red-Black trees** (relaxed balance, faster writes).
+
+## AVL Trees
+
+An AVL tree maintains the **balance factor** at every node:
+
+```
+balance_factor = height(left subtree) - height(right subtree)
+```
+
+Valid values: -1, 0, +1. If any node's balance factor becomes -2 or +2, the tree rotates to restore balance.
+
+### Rotations
+
+There are four rotation cases. All are O(1) — they just relink pointers.
+
+**Right Rotation (LL case):**
+
+```
+    z                y
+   /                / \
+  y        →       x   z
+ /
+x
+```
+
+```java
+TreeNode rotateRight(TreeNode z) {
+    TreeNode y = z.left;
+    TreeNode T3 = y.right;
+    y.right = z;
+    z.left = T3;
+    // update heights
+    z.height = 1 + Math.max(height(z.left), height(z.right));
+    y.height = 1 + Math.max(height(y.left), height(y.right));
+    return y;
+}
+```
+
+**Left Rotation (RR case)** is the mirror image. The LR and RL cases are handled with a double rotation.
+
+### AVL Guarantees
+
+| Operation | Complexity |
+|-----------|-----------|
+| Search    | O(log n)  |
+| Insert    | O(log n)  |
+| Delete    | O(log n)  |
+
+Height is strictly bounded to `1.44 * log2(n)`. AVL trees are the most height-efficient balanced BST.
+
+**Downside:** Insertions and deletions may trigger rotations all the way up the tree (O(log n) rotations). This makes writes more expensive than Red-Black trees.
+
+## Red-Black Trees
+
+Red-Black trees use a coloring rule instead of a strict height invariant:
+
+1. Every node is red or black
+2. The root is black
+3. Red nodes cannot have red children (no two consecutive reds)
+4. Every path from a node to a null leaf has the same number of black nodes
+
+These rules guarantee height `≤ 2 * log2(n+1)` — slightly looser than AVL, but insert/delete require at most **2 rotations** (vs O(log n) for AVL).
+
+**Red-Black trees win on write-heavy workloads. AVL trees win on read-heavy workloads.**
+
+## What Java Uses
+
+```java
+TreeMap<Integer, String> map = new TreeMap<>();  // Red-Black tree
+TreeSet<Integer> set = new TreeSet<>();           // Red-Black tree (backed by TreeMap)
+```
+
+Both give you O(log n) `get`, `put`, `remove`, `firstKey`, `lastKey`, `floorKey`, `ceilingKey` — operations impossible on a HashMap.
+
+```java
+TreeMap<Integer, String> scores = new TreeMap<>();
+scores.put(85, "Alice");
+scores.put(92, "Bob");
+scores.put(78, "Carol");
+
+// All in sorted order:
+scores.forEach((k, v) -> System.out.println(k + ": " + v));
+// 78: Carol, 85: Alice, 92: Bob
+
+// Range query — who scored between 80 and 90?
+scores.subMap(80, 91).forEach((k, v) -> System.out.println(v));
+// Alice
+```
+
+## Choosing the Right Tree
+
+| Need | Use |
+|------|-----|
+| Fast ordered iteration, range queries | `TreeMap` / `TreeSet` (Red-Black) |
+| Maximum lookup speed on read-heavy data | AVL tree |
+| Prefix search, autocomplete | Trie (next course) |
+| Range sum / point update queries | Segment tree |
+| Unordered fast lookup, no ordering needed | `HashMap` (not a tree at all) |
+
+The rule of thumb: reach for `TreeMap`/`TreeSet` when you need sorted order or range queries. If you don't need ordering, `HashMap` is almost always faster.

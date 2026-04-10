@@ -1,0 +1,114 @@
+---
+title: "02 — Two Pointers"
+courseSlug: "arrays-the-hard-way"
+lessonNumber: 2
+description: "The two-pointer technique — opposite ends, same direction, and fast/slow — with the intuition behind each variant."
+date: "2026-02-06"
+draft: false
+---
+
+## The Core Idea
+
+Two pointers is the technique of maintaining two indices into an array simultaneously, moving them according to problem-specific rules. It turns O(n²) brute-force scans into O(n) solutions by eliminating impossible candidate pairs without checking them.
+
+There are three distinct variants:
+
+1. **Opposite ends** — pointers start at both ends and move inward
+2. **Same direction** — both pointers start at the left, one leads the other
+3. **Fast/slow** — one pointer moves twice as fast (primarily for linked lists, but applies to arrays too)
+
+## Variant 1: Opposite Ends
+
+**Problem:** Given a sorted array, find two numbers that sum to a target.
+
+**Brute force:** Check all pairs — O(n²).
+
+**Two pointers:** Start `left = 0`, `right = n-1`. At each step:
+- If `arr[left] + arr[right] == target`: found it
+- If `arr[left] + arr[right] < target`: sum is too small, move left forward (increases the sum)
+- If `arr[left] + arr[right] > target`: sum is too large, move right backward (decreases the sum)
+
+```java
+int[] twoSum(int[] nums, int target) {
+    int left = 0, right = nums.length - 1;
+    while (left < right) {
+        int sum = nums[left] + nums[right];
+        if      (sum == target) return new int[]{left, right};
+        else if (sum < target)  left++;
+        else                    right--;
+    }
+    return new int[]{-1, -1}; // not found
+}
+```
+
+**Why it works:** When we move `left++`, we eliminate every pair `(left, right'), right' <= right` — all those sums were too small, and making `right` smaller would only make them smaller. We eliminate an entire column of the implicit n² matrix per step.
+
+## Variant 2: Same Direction (Slow/Fast Read-Write)
+
+**Problem:** Remove duplicates from a sorted array in-place, return new length.
+
+```java
+int removeDuplicates(int[] nums) {
+    if (nums.length == 0) return 0;
+    int write = 0; // slow pointer — next position to write
+    for (int read = 1; read < nums.length; read++) { // fast pointer
+        if (nums[read] != nums[write]) {
+            write++;
+            nums[write] = nums[read];
+        }
+    }
+    return write + 1;
+}
+```
+
+`write` tracks the boundary of the deduplicated prefix. `read` scans ahead. Only unique elements cross from right to left. No extra memory, single pass — O(n) time, O(1) space.
+
+## Variant 3: Partition (Dutch National Flag)
+
+**Problem:** Sort an array containing only 0s, 1s, and 2s in-place.
+
+```java
+void sortColors(int[] nums) {
+    int low = 0, mid = 0, high = nums.length - 1;
+
+    while (mid <= high) {
+        if (nums[mid] == 0) {
+            swap(nums, low++, mid++);
+        } else if (nums[mid] == 1) {
+            mid++;
+        } else { // nums[mid] == 2
+            swap(nums, mid, high--);
+            // don't increment mid — the swapped value is unknown
+        }
+    }
+}
+```
+
+Three pointers define four regions:
+```
+[0..low-1]: all 0s
+[low..mid-1]: all 1s
+[mid..high]: unknown
+[high+1..n-1]: all 2s
+```
+
+Single pass, O(n) time, O(1) space. One of the most elegant array algorithms.
+
+## When Two Pointers Apply
+
+The pattern works when the problem has:
+
+1. **Sorted input** (or can be sorted) — enables the elimination argument for opposite-end pointers
+2. **Monotonic constraint** — moving one pointer in a direction makes the situation strictly better or worse in a predictable way
+3. **Subarray or pair search** — you need two positions that satisfy a condition
+
+If you find yourself writing a nested loop over an array and the inner loop's start depends on the outer index, ask: can I maintain the inner pointer across outer iterations instead of restarting it?
+
+## Complexity
+
+| Approach | Time | Space |
+|----------|------|-------|
+| Brute force (nested loops) | O(n²) | O(1) |
+| Two pointers | O(n) | O(1) |
+
+The O(n) bound holds because each pointer only moves forward (or inward) — in total, across all iterations, they move at most n steps each.

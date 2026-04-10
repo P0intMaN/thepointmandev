@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { DifficultyBadge } from "./DifficultyBadge";
-import { TagBadge } from "@/components/blog/TagBadge";
 import type { DSAProblem } from "@/types/dsa";
 
 interface DSACardProps {
@@ -62,14 +61,6 @@ export function DSACard({ problem }: DSACardProps) {
         </span>
       </div>
 
-      {/* Tags */}
-      {frontmatter.tags.length > 0 && (
-        <div className="flex flex-wrap gap-1.5">
-          {frontmatter.tags.slice(0, 4).map((tag) => (
-            <TagBadge key={tag} tag={tag} />
-          ))}
-        </div>
-      )}
     </article>
   );
 }

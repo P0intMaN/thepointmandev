@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { getAllBlogPosts, getAllCourses, getCourseLessons, getAllDSAProblems, getAllTags } from "@/lib/mdx/getAllContent";
+import { getAllBlogPosts, getAllCourses, getCourseLessons, getAllDSAProblems } from "@/lib/mdx/getAllContent";
 import { getAllSeries } from "@/lib/mdx/getSeriesPosts";
 
 export const dynamic = "force-static";
@@ -14,7 +14,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${BASE_URL}/blog`, lastModified: now, changeFrequency: "daily", priority: 0.9 },
     { url: `${BASE_URL}/courses`, lastModified: now, changeFrequency: "weekly", priority: 0.8 },
     { url: `${BASE_URL}/dsa`, lastModified: now, changeFrequency: "weekly", priority: 0.8 },
-    { url: `${BASE_URL}/tags`, lastModified: now, changeFrequency: "weekly", priority: 0.5 },
     { url: `${BASE_URL}/about`, lastModified: now, changeFrequency: "monthly", priority: 0.6 },
   ];
 
@@ -48,13 +47,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.7,
   }));
 
-  const tagRoutes: MetadataRoute.Sitemap = Object.keys(getAllTags()).map((tag) => ({
-    url: `${BASE_URL}/tags/${encodeURIComponent(tag)}`,
-    lastModified: now,
-    changeFrequency: "weekly",
-    priority: 0.5,
-  }));
-
   const seriesRoutes: MetadataRoute.Sitemap = Object.keys(getAllSeries()).map((series) => ({
     url: `${BASE_URL}/series/${series}`,
     lastModified: now,
@@ -67,7 +59,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     ...blogRoutes,
     ...courseRoutes,
     ...dsaRoutes,
-    ...tagRoutes,
     ...seriesRoutes,
   ];
 }

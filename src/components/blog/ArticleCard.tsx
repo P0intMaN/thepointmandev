@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { formatDate } from "@/lib/utils";
-import { TagBadge } from "./TagBadge";
 import type { BlogPost } from "@/types/blog";
 
 interface ArticleCardProps {
@@ -65,14 +64,6 @@ export function ArticleCard({ post, compact = false }: ArticleCardProps) {
         {excerpt}
       </p>
 
-      {/* Tags */}
-      {frontmatter.tags.length > 0 && (
-        <div className="flex flex-wrap gap-1.5">
-          {frontmatter.tags.slice(0, 4).map((tag) => (
-            <TagBadge key={tag} tag={tag} />
-          ))}
-        </div>
-      )}
     </article>
   );
 }

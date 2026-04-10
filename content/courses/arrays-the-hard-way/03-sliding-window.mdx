@@ -1,0 +1,112 @@
+---
+title: "03 — Sliding Window"
+courseSlug: "arrays-the-hard-way"
+lessonNumber: 3
+description: "Fixed and variable-size sliding windows, and the exact thought process for recognizing and constructing them."
+date: "2026-02-07"
+draft: false
+---
+
+## The Pattern
+
+A sliding window maintains a contiguous subarray between two indices `left` and `right`. As `right` expands the window by including a new element, `left` contracts it when a constraint is violated. The key insight: **we never restart from scratch** — we slide.
+
+There are two flavors:
+
+- **Fixed-size window:** window size `k` is given. `right` and `left` always move together.
+- **Variable-size window:** window size is determined by a constraint. `left` catches up to `right` when the constraint breaks.
+
+## Fixed-Size Window
+
+**Problem:** Maximum sum of any subarray of length k.
+
+**Brute force:** For each starting index, sum k elements — O(n*k).
+
+**Sliding window:** Sum the first window, then for each step add the incoming element and subtract the outgoing one — O(n).
+
+```java
+int maxSumSubarray(int[] nums, int k) {
+    int windowSum = 0;
+    for (int i = 0; i < k; i++) windowSum += nums[i];
+
+    int maxSum = windowSum;
+    for (int right = k; right < nums.length; right++) {
+        windowSum += nums[right];         // add incoming
+        windowSum -= nums[right - k];     // remove outgoing
+        maxSum = Math.max(maxSum, windowSum);
+    }
+    return maxSum;
+}
+```
+
+The window "slides" one step right per iteration. Each element is added once and removed once — O(n) total.
+
+## Variable-Size Window
+
+**Problem:** Longest substring without repeating characters.
+
+The constraint: no character appears more than once in the window.
+
+```java
+int lengthOfLongestSubstring(String s) {
+    Map<Character, Integer> freq = new HashMap<>();
+    int left = 0, maxLen = 0;
+
+    for (int right = 0; right < s.length(); right++) {
+        char c = s.charAt(right);
+        freq.merge(c, 1, Integer::sum);
+
+        // shrink from left until window is valid again
+        while (freq.get(c) > 1) {
+            char leftChar = s.charAt(left);
+            freq.merge(leftChar, -1, Integer::sum);
+            if (freq.get(leftChar) == 0) freq.remove(leftChar);
+            left++;
+        }
+
+        maxLen = Math.max(maxLen, right - left + 1);
+    }
+    return maxLen;
+}
+```
+
+**Why O(n):** `right` advances n times. `left` also advances at most n times total (it never goes backward). Each character is added and removed from the map exactly once.
+
+## The Template
+
+Most sliding window problems fit this template:
+
+```java
+int left = 0;
+// state tracks what's currently in the window
+for (int right = 0; right < n; right++) {
+    // 1. Expand: add nums[right] to state
+
+    // 2. Shrink: while window violates constraint, remove nums[left] from state, left++
+
+    // 3. Update answer using current valid window
+}
+```
+
+The crucial question for step 2: **what is the constraint?** Once you can state it precisely, the shrink condition writes itself.
+
+## Recognizing Sliding Window Problems
+
+Ask these questions about the problem:
+
+1. Does it ask for a subarray (contiguous elements)?
+2. Is there a constraint on what makes the subarray valid or optimal?
+3. Does adding an element to the right make the window "more" of something, and removing from the left make it "less"?
+
+If yes to all three, sliding window almost certainly applies.
+
+**Not** sliding window: problems requiring non-contiguous subsequences, or where the optimal subarray's validity doesn't have a monotonic relationship with its size.
+
+## Comparison
+
+| Problem | Brute Force | Sliding Window |
+|---------|------------|---------------|
+| Max sum subarray of size k | O(n*k) | O(n) |
+| Longest substring, no repeats | O(n²) | O(n) |
+| Minimum window substring | O(n²) | O(n) |
+| All anagrams in string | O(n*m) | O(n) |

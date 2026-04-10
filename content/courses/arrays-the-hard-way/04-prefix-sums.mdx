@@ -1,0 +1,125 @@
+---
+title: "04 — Prefix Sums"
+courseSlug: "arrays-the-hard-way"
+lessonNumber: 4
+description: "Prefix sums, range queries in O(1), the prefix-sum-plus-hashmap pattern, and 2D prefix sums."
+date: "2026-02-08"
+draft: false
+---
+
+## The Idea
+
+A **prefix sum array** `pre` stores the cumulative sum up to each index:
+
+```
+nums: [3, 1, 4, 1, 5, 9, 2, 6]
+pre:  [0, 3, 4, 8, 9, 14, 23, 25, 31]
+```
+
+`pre[i]` = sum of `nums[0..i-1]`. The zero-indexed extra element at the front (`pre[0] = 0`) is the key convenience — it makes every range query use the same formula.
+
+```java
+int[] buildPrefix(int[] nums) {
+    int[] pre = new int[nums.length + 1];
+    for (int i = 0; i < nums.length; i++) {
+        pre[i + 1] = pre[i] + nums[i];
+    }
+    return pre;
+}
+```
+
+## Range Sum in O(1)
+
+Sum of `nums[left..right]` (inclusive, 0-indexed):
+
+```java
+int rangeSum(int[] pre, int left, int right) {
+    return pre[right + 1] - pre[left];
+}
+```
+
+Without prefix sums: iterate from `left` to `right` — O(n) per query. With prefix sums: one subtraction — O(1) per query after O(n) preprocessing. For k queries on the same array, this is O(n + k) vs O(n*k).
+
+## The Prefix Sum + HashMap Pattern
+
+This is where prefix sums get genuinely powerful.
+
+**Problem:** Count subarrays that sum to a target k.
+
+```java
+int subarraySum(int[] nums, int k) {
+    Map<Integer, Integer> prefixCount = new HashMap<>();
+    prefixCount.put(0, 1); // empty prefix (sum=0) seen once
+    int sum = 0, count = 0;
+
+    for (int num : nums) {
+        sum += num;
+        // if (sum - k) appeared before, those subarrays sum to k
+        count += prefixCount.getOrDefault(sum - k, 0);
+        prefixCount.merge(sum, 1, Integer::sum);
+    }
+    return count;
+}
+```
+
+**The key insight:** A subarray `nums[i..j]` sums to `k` if and only if `pre[j+1] - pre[i] = k`, i.e., `pre[i] = pre[j+1] - k`. For each new prefix sum we compute, we check how many previous prefix sums equal `current - k` — each one corresponds to a valid subarray ending at the current position.
+
+The hashmap stores `(prefix_sum → count_of_occurrences)` seen so far. The `{0: 1}` initialization handles subarrays starting from index 0.
+
+## Difference Arrays
+
+A difference array is the inverse of a prefix sum — it's used to apply **range updates in O(1)**, then recover the final array in O(n).
+
+**Problem:** Apply m range increment operations to an array, then output the result.
+
+```java
+// Increment nums[left..right] by val, for many (left, right, val) queries
+void rangeUpdate(int[] diff, int left, int right, int val) {
+    diff[left]     += val;
+    diff[right + 1] -= val; // undo after right
+}
+
+// Recover the actual values
+int[] reconstruct(int[] diff) {
+    int[] result = new int[diff.length];
+    result[0] = diff[0];
+    for (int i = 1; i < diff.length; i++) {
+        result[i] = result[i - 1] + diff[i];
+    }
+    return result;
+}
+```
+
+m range updates: O(m). Final reconstruction: O(n). Without difference arrays: O(n*m).
+
+## 2D Prefix Sums
+
+For a matrix, build a 2D prefix sum where `pre[r][c]` = sum of all elements in the rectangle `[0,0]` to `[r-1,c-1]`.
+
+```java
+int[][] build2D(int[][] mat) {
+    int R = mat.length, C = mat[0].length;
+    int[][] pre = new int[R + 1][C + 1];
+    for (int r = 1; r <= R; r++)
+        for (int c = 1; c <= C; c++)
+            pre[r][c] = mat[r-1][c-1] + pre[r-1][c] + pre[r][c-1] - pre[r-1][c-1];
+    return pre;
+}
+
+// Sum of rectangle (r1,c1) to (r2,c2), 0-indexed
+int query2D(int[][] pre, int r1, int c1, int r2, int c2) {
+    return pre[r2+1][c2+1] - pre[r1][c2+1] - pre[r2+1][c1] + pre[r1][c1];
+}
+```
+
+The inclusion-exclusion formula subtracts the two over-counted rectangles and adds back the doubly-subtracted corner.
+
+## When to Reach for Prefix Sums
+
+| Signal | Technique |
+|--------|-----------|
+| Range sum queries, static array | Prefix sum array |
+| Count subarrays with target sum | Prefix sum + HashMap |
+| Range updates, then read final array | Difference array |
+| Rectangle sum queries on matrix | 2D prefix sum |
+| Dynamic range queries (updates + queries interleaved) | Segment tree or BIT |

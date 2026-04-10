@@ -8,6 +8,7 @@ export const CourseFrontmatterSchema = z.object({
   tags: z.array(z.string()).default([]),
   level: z.enum(["beginner", "intermediate", "advanced"] as const),
   totalLessons: z.number(),
+  category: z.string().default("Other"),
   image: z.string().optional(),
   draft: z.boolean().default(false),
 });

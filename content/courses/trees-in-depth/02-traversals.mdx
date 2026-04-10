@@ -1,0 +1,124 @@
+---
+title: "02 — Traversals: DFS and BFS"
+courseSlug: "trees-in-depth"
+lessonNumber: 2
+description: "Every traversal pattern — inorder, preorder, postorder, level-order — and when each one actually matters."
+date: "2026-02-02"
+draft: false
+---
+
+## The Four Traversals
+
+There are four standard ways to visit every node in a binary tree. Three are DFS variants (use a stack, implicitly via recursion). One is BFS (use a queue).
+
+### Inorder — Left, Root, Right
+
+```java
+void inorder(TreeNode node) {
+    if (node == null) return;
+    inorder(node.left);
+    System.out.print(node.val + " ");
+    inorder(node.right);
+}
+```
+
+**Key property:** On a BST, inorder traversal produces values in sorted ascending order. This is how you flatten a BST to a sorted array in O(n).
+
+### Preorder — Root, Left, Right
+
+```java
+void preorder(TreeNode node) {
+    if (node == null) return;
+    System.out.print(node.val + " ");
+    preorder(node.left);
+    preorder(node.right);
+}
+```
+
+**Key property:** Preorder visits the root before children — useful for serializing a tree (the root must come first to reconstruct the tree on the other end).
+
+### Postorder — Left, Right, Root
+
+```java
+void postorder(TreeNode node) {
+    if (node == null) return;
+    postorder(node.left);
+    postorder(node.right);
+    System.out.print(node.val + " ");
+}
+```
+
+**Key property:** Children are processed before the parent. Critical for deletion (you must delete children before the parent) and for computing subtree aggregates (e.g., subtree sum — you need both children's values before processing the current node).
+
+### Level-Order (BFS) — Queue-based
+
+```java
+List<List<Integer>> levelOrder(TreeNode root) {
+    List<List<Integer>> result = new ArrayList<>();
+    if (root == null) return result;
+
+    Queue<TreeNode> queue = new LinkedList<>();
+    queue.offer(root);
+
+    while (!queue.isEmpty()) {
+        int size = queue.size(); // nodes at current level
+        List<Integer> level = new ArrayList<>();
+        for (int i = 0; i < size; i++) {
+            TreeNode node = queue.poll();
+            level.add(node.val);
+            if (node.left  != null) queue.offer(node.left);
+            if (node.right != null) queue.offer(node.right);
+        }
+        result.add(level);
+    }
+    return result;
+}
+```
+
+**Key property:** Processes nodes level by level. Essential for shortest-path problems on trees (minimum depth), right-side view, and anything that requires knowing which level a node is on.
+
+## Choosing the Right Traversal
+
+| Goal | Use |
+|------|-----|
+| Sorted output from BST | Inorder |
+| Serialize / reconstruct tree | Preorder |
+| Delete tree / compute subtree values | Postorder |
+| Shortest path, level grouping | Level-order (BFS) |
+| Any subtree-aggregate problem | Postorder |
+
+## Iterative DFS (No Recursion)
+
+Recursion hits the call stack limit on deep trees (~10k nodes in Java with default stack). The iterative equivalent uses an explicit stack:
+
+```java
+// Iterative inorder
+List<Integer> inorderIterative(TreeNode root) {
+    List<Integer> result = new ArrayList<>();
+    Deque<TreeNode> stack = new ArrayDeque<>();
+    TreeNode curr = root;
+
+    while (curr != null || !stack.isEmpty()) {
+        while (curr != null) {
+            stack.push(curr);
+            curr = curr.left;
+        }
+        curr = stack.pop();
+        result.add(curr.val);
+        curr = curr.right;
+    }
+    return result;
+}
+```
+
+The pattern: push left until null, pop and record, move right. Mirrors the recursive call stack exactly.
+
+## Space Complexity
+
+| Traversal | Space (balanced) | Space (degenerate) |
+|-----------|-----------------|-------------------|
+| DFS (recursive) | O(log n) | O(n) |
+| DFS (iterative) | O(log n) | O(n) |
+| BFS | O(n) | O(1) |
+
+BFS uses O(n) in the worst case because the last level of a complete binary tree holds n/2 nodes — all simultaneously in the queue.

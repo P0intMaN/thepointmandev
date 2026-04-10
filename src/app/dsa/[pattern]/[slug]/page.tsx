@@ -3,7 +3,6 @@ import { notFound } from "next/navigation";
 import { getAllDSAProblems } from "@/lib/mdx/getAllContent";
 import { getDSAProblemBySlug, getDSAPatternBySlug } from "@/lib/mdx/getBySlug";
 import { DifficultyBadge } from "@/components/dsa/DifficultyBadge";
-import { TagBadge } from "@/components/blog/TagBadge";
 import { TableOfContents } from "@/components/mdx/TableOfContents";
 import { ReadingProgress } from "@/components/mdx/ReadingProgress";
 import { MDXContent } from "@/components/mdx/MDXContent";
@@ -108,14 +107,6 @@ export default async function DSAProblemPage({ params }: Props) {
                 </div>
               )}
 
-              {/* Tags */}
-              {frontmatter.tags.length > 0 && (
-                <div className="flex flex-wrap gap-1.5">
-                  {frontmatter.tags.map((tag) => (
-                    <TagBadge key={tag} tag={tag} />
-                  ))}
-                </div>
-              )}
             </header>
 
             <MDXContent source={content} />

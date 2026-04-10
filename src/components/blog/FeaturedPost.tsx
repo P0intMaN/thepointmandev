@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { formatDate } from "@/lib/utils";
-import { TagBadge } from "./TagBadge";
 import type { BlogPost } from "@/types/blog";
 
 interface FeaturedPostProps {
@@ -45,20 +44,12 @@ export function FeaturedPost({ post }: FeaturedPostProps) {
         {excerpt}
       </p>
 
-      {/* Tags + CTA */}
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div className="flex flex-wrap gap-1.5">
-          {frontmatter.tags.slice(0, 5).map((tag) => (
-            <TagBadge key={tag} tag={tag} />
-          ))}
-        </div>
-        <Link
-          href={`/blog/${slug}`}
-          className="font-mono text-sm text-[var(--color-accent)] no-underline hover:text-[var(--color-accent-muted)] hover:no-underline"
-        >
-          Read article →
-        </Link>
-      </div>
+      <Link
+        href={`/blog/${slug}`}
+        className="font-mono text-sm text-[var(--color-accent)] no-underline hover:text-[var(--color-accent-muted)] hover:no-underline"
+      >
+        Read article →
+      </Link>
     </article>
   );
 }

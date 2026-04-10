@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getAllBlogPosts, getAllCourses, getAllDSAProblems, getAllTags } from "@/lib/mdx/getAllContent";
+import { getAllBlogPosts, getAllCourses, getAllDSAProblems } from "@/lib/mdx/getAllContent";
 import { FeaturedPost } from "@/components/blog/FeaturedPost";
 import { ArticleCard } from "@/components/blog/ArticleCard";
 import { CourseCard } from "@/components/course/CourseCard";
@@ -11,9 +11,6 @@ export default function Home() {
   const recentPosts = allPosts.filter((p) => p !== featured).slice(0, 6);
   const courses = getAllCourses().slice(0, 3);
   const dsaProblems = getAllDSAProblems().slice(0, 3);
-  const tags = Object.entries(getAllTags())
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 20);
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
@@ -76,39 +73,23 @@ export default function Home() {
         </section>
       )}
 
-      {/* Tag cloud */}
-      {tags.length > 0 && (
-        <section className="mb-16">
-          <SectionHeader label="Topics" href="/tags" />
-          <div className="flex flex-wrap gap-2">
-            {tags.map(([tag, count]) => (
-              <Link
-                key={tag}
-                href={`/tags/${encodeURIComponent(tag)}`}
-                className="flex items-center gap-1.5 rounded border border-[var(--color-bg-border)] bg-[var(--color-bg-elevated)] px-3 py-1 font-mono text-xs text-[var(--color-text-faint)] no-underline transition-colors hover:border-[var(--color-text-faint)] hover:text-[var(--color-text-muted)] hover:no-underline"
-              >
-                #{tag}
-                <span className="text-[var(--color-bg-border)]">{count}</span>
-              </Link>
-            ))}
-          </div>
-        </section>
-      )}
     </div>
   );
 }
 
 function SectionHeader({ label, href }: { label: string; href: string }) {
   return (
-    <div className="mb-6 flex items-center justify-between">
-      <h2 className="font-mono text-sm font-semibold uppercase tracking-widest text-[var(--color-text-faint)]">
+    <div className="mb-6 flex items-center gap-3">
+      <span className="shrink-0 font-mono text-xs text-[var(--color-accent)]">//</span>
+      <h2 className="shrink-0 font-mono text-xs font-semibold uppercase tracking-widest text-[var(--color-text-faint)]">
         {label}
       </h2>
+      <div className="h-px flex-1 bg-[var(--color-bg-border)]" />
       <Link
         href={href}
-        className="font-mono text-xs text-[var(--color-text-faint)] no-underline hover:text-[var(--color-accent)] hover:no-underline"
+        className="shrink-0 font-mono text-xs text-[var(--color-text-faint)] no-underline hover:text-[var(--color-accent)] hover:no-underline"
       >
-        View all →
+        view all →
       </Link>
     </div>
   );

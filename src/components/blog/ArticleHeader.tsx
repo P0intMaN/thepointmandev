@@ -1,5 +1,4 @@
 import { formatDate } from "@/lib/utils";
-import { TagBadge } from "./TagBadge";
 import type { BlogFrontmatter } from "@/types/blog";
 
 interface ArticleHeaderProps {
@@ -45,14 +44,6 @@ export function ArticleHeader({ frontmatter, readingTime }: ArticleHeaderProps) 
         {frontmatter.author && <span>by {frontmatter.author}</span>}
       </div>
 
-      {/* Tags */}
-      {frontmatter.tags.length > 0 && (
-        <div className="flex flex-wrap gap-1.5">
-          {frontmatter.tags.map((tag) => (
-            <TagBadge key={tag} tag={tag} />
-          ))}
-        </div>
-      )}
     </header>
   );
 }
