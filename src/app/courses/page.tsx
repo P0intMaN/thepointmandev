@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { getAllCourses, getCourseLessons } from "@/lib/mdx/getAllContent";
+import { getAllCourses } from "@/lib/mdx/getAllContent";
 import { CourseCard } from "@/components/course/CourseCard";
 import type { Course } from "@/types/course";
 
@@ -38,18 +38,15 @@ export default function CoursesPage() {
   const allCourses = getAllCourses();
 
   // Group by category
-  const grouped = new Map<string, { course: Course; lessonCount: number }[]>();
+  const grouped = new Map<string, Course[]>();
   for (const course of allCourses) {
     const cat = course.frontmatter.category;
     if (!grouped.has(cat)) grouped.set(cat, []);
-    grouped.get(cat)!.push({
-      course,
-      lessonCount: getCourseLessons(course.slug).length,
-    });
+    grouped.get(cat)!.push(course);
   }
 
   // Sort sections by SECTION_ORDER, unknown categories before "Other"
-  const knownOrder = SECTION_ORDER.slice(0, -1); // everything except "Other"
+  const knownOrder = SECTION_ORDER.slice(0, -1);
   const sections = [
     ...knownOrder.filter((s) => grouped.has(s)).map((s) => [s, grouped.get(s)!] as const),
     ...[...grouped.entries()].filter(([k]) => !SECTION_ORDER.includes(k)).sort(([a], [b]) => a.localeCompare(b)),
@@ -76,8 +73,8 @@ export default function CoursesPage() {
             <section key={name}>
               <SectionHeader name={name} count={entries.length} />
               <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                {entries.map(({ course, lessonCount }) => (
-                  <CourseCard key={course.slug} course={course} lessonCount={lessonCount} />
+                {entries.map((course) => (
+                  <CourseCard key={course.slug} course={course} />
                 ))}
               </div>
             </section>

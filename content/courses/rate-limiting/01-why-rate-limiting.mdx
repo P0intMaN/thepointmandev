@@ -1,0 +1,56 @@
+---
+title: "01 — Why Rate Limiting"
+courseSlug: "rate-limiting"
+lessonNumber: 1
+description: "What rate limiting protects against, where it lives in a system, and the three categories of limits you'll encounter in production."
+date: "2026-02-10"
+draft: false
+---
+
+## What Rate Limiting Is
+
+Rate limiting controls how many requests a client can make to a service within a time window. Exceed the limit — get a `429 Too Many Requests`. Stay within it — proceed normally.
+
+That's the surface. The substance is what it's protecting.
+
+## What It Protects Against
+
+**Abuse and scraping.** An unauthenticated client hammering your search endpoint at 10,000 req/s isn't a user — it's a scraper. Rate limiting kills it before it drains your database.
+
+**Denial of Service.** A single misbehaving client shouldn't be able to starve legitimate users of capacity. Even without malicious intent, a client with a bug in a retry loop can take down a service.
+
+**Cost control.** APIs that call downstream paid services (LLMs, SMS providers, map tiles) can spiral into enormous bills if a single client is uncapped. Rate limiting is a financial control as much as a technical one.
+
+**Fairness.** In a multi-tenant system, one noisy tenant shouldn't degrade the experience for everyone else. Rate limiting enforces the implicit social contract.
+
+## Three Categories of Limits
+
+**User-level limits.** Each authenticated user gets their own quota. Standard for public APIs — GitHub gives every token 5,000 requests/hour regardless of what IP it comes from.
+
+**IP-level limits.** Applied before authentication. Protects login endpoints from credential stuffing, and unauthenticated endpoints from anonymous abuse. Blunt instrument — shared IPs (NAT, corporate proxies) make this tricky.
+
+**Global / endpoint limits.** A cap on total throughput to a specific endpoint, regardless of who's calling. Protects a particularly expensive operation (a report generation endpoint, a bulk export) from overwhelming the system even under legitimate load.
+
+In practice, most systems layer all three.
+
+## Where Rate Limiting Lives
+
+```
+Client → [API Gateway / Load Balancer] → [Rate Limiter] → Service → DB
+```
+
+Ideally, rate limiting happens at the edge — as early as possible, before any expensive work is done. An API gateway (Kong, AWS API Gateway, Nginx) is the canonical location.
+
+If you're enforcing per-user limits that require knowing who the user is, the rate limiter needs to sit after authentication but before your business logic.
+
+## The Interface
+
+Whatever algorithm sits underneath, the interface is simple:
+
+```java
+boolean allow(String key);   // returns true if request is permitted
+```
+
+`key` is whatever you're rate-limiting on — a user ID, an IP address, a tenant ID. The implementation decides whether to allow or deny and handles state.
+
+The next lesson covers the first and most intuitive algorithm: the token bucket.

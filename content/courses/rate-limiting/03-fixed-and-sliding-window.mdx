@@ -1,0 +1,158 @@
+---
+title: "03 — Fixed Window and Sliding Window"
+courseSlug: "rate-limiting"
+lessonNumber: 3
+description: "Counter-based rate limiting algorithms — why fixed windows have a nasty edge case, and how sliding windows fix it."
+date: "2026-02-12"
+draft: false
+---
+
+## Fixed Window Counter
+
+The simplest possible rate limiter: divide time into fixed windows (e.g., each minute), keep a counter per window, reject requests once the counter hits the limit.
+
+```java
+class FixedWindowLimiter {
+    private final int limit;
+    private final long windowMs;
+    private long windowStart;
+    private int count;
+
+    FixedWindowLimiter(int limit, long windowMs) {
+        this.limit = limit;
+        this.windowMs = windowMs;
+        this.windowStart = System.currentTimeMillis();
+        this.count = 0;
+    }
+
+    synchronized boolean allow() {
+        long now = System.currentTimeMillis();
+        if (now - windowStart >= windowMs) {
+            // New window — reset
+            windowStart = now;
+            count = 0;
+        }
+        if (count < limit) {
+            count++;
+            return true;
+        }
+        return false;
+    }
+}
+```
+
+**In Redis:** One key per `(user, window)`, incremented on each request, TTL set to the window duration.
+
+```
+INCR rate:{user_id}:{minute}
+EXPIRE rate:{user_id}:{minute} 60
+```
+
+Simple, fast, O(1) memory per user. So what's the catch?
+
+## The Boundary Spike Problem
+
+Fixed windows have a critical edge case: a burst straddling the window boundary effectively doubles the limit.
+
+```
+Limit: 100 req/min
+
+11:00:59 PM — 100 requests (fills the window)
+11:01:00 PM — 100 requests (new window, counter resets)
+
+In 2 seconds, 200 requests got through.
+```
+
+For many use cases this is acceptable. For anything security-sensitive or protecting an expensive downstream, it's not.
+
+## Sliding Window Log
+
+Track the exact timestamp of every request in a sorted set. To check if a new request is allowed:
+1. Remove all timestamps older than `now - windowMs`
+2. Count remaining entries
+3. If count < limit, add current timestamp and allow
+
+```java
+class SlidingWindowLog {
+    private final int limit;
+    private final long windowMs;
+    private final TreeMap<Long, Integer> log = new TreeMap<>(); // timestamp → count
+
+    synchronized boolean allow() {
+        long now = System.currentTimeMillis();
+        long cutoff = now - windowMs;
+
+        // Remove expired entries
+        log.headMap(cutoff).clear();
+
+        int total = log.values().stream().mapToInt(Integer::intValue).sum();
+        if (total < limit) {
+            log.merge(now, 1, Integer::sum);
+            return true;
+        }
+        return false;
+    }
+}
+```
+
+**Accurate.** No boundary spike. The window is always exactly the last `windowMs` milliseconds.
+
+**Expensive.** Memory is O(requests in window) per user, not O(1). For 1M users each with 1000 req/min limit, that's a lot of stored timestamps.
+
+## Sliding Window Counter (Hybrid)
+
+The practical compromise: track only the current and previous window counters, use the overlap fraction to estimate the sliding window count.
+
+```
+Estimated count = prev_count * (1 - elapsed_in_current_window / window_size)
+                + current_count
+```
+
+```java
+class SlidingWindowCounter {
+    private final int limit;
+    private final long windowMs;
+    private long currentWindowStart;
+    private int currentCount;
+    private int prevCount;
+
+    synchronized boolean allow() {
+        long now = System.currentTimeMillis();
+        long elapsed = now - currentWindowStart;
+
+        if (elapsed >= windowMs * 2) {
+            // Both windows expired
+            prevCount = 0;
+            currentCount = 0;
+            currentWindowStart = now;
+        } else if (elapsed >= windowMs) {
+            // Roll forward
+            prevCount = currentCount;
+            currentCount = 0;
+            currentWindowStart += windowMs;
+            elapsed = now - currentWindowStart;
+        }
+
+        double weight = 1.0 - (double) elapsed / windowMs;
+        double estimate = prevCount * weight + currentCount;
+
+        if (estimate < limit) {
+            currentCount++;
+            return true;
+        }
+        return false;
+    }
+}
+```
+
+**O(1) memory.** Just two counters and a timestamp per user. The estimate is slightly off at window boundaries (it's an approximation, not exact) but in practice the error is small enough that Cloudflare and others use this approach at scale.
+
+## Comparison
+
+| Algorithm | Memory | Accuracy | Burst protection |
+|-----------|--------|----------|-----------------|
+| Fixed window | O(1) | Boundary spike | Weak |
+| Sliding window log | O(requests) | Exact | Strong |
+| Sliding window counter | O(1) | ~Exact | Strong |
+
+**Use sliding window counter** for most production rate limiters. It's what Cloudflare, Stripe, and most high-scale API gateways use — the approximation error is negligible and the memory cost is constant.

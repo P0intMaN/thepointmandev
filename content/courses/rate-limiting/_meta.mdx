@@ -1,0 +1,17 @@
+---
+title: "Rate Limiting"
+slug: "rate-limiting"
+description: "A deep dive into rate limiting strategies — token bucket, sliding window, leaky bucket — and how to build distributed rate limiters that actually hold up at scale."
+date: "2026-02-10"
+tags: ["rate-limiting", "system-design", "distributed-systems", "redis"]
+level: "intermediate"
+totalLessons: 4
+category: "System Design"
+icon: "funnel"
+accent: "#fb923c"
+draft: false
+---
+
+Rate limiting is one of those things that looks simple until you try to build it for a system handling a million requests per second across fifty servers. Every algorithm has a trade-off. Every distributed approach introduces new failure modes.
+
+This course works through each strategy from first principles — what it protects, where it breaks down, and how the industry actually implements it.

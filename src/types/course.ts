@@ -9,6 +9,8 @@ export const CourseFrontmatterSchema = z.object({
   level: z.enum(["beginner", "intermediate", "advanced"] as const),
   totalLessons: z.number(),
   category: z.string().default("Other"),
+  icon: z.string().optional(),
+  accent: z.string().optional(),
   image: z.string().optional(),
   draft: z.boolean().default(false),
 });

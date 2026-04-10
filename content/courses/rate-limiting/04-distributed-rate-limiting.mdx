@@ -1,0 +1,151 @@
+---
+title: "04 — Distributed Rate Limiting"
+courseSlug: "rate-limiting"
+lessonNumber: 4
+description: "The hard part: making rate limiting work correctly across multiple servers with Redis, Lua scripts, and the trade-offs when Redis itself goes down."
+date: "2026-02-13"
+draft: false
+---
+
+## The Problem with Multiple Servers
+
+A single-server rate limiter is straightforward — one process, one counter, one lock. The moment you have multiple API servers, each maintaining their own in-memory counter, you have a problem:
+
+```
+Server A: user X has made 80 requests  (thinks: 20 remaining)
+Server B: user X has made 60 requests  (thinks: 40 remaining)
+
+Reality: user X has made 140 requests — already 40 over the limit
+```
+
+Without shared state, per-server counters are useless for enforcing a global limit.
+
+## Redis as the Central Counter
+
+Redis is the standard solution: all servers read and write to a single shared Redis instance. Redis is single-threaded for command execution, so operations are naturally serialized without distributed locking.
+
+### Naive Approach (Broken)
+
+```java
+// THIS IS WRONG — race condition
+long count = redis.incr("rate:" + userId);
+if (count == 1) redis.expire("rate:" + userId, 60);
+if (count > limit) return false;
+return true;
+```
+
+The `INCR` and `EXPIRE` are two separate operations. Between them, the key could expire, or another server could set a different TTL, or the server could crash — leaving a key that never expires.
+
+### Atomic Approach with Lua
+
+Redis executes Lua scripts atomically — the entire script runs without interruption:
+
+```lua
+-- rate_limit.lua
+local key = KEYS[1]
+local limit = tonumber(ARGV[1])
+local window = tonumber(ARGV[2])  -- seconds
+
+local count = redis.call('INCR', key)
+if count == 1 then
+    redis.call('EXPIRE', key, window)
+end
+
+if count > limit then
+    return 0  -- denied
+end
+return 1      -- allowed
+```
+
+```java
+// Java call
+Object result = jedis.eval(
+    luaScript,
+    List.of("rate:" + userId + ":" + windowKey),
+    List.of(String.valueOf(limit), String.valueOf(windowSeconds))
+);
+boolean allowed = ((Long) result) == 1L;
+```
+
+The `INCR` + `EXPIRE` are now atomic. No race condition.
+
+### Sliding Window in Redis
+
+For a sliding window log, Redis sorted sets are a natural fit:
+
+```lua
+-- sliding_window.lua
+local key = KEYS[1]
+local now = tonumber(ARGV[1])       -- current timestamp (ms)
+local window = tonumber(ARGV[2])    -- window size (ms)
+local limit = tonumber(ARGV[3])
+
+local cutoff = now - window
+
+-- Remove expired entries
+redis.call('ZREMRANGEBYSCORE', key, '-inf', cutoff)
+
+-- Count current entries
+local count = redis.call('ZCARD', key)
+
+if count < limit then
+    redis.call('ZADD', key, now, now)  -- score=timestamp, member=timestamp
+    redis.call('EXPIRE', key, math.ceil(window / 1000) + 1)
+    return 1
+end
+return 0
+```
+
+All in one atomic Lua script: prune old entries, count, conditionally add, set TTL.
+
+## What Happens When Redis Goes Down
+
+This is the question interviewers love. You have two choices, and neither is free:
+
+**Fail open (allow all requests).** Redis is down — rate limiting is suspended, all requests pass through. Your service stays up. Abuse can spike. This is the right choice for most consumer-facing APIs where availability matters more than perfect enforcement.
+
+**Fail closed (deny all requests).** Redis is down — all requests are rejected with `429`. Rate limiting is enforced, but your service is also effectively down. Appropriate for financial APIs or systems where the cost of abuse is catastrophic.
+
+In practice, most systems fail open with alerting, and use Redis Sentinel or Redis Cluster to minimize downtime.
+
+## Redis Cluster Considerations
+
+With Redis Cluster (multiple shards), you need to ensure that all rate limit keys for a user land on the same shard — otherwise your Lua script can't execute atomically across shards.
+
+Force key co-location using hash tags:
+
+```java
+// Without hash tag — may land on different shards
+"rate:user:12345"
+"rate:user:12345:meta"
+
+// With hash tag — both guaranteed same shard
+"rate:{user:12345}"
+"rate:{user:12345}:meta"
+```
+
+Redis Cluster routes based on the hash of the substring inside `{}`.
+
+## Architecture Summary
+
+```
+Client Request
+     ↓
+API Gateway
+     ↓
+Rate Limiter Middleware
+     ├── EVAL lua_script → Redis (atomic check + increment)
+     │       ├── Allowed → forward to service
+     │       └── Denied  → return 429
+     └── Redis unreachable → fail open (log + alert)
+```
+
+**Headers to return on 429:**
+```
+X-RateLimit-Limit: 100
+X-RateLimit-Remaining: 0
+X-RateLimit-Reset: 1712345678   ← Unix timestamp when window resets
+Retry-After: 47                 ← seconds until they can retry
+```
+
+These headers let well-behaved clients back off gracefully instead of hammering you with retries.

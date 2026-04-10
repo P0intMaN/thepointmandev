@@ -1,0 +1,109 @@
+---
+title: "02 — Token Bucket and Leaky Bucket"
+courseSlug: "rate-limiting"
+lessonNumber: 2
+description: "The two classic rate limiting algorithms — how they work, where they differ, and which one you actually want."
+date: "2026-02-11"
+draft: false
+---
+
+## Token Bucket
+
+A token bucket has a capacity and a refill rate. Tokens accumulate over time up to the capacity. Each request consumes one token. No token — no request.
+
+```java
+class TokenBucket {
+    private final long capacity;
+    private final double refillRatePerMs; // tokens per millisecond
+    private double tokens;
+    private long lastRefillTime;
+
+    TokenBucket(long capacity, double refillRatePerMs) {
+        this.capacity = capacity;
+        this.refillRatePerMs = refillRatePerMs;
+        this.tokens = capacity;
+        this.lastRefillTime = System.currentTimeMillis();
+    }
+
+    synchronized boolean allow() {
+        refill();
+        if (tokens >= 1) {
+            tokens -= 1;
+            return true;
+        }
+        return false;
+    }
+
+    private void refill() {
+        long now = System.currentTimeMillis();
+        double elapsed = now - lastRefillTime;
+        tokens = Math.min(capacity, tokens + elapsed * refillRatePerMs);
+        lastRefillTime = now;
+    }
+}
+```
+
+**Key property: bursting.** If a user hasn't made requests in a while, their bucket fills up. They can then burst up to `capacity` requests immediately before being throttled. This is intentional — it accommodates legitimate bursty behavior (a user opening your app after a week away).
+
+**Example:** capacity = 100, refill = 10 tokens/second. A user can burst 100 requests instantly, then sustain 10 req/s indefinitely.
+
+## Leaky Bucket
+
+A leaky bucket is the inverse mental model. Requests flow in at any rate and queue up. The queue drains ("leaks") at a fixed rate. If the queue is full, the incoming request is dropped.
+
+```
+Incoming requests → [   queue (capacity N)   ] → processed at fixed rate R
+                                                        ↑ excess dropped
+```
+
+```java
+class LeakyBucket {
+    private final int capacity;
+    private final long intervalMs; // ms between processing one request
+    private final Queue<Runnable> queue = new LinkedList<>();
+    private long lastProcessed = 0;
+
+    synchronized boolean enqueue(Runnable request) {
+        if (queue.size() >= capacity) return false; // drop
+        queue.add(request);
+        return true;
+    }
+
+    // Called on a fixed schedule
+    void processNext() {
+        long now = System.currentTimeMillis();
+        if (now - lastProcessed >= intervalMs && !queue.isEmpty()) {
+            queue.poll().run();
+            lastProcessed = now;
+        }
+    }
+}
+```
+
+**Key property: smoothing.** Output is always at exactly rate R, regardless of how spiky the input is. Useful when the downstream system can't handle bursts — you're protecting it by metering the load.
+
+## The Critical Difference
+
+| Property | Token Bucket | Leaky Bucket |
+|----------|-------------|--------------|
+| Burst handling | Allows bursts up to capacity | Absorbs bursts, smooths output |
+| Output rate | Variable (up to capacity) | Constant rate R |
+| Use case | User-facing APIs | Protecting downstream services |
+| Dropped requests | Rejected immediately | Queued, then dropped if full |
+
+**Token bucket** is almost always what you want for user-facing rate limiting. It's forgiving of natural burstiness and gives users a good experience.
+
+**Leaky bucket** is what you want when you're metering outbound calls to a third-party API that has its own strict rate limit — you need to guarantee you never exceed their limit even under your own burst traffic.
+
+## In Practice
+
+Most real-world rate limiters use token bucket or a close variant (sliding window log, which we'll cover next). Redis's built-in rate limiting primitive (`INCR` + `EXPIRE`) is essentially a fixed window counter, but the token bucket model maps cleanly to Redis too:
+
+```
+HGETALL rate_limit:{user_id}          # get current tokens + timestamp
+# compute new tokens based on elapsed time
+HSET rate_limit:{user_id} tokens N ts T
+EXPIRE rate_limit:{user_id} {ttl}
+```
+
+The atomicity problem (read-modify-write must be atomic across servers) is the core challenge of distributed rate limiting — that's the subject of lesson 4.

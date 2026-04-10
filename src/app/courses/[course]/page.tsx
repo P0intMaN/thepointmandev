@@ -73,19 +73,14 @@ export default async function CourseOverviewPage({ params }: Props) {
             <li key={lesson.slug}>
               <Link
                 href={`/courses/${slug}/${lesson.slug}`}
-                className="flex items-start gap-4 rounded-[var(--radius-lg)] border border-[var(--color-bg-border)] bg-[var(--color-bg-elevated)] p-4 no-underline transition-colors hover:border-[var(--color-text-faint)] hover:no-underline"
+                className="flex items-center gap-4 rounded-[var(--radius-lg)] border border-[var(--color-bg-border)] bg-[var(--color-bg-elevated)] p-4 no-underline transition-colors hover:border-[var(--color-text-faint)] hover:no-underline"
               >
-                <span className="mt-0.5 shrink-0 font-mono text-sm text-[var(--color-text-faint)]">
+                <span className="shrink-0 font-mono text-sm text-[var(--color-text-faint)]">
                   {String(lesson.frontmatter.lessonNumber).padStart(2, "0")}
                 </span>
-                <div>
-                  <p className="text-base font-medium text-[var(--color-text-primary)]">
-                    {lesson.frontmatter.title}
-                  </p>
-                  <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-                    {lesson.frontmatter.description}
-                  </p>
-                </div>
+                <p className="text-base font-medium text-[var(--color-text-primary)]">
+                  {lesson.frontmatter.title}
+                </p>
               </Link>
             </li>
           ))}
