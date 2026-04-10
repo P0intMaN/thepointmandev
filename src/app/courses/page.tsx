@@ -22,7 +22,7 @@ const SECTION_ORDER = [
 function SectionHeader({ name, count }: { name: string; count: number }) {
   return (
     <div className="flex items-center gap-3">
-      <span className="shrink-0 font-mono text-xs text-[var(--color-accent)]">//</span>
+      <span className="shrink-0 font-mono text-xs text-[var(--color-accent)]">{"// "}</span>
       <span className="shrink-0 font-mono text-xs font-semibold uppercase tracking-widest text-[var(--color-text-faint)]">
         {name}
       </span>

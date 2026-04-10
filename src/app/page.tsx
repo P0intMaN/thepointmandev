@@ -80,7 +80,7 @@ export default function Home() {
 function SectionHeader({ label, href }: { label: string; href: string }) {
   return (
     <div className="mb-6 flex items-center gap-3">
-      <span className="shrink-0 font-mono text-xs text-[var(--color-accent)]">//</span>
+      <span className="shrink-0 font-mono text-xs text-[var(--color-accent)]">{"// "}</span>
       <h2 className="shrink-0 font-mono text-xs font-semibold uppercase tracking-widest text-[var(--color-text-faint)]">
         {label}
       </h2>
