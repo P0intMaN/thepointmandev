@@ -51,7 +51,7 @@ export function MobileNav({ links, open, onClose }: MobileNavProps) {
               key={link.href}
               href={link.href}
               className={cn(
-                "flex items-center py-3 text-base font-medium border-b border-[var(--color-bg-border)] last:border-0 no-underline hover:no-underline transition-colors",
+                "flex items-center py-3 text-base font-medium border-b border-[var(--color-bg-border)] no-underline hover:no-underline transition-colors",
                 active
                   ? "text-[var(--color-accent)]"
                   : "text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
@@ -61,6 +61,24 @@ export function MobileNav({ links, open, onClose }: MobileNavProps) {
             </Link>
           );
         })}
+
+        {/* Uptime tab */}
+        <div className="pt-3">
+          <Link
+            href="/uptime"
+            className={cn(
+              "inline-flex items-center gap-1 rounded border px-2 py-1 font-mono text-xs no-underline hover:no-underline transition-all",
+              pathname === "/uptime"
+                ? "border-[var(--color-accent)]/50 bg-[var(--color-accent)]/10 text-[var(--color-accent)]"
+                : "border-[var(--color-bg-border)] text-[var(--color-text-faint)] hover:border-[var(--color-accent)]/40 hover:text-[var(--color-accent)]"
+            )}
+            style={{ animation: "glow-pulse 3s ease-in-out infinite" }}
+          >
+            <span className="opacity-50">$</span>
+            <span>uptime</span>
+            <span style={{ animation: "blink 1.1s step-end infinite" }}>▋</span>
+          </Link>
+        </div>
       </nav>
     </div>
   );
