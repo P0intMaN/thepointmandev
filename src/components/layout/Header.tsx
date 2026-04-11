@@ -54,6 +54,22 @@ export function Header() {
             })}
           </nav>
 
+          {/* Uptime tab — terminal-style, separate from regular nav */}
+            <Link
+              href="/uptime"
+              className={cn(
+                "hidden md:flex items-center gap-1 rounded border px-2 py-0.5 font-mono text-xs transition-all duration-300 no-underline hover:no-underline",
+                pathname === "/uptime"
+                  ? "border-[var(--color-accent)]/50 bg-[var(--color-accent)]/10 text-[var(--color-accent)]"
+                  : "border-[var(--color-bg-border)] text-[var(--color-text-faint)] hover:border-[var(--color-accent)]/40 hover:text-[var(--color-accent)]"
+              )}
+              style={{ animation: "glow-pulse 3s ease-in-out infinite" }}
+            >
+              <span className="opacity-50">$</span>
+              <span>uptime</span>
+              <span style={{ animation: "blink 1.1s step-end infinite" }}>▋</span>
+            </Link>
+
           {/* Actions */}
           <div className="flex items-center gap-2">
             <Link
