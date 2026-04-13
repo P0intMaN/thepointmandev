@@ -1,0 +1,282 @@
+---
+title: "Inversion of Control — The Framework Takes Over"
+courseSlug: "spring-boot"
+lessonNumber: 4
+description: "Understand what Inversion of Control really means — who runs your application, what the IoC container is, how Spring manages the full lifecycle of your objects, and what bean scopes control."
+date: "2026-04-14"
+draft: false
+---
+
+## Who Is Running This Application?
+
+In a traditional Java program, the answer is obvious: your `main()` method.
+
+You write the code. You decide what objects get created, in what order, when they talk to each other, and when they're cleaned up. Your code is in charge of everything.
+
+```java
+public static void main(String[] args) {
+    // I create everything
+    DataSource dataSource = new HikariDataSource(config);
+    UserRepository repo = new UserRepository(dataSource);
+    EmailService emailService = new SmtpEmailService(smtpConfig);
+    UserService service = new UserService(repo, emailService);
+
+    // I start the server
+    HttpServer server = new HttpServer(8080);
+    server.addRoute("/users", new UserController(service));
+    server.start();
+
+    // I keep it running
+    server.awaitTermination();
+}
+```
+
+This is explicit. Clear. You understand every object that gets created. You control the flow end-to-end.
+
+So what exactly changes with Spring?
+
+---
+
+## The Traditional Model: Your Code Calls the Framework
+
+In a library-based application, control flows outward from your code:
+
+```
+main()
+  → creates DataSource (using connection pool library)
+  → creates Repository (your code)
+  → creates Service (your code)
+  → starts HttpServer (using HTTP library)
+  → HttpServer calls your handler when a request arrives
+```
+
+You're at the top. Everything else serves you.
+
+---
+
+## Inversion of Control: The Framework Calls Your Code
+
+With Inversion of Control, the relationship flips. Your code is no longer at the top of the call stack running the show. The framework is.
+
+You register components with the framework. The framework creates them, wires them together, and calls them when needed.
+
+```java
+@SpringBootApplication
+public class MyApp {
+    public static void main(String[] args) {
+        SpringApplication.run(MyApp.class, args);  // hand control to Spring
+    }
+}
+```
+
+That `SpringApplication.run()` is the moment you hand control over. From that point on:
+
+- Spring scans your code for components
+- Spring creates all the objects (beans)
+- Spring injects dependencies where declared
+- Spring starts the web server
+- Spring dispatches HTTP requests to your controllers
+- Spring manages database transactions
+- Spring shuts everything down cleanly when the process ends
+
+Your code is a collection of annotated components. Spring assembles and runs the application. You are a guest in your own house — a very productive guest.
+
+---
+
+## What Is Inversion of Control, Precisely?
+
+"Inversion of Control" sounds abstract. Let's make it concrete.
+
+**Before IoC:** You control the lifecycle of your objects. You call `new`, you use the object, you (implicitly) let it get garbage collected.
+
+**After IoC:** The framework controls the lifecycle of your objects. It decides when to create them, how long to keep them alive, how to provide them to whoever needs them, and when to destroy them.
+
+The *control* of object management has been *inverted* — from you to the framework.
+
+Dependency Injection (which we covered in the previous lesson) is *one implementation* of IoC. When Spring injects `UserRepository` into `UserService`, it's exercising its control over object creation and wiring. But IoC is broader than just injection — it also covers:
+
+- **When objects are created** (at startup? on first use?)
+- **How many instances exist** (one? one per request? one per session?)
+- **What happens when they're first created** (initialisation hooks)
+- **What happens when the application shuts down** (cleanup hooks)
+
+---
+
+## The IoC Container
+
+The mechanism Spring uses to implement IoC is the **IoC container**.
+
+The IoC container is a runtime object — specifically, an instance of `ApplicationContext` — that acts as the factory, registry, and manager of every Spring-managed object in your application.
+
+Think of it like this: imagine a kitchen that knows every recipe in the cookbook. When someone orders a dish, the kitchen doesn't ask you to cook it — it already knows the ingredients and the steps. It assembles everything itself.
+
+The IoC container is that kitchen. The recipes are your component definitions. The dishes are your beans.
+
+When Spring starts:
+1. It reads your configuration (annotations, `@Configuration` classes)
+2. It discovers all your `@Component`, `@Service`, `@Repository`, `@Controller` classes
+3. It determines the full dependency graph — who needs what
+4. It creates beans in the correct order (dependencies first)
+5. It injects dependencies
+6. It calls initialisation hooks
+7. It makes all beans available for the lifetime of the application
+
+---
+
+## Bean Scopes: How Long Does an Object Live?
+
+One of the most important things the IoC container controls is **scope** — how many instances of a bean exist and for how long.
+
+### Singleton (Default)
+
+Spring creates exactly **one instance** of the bean and reuses it everywhere.
+
+```java
+@Service
+public class UserService {
+    // One instance for the entire application lifetime
+}
+```
+
+When `OrderService` needs a `UserService` and `PaymentService` also needs a `UserService`, they both get the *same* instance. Spring creates it once at startup and hands the same reference to everyone who needs it.
+
+This is the right default for stateless services — and your services should almost always be stateless.
+
+> **Stateless** means the object doesn't store request-specific data in fields. It just takes inputs, does work, and returns outputs. Two threads can safely call the same stateless singleton simultaneously.
+
+### Prototype
+
+Spring creates a **new instance every time** someone requests the bean.
+
+```java
+@Component
+@Scope("prototype")
+public class ShoppingCart {
+    private List<Item> items = new ArrayList<>();
+    // Mutable state — each caller needs their own instance
+}
+```
+
+Use prototype scope for stateful objects that must not be shared. Rare in practice.
+
+### Request (Web Only)
+
+Spring creates a **new instance per HTTP request**. The bean lives for the duration of one request and is discarded afterward.
+
+```java
+@Component
+@Scope(value = "request", proxyMode = ScopedProxyMode.TARGET_CLASS)
+public class RequestContext {
+    private String requestId;
+    // Lives only for the duration of one HTTP request
+}
+```
+
+### Session (Web Only)
+
+Spring creates a **new instance per user session**. Lives as long as the user's session.
+
+```java
+@Component
+@Scope(value = "session", proxyMode = ScopedProxyMode.TARGET_CLASS)
+public class UserPreferences {
+    private String theme;
+    private String language;
+    // Persists across requests from the same user
+}
+```
+
+For most backend services, you'll use singleton scope exclusively. The others exist for specific web scenarios.
+
+---
+
+## Bean Lifecycle: From Birth to Death
+
+Spring doesn't just create beans — it manages their entire lifecycle. Understanding this lifecycle helps you know when to put initialisation and cleanup logic.
+
+Here's what happens to a singleton bean from application start to shutdown:
+
+```
+1. INSTANTIATION  — Spring calls the constructor
+2. DEPENDENCY INJECTION — Spring injects constructor/setter dependencies
+3. POST-CONSTRUCT — Spring calls @PostConstruct method (if any)
+4. IN USE — the bean serves requests for the application's lifetime
+5. PRE-DESTROY — Spring calls @PreDestroy method (if any) on shutdown
+6. DESTRUCTION — the bean is released
+```
+
+### @PostConstruct — Initialisation Hook
+
+You might need to do something *after* Spring has created and injected your bean — like loading a cache, validating configuration, or establishing a connection.
+
+```java
+@Service
+public class ProductCatalogService {
+    private final ProductRepository repository;
+    private Map<Long, Product> cache;
+
+    public ProductCatalogService(ProductRepository repository) {
+        this.repository = repository;
+        // Can't load the cache here — repository isn't injected yet
+    }
+
+    @PostConstruct
+    public void loadCache() {
+        // Called after construction AND after dependency injection is complete
+        this.cache = repository.findAll()
+            .stream()
+            .collect(Collectors.toMap(Product::getId, p -> p));
+
+        System.out.println("Cache loaded: " + cache.size() + " products");
+    }
+}
+```
+
+Why not just put this in the constructor? Because when the constructor runs, dependency injection hasn't happened yet. The `repository` field might not be set. `@PostConstruct` guarantees the method runs after all dependencies are injected.
+
+### @PreDestroy — Cleanup Hook
+
+When the application shuts down, you might need to release resources — close connections, flush buffers, cancel scheduled tasks.
+
+```java
+@Service
+public class ConnectionPoolManager {
+    private HikariDataSource pool;
+
+    @PostConstruct
+    public void initPool() {
+        pool = new HikariDataSource(config);
+        System.out.println("Connection pool started");
+    }
+
+    @PreDestroy
+    public void closePool() {
+        if (pool != null && !pool.isClosed()) {
+            pool.close();
+            System.out.println("Connection pool closed cleanly");
+        }
+    }
+}
+```
+
+`@PreDestroy` ensures your cleanup runs before the JVM exits. Without it, connections might be abandoned rather than returned to the pool.
+
+---
+
+## What IoC Gives You
+
+Let's be concrete about the benefits:
+
+**You don't manage the object graph.** Spring figures out that `UserService` needs `UserRepository`, which needs a `DataSource`, which needs connection pool configuration. It creates them in the right order. You declare what each class needs; Spring handles the rest.
+
+**Startup-time failure.** If Spring can't satisfy a dependency — say, you declared that a class needs a `PaymentGateway` but none is defined — it fails immediately at application startup with a clear error message. It doesn't wait until the first HTTP request arrives at 3am in production to tell you something's wrong.
+
+**Consistent lifecycle management.** `@PostConstruct` and `@PreDestroy` give you well-defined hooks for startup and shutdown logic. You don't manage this in `main()`. You declare it at the component level, close to the logic it relates to.
+
+**Testability.** Because Spring manages object creation, you can also run without Spring — in tests, create objects directly and inject fakes. When you need Spring for integration tests, its test support spins up a full context for you.
+
+---
+
+> **Key Takeaway:** Inversion of Control means the framework — not your code — controls the lifecycle of your objects: when they're created, how many exist, what they're initialised with, and when they're cleaned up. Spring's IoC container handles this for your entire application, which means you stop writing wiring code and start writing business logic. The lifecycle hooks `@PostConstruct` and `@PreDestroy` let you plug into that managed lifecycle at the right moments.
+
+Next, we go inside the container itself — the `ApplicationContext` — and understand exactly how Spring discovers, creates, and wires your beans.

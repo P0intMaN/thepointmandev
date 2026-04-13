@@ -13,6 +13,7 @@ const SECTION_ORDER = [
   "System Design",
   "Data Structures",
   "Algorithms",
+  "Java",
   "Backend Engineering",
   "Frontend Engineering",
   "DevOps",

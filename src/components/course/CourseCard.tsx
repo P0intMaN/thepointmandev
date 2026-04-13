@@ -57,6 +57,13 @@ const icons: Record<string, React.ReactNode> = {
       <path d="M3 4h18l-7 9v7l-4-2V13L3 4z"/>
     </svg>
   ),
+  leaf: (
+    // Spring leaf — Java / Spring Boot courses
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <path d="M12 22C8 18 4 14 4 9a8 8 0 0 1 16 0c0 5-4 9-8 13z"/>
+      <path d="M12 22V10" stroke="currentColor" strokeWidth="1.2" fill="none" strokeLinecap="round" opacity=".4"/>
+    </svg>
+  ),
 };
 
 const levelDefault: Record<string, string> = {

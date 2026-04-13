@@ -1,0 +1,123 @@
+---
+title: "Diameter of Binary Tree"
+description: "Find the length of the longest path between any two nodes in a binary tree. The path may or may not pass through the root."
+date: "2026-04-12"
+tags: ["tree", "dfs", "recursion"]
+category: "Trees"
+difficulty: "easy"
+timeComplexity: "O(n)"
+spaceComplexity: "O(h)"
+companies: ["Amazon", "Google", "Facebook", "Microsoft", "Apple"]
+leetcodeNumber: 543
+draft: false
+---
+
+## Problem Statement
+
+Given the `root` of a binary tree, return the length of the **diameter** — the longest path between any two nodes. The length is measured in number of **edges**, not nodes. The path may or may not pass through the root.
+
+```
+Input:  root = [1,2,3,4,5]
+Output: 3
+Explanation: [4,2,1,3] or [5,2,1,3], both have length 3
+
+Input:  root = [1,2]
+Output: 1
+```
+
+## Approach 1: Brute Force — O(n²) time, O(h) space
+
+For every node, compute `leftHeight + rightHeight` and track the maximum. The problem is computing height from scratch at each node — that's O(n) per node.
+
+```java
+public int diameterOfBinaryTree(TreeNode root) {
+    if (root == null) return 0;
+
+    int leftHeight  = height(root.left);
+    int rightHeight = height(root.right);
+    int throughRoot = leftHeight + rightHeight;
+
+    int leftDiam  = diameterOfBinaryTree(root.left);
+    int rightDiam = diameterOfBinaryTree(root.right);
+
+    return Math.max(throughRoot, Math.max(leftDiam, rightDiam));
+}
+
+private int height(TreeNode node) {
+    if (node == null) return 0;
+    return 1 + Math.max(height(node.left), height(node.right));
+}
+```
+
+Recomputes height repeatedly at every node. Fine for interviews if you call it out, but O(n²) in the worst case.
+
+## Approach 2: Single-Pass DFS — O(n) time, O(h) space ✅
+
+The key observation: height and diameter can be computed in the same DFS pass. At each node, the height is `1 + max(left, right)` and the diameter through that node is `left + right`. Track a global max.
+
+```java
+private int diameter = 0;
+
+public int diameterOfBinaryTree(TreeNode root) {
+    height(root);
+    return diameter;
+}
+
+private int height(TreeNode node) {
+    if (node == null) return 0;
+
+    int left  = height(node.left);
+    int right = height(node.right);
+
+    diameter = Math.max(diameter, left + right);  // path through this node
+
+    return 1 + Math.max(left, right);             // height up to parent
+}
+```
+
+The function returns height (used by the parent) but also updates the global diameter as a side effect.
+
+**No instance variable version** — pass diameter as a 1-element array to avoid global state:
+
+```java
+public int diameterOfBinaryTree(TreeNode root) {
+    int[] diameter = {0};
+    height(root, diameter);
+    return diameter[0];
+}
+
+private int height(TreeNode node, int[] diameter) {
+    if (node == null) return 0;
+
+    int left  = height(node.left,  diameter);
+    int right = height(node.right, diameter);
+
+    diameter[0] = Math.max(diameter[0], left + right);
+
+    return 1 + Math.max(left, right);
+}
+```
+
+## Complexity
+
+| | Time | Space |
+|---|---|---|
+| Brute force | O(n²) | O(h) |
+| Single-pass DFS | O(n) | O(h) — O(log n) balanced, O(n) skewed |
+
+## Key Insight
+
+The diameter through any node is `leftHeight + rightHeight` — you're measuring how far you can reach left plus how far you can reach right. The trick is that the answer doesn't have to go through the root, so you must consider every node as a potential "turning point" and track the global max.
+
+This pattern — returning one value (height) while tracking another (diameter) as a side effect — is extremely common in tree problems:
+
+- **#124 Binary Tree Maximum Path Sum** — same structure, but sum edges instead of counting them, and handle negatives
+- **#687 Longest Univalue Path** — same post-order pass, only count edges where values match
+- **#1245 Tree Diameter** (general graph) — generalise to n-ary trees using the same idea
+
+## Edge Cases
+
+- **Null root**: return 0.
+- **Single node**: both children null → `left + right = 0`, diameter is 0.
+- **Straight line** (all left or all right): the diameter is `n - 1` edges, never passing through any "fork" — the max is still found correctly at each node since one side is always 0.
+- **Negative values in nodes**: irrelevant — diameter counts edges, not values.

@@ -66,6 +66,7 @@ Organised into category sections on the courses page (`SECTION_ORDER` in `src/ap
 Current courses:
 - **System Design:** `system-design-fundamentals`, `rate-limiting`
 - **Data Structure Deep Dives:** `trees-in-depth`, `arrays-the-hard-way`
+- **Java:** `spring-boot` (10 lessons — frameworks → EJBs → DI → IoC → ApplicationContext → XML hell → WAR/Tomcat → Spring Boot → Auto-config → Fat JAR)
 
 ## Pages
 
@@ -111,3 +112,21 @@ Current courses:
 - Write-ups: clear, practical, interview-focused — not academic
 - Always start from brute force, progress to optimal
 - Always include a `#` separator when encoding arrays as string keys to avoid hash collisions
+
+## Course Lesson Writing Tone
+
+When writing course lessons (not DSA write-ups), follow this narrative voice:
+
+**Persona:** A patient, senior Google-level architect on a mission to take a complete beginner all the way to deep understanding. No hand-waving. No "just trust me." Every concept earns its place.
+
+**Rules:**
+- **Start from first principles.** Never assume the reader knows why something exists. Ask the underlying question before answering it.
+- **Lead with the problem, not the solution.** Don't introduce Spring Boot by saying "Spring Boot does X." Introduce the pain that made Spring Boot inevitable.
+- **Analogies before abstractions.** Every non-obvious concept gets a real-world analogy first. The Hollywood Principle, the restaurant kitchen, the chef who doesn't source ingredients — these land before the formal definition.
+- **Show the wrong way first.** Naïve/incorrect approaches get code examples. Explain *why* they fail before showing the right approach. (e.g. the broken `minDepth` with `Math.min`, the tightly coupled `new UserRepository()` in a constructor.)
+- **No stones left unturned.** Cover the concept, the history, the tradeoffs, the edge cases, and the mental model the reader should carry forward.
+- **Connect everything.** After explaining a concept, link it to where it shows up elsewhere ("this is why Spring Boot's `@ConditionalOnMissingBean` exists", "this is what makes Docker packaging trivial").
+- **Tone:** Conversational but precise. Write like you're pair-programming with someone smart who is new to the domain. No padding, no filler — but no skipping either.
+- **End with a Key Takeaway** block that crystallises the entire lesson into 2-3 sentences.
+
+The measure of a good lesson: a reader with zero prior knowledge of the topic should finish it with a complete mental model, able to reason about new situations — not just repeat memorised facts.

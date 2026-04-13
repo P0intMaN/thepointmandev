@@ -1,0 +1,120 @@
+---
+title: "Minimum Depth of Binary Tree"
+description: "Find the minimum depth of a binary tree — the number of nodes along the shortest path from the root to the nearest leaf node."
+date: "2026-04-12"
+tags: ["tree", "dfs", "bfs", "recursion"]
+category: "Trees"
+difficulty: "easy"
+timeComplexity: "O(n)"
+spaceComplexity: "O(h)"
+companies: ["Amazon", "Facebook", "Bloomberg"]
+leetcodeNumber: 111
+draft: false
+---
+
+## Problem Statement
+
+Given the `root` of a binary tree, return its **minimum depth** — the number of nodes along the shortest path from the root down to the nearest **leaf** node. A leaf is a node with no children.
+
+```
+Input:  root = [3,9,20,null,null,15,7]
+Output: 2
+Explanation: shortest path is 3 → 9
+
+Input:  root = [2,null,3,null,4,null,5,null,6]
+Output: 5
+Explanation: the tree is a straight line — only one leaf, depth 5
+```
+
+## The Classic Mistake
+
+The naive instinct is to mirror maximum depth:
+
+```java
+// WRONG
+public int minDepth(TreeNode root) {
+    if (root == null) return 0;
+    return 1 + Math.min(minDepth(root.left), minDepth(root.right));
+}
+```
+
+This is **incorrect**. For a node with only a right child, `minDepth(root.left)` returns 0 — making it look like there's a leaf at depth 1, when there isn't. A node with one null child is **not a leaf**.
+
+## Approach 1: DFS Recursion — O(n) time, O(h) space ✅
+
+Handle the one-child case explicitly: if a child is null, don't count that side.
+
+```java
+public int minDepth(TreeNode root) {
+    if (root == null) return 0;
+
+    // leaf node
+    if (root.left == null && root.right == null) return 1;
+
+    // only right child exists — must go right
+    if (root.left == null) return 1 + minDepth(root.right);
+
+    // only left child exists — must go left
+    if (root.right == null) return 1 + minDepth(root.left);
+
+    // both children exist — take the minimum
+    return 1 + Math.min(minDepth(root.left), minDepth(root.right));
+}
+```
+
+The core rule: only take `Math.min` when **both** children are present. Otherwise, the non-null side is the only valid path to a leaf.
+
+## Approach 2: BFS — O(n) time, O(n) space
+
+BFS is actually a natural fit here. The first leaf you encounter in a level-order traversal is guaranteed to be at the minimum depth — you can return immediately without visiting the rest of the tree.
+
+```java
+public int minDepth(TreeNode root) {
+    if (root == null) return 0;
+
+    Queue<TreeNode> queue = new LinkedList<>();
+    queue.offer(root);
+    int depth = 0;
+
+    while (!queue.isEmpty()) {
+        int levelSize = queue.size();
+        depth++;
+
+        for (int i = 0; i < levelSize; i++) {
+            TreeNode node = queue.poll();
+
+            // first leaf found — this is the minimum depth
+            if (node.left == null && node.right == null) return depth;
+
+            if (node.left  != null) queue.offer(node.left);
+            if (node.right != null) queue.offer(node.right);
+        }
+    }
+
+    return depth;
+}
+```
+
+In the best case (wide, balanced tree), BFS returns as soon as it hits the first leaf — well before visiting all n nodes. DFS always traverses the full tree.
+
+## Complexity
+
+| | Time | Space |
+|---|---|---|
+| DFS | O(n) | O(h) — O(log n) balanced, O(n) skewed |
+| BFS | O(n) worst case | O(n) — queue width |
+
+BFS is often preferred for minimum-depth problems precisely because it can short-circuit. DFS is simpler to write and uses less memory on balanced trees.
+
+## Key Insight
+
+Minimum depth is **not** the symmetric opposite of maximum depth. The asymmetry comes from the definition of a leaf: a node is only a leaf if **both** children are null. A node with one child is an internal node — the path must continue down the non-null side.
+
+Whenever you see "minimum path to a leaf", ask: what happens at a node with only one child? That question separates a correct solution from a wrong one.
+
+## Edge Cases
+
+- **Null root**: return 0.
+- **Single node**: it's a leaf — return 1.
+- **Straight line / skewed tree**: only one path exists, minimum depth equals the total number of nodes.
+- **One child at root**: cannot go the null direction — must follow the non-null child.

@@ -1,0 +1,266 @@
+---
+title: "The Java Enterprise Problem — EJBs and Why They Failed"
+courseSlug: "spring-boot"
+lessonNumber: 2
+description: "Understand the world Spring was born into — Java EE, Enterprise JavaBeans, and the suffocating complexity that made the entire industry desperate for something better."
+date: "2026-04-14"
+draft: false
+---
+
+## Setting the Scene
+
+The year is 2002. Java is the dominant enterprise language. Banks, airlines, insurance companies, telecoms — all are betting their most critical systems on Java.
+
+These systems have real demands. They need to:
+- Handle thousands of concurrent users without falling over
+- Talk to databases reliably, with proper transactions
+- Integrate with other internal systems via remote method calls
+- Be secure — authenticate users, authorise access
+- Be maintainable over years, across large teams
+
+Java's official answer to all of this was **Java EE** — Java Enterprise Edition. And at the heart of Java EE was something called the **Enterprise JavaBean**, or EJB.
+
+Understanding EJBs — and why they failed — is not just history. It directly explains every design decision Spring made. Everything Spring does differently is a reaction to EJB pain.
+
+---
+
+## What Is Java EE?
+
+Java SE (Standard Edition) is the core language: collections, I/O, threading, etc.
+
+Java EE (Enterprise Edition) is a set of **specifications** layered on top of Java SE, defining how enterprise applications should handle:
+- **Transactions** — ensuring database operations are atomic
+- **Persistence** — mapping Java objects to database tables
+- **Messaging** — asynchronous communication between systems
+- **Remote method invocation** — calling methods on objects in a different JVM
+- **Security** — authentication and authorisation
+- **Web** — handling HTTP requests
+
+Java EE doesn't ship an implementation. It defines the API. Vendors (IBM, JBoss, BEA, Oracle) then compete by building *application servers* that implement these specs — WebSphere, JBoss, WebLogic, GlassFish.
+
+Your application runs *inside* the application server. The server provides the runtime environment. The server handles transactions. The server handles threading. You write code to the Java EE API.
+
+In theory: brilliant. In practice: a disaster.
+
+---
+
+## Enterprise JavaBeans: A Component Model Gone Wrong
+
+The central building block of Java EE was the **Enterprise JavaBean (EJB)**. EJBs were supposed to let you write server-side components that the application server would manage — handling transactions, security, and remote access on your behalf.
+
+There were three types:
+- **Session Beans** — business logic components (stateless or stateful)
+- **Entity Beans** — persistent objects mapped to database rows
+- **Message-Driven Beans** — components that respond to JMS messages
+
+Let's look at what it actually took to create a simple stateless session bean — say, a `UserService` that looks up users.
+
+### What You Had to Write
+
+**1. The Remote Interface**
+
+This was a Java interface listing every method that could be called remotely. Had to extend `javax.ejb.EJBObject`.
+
+```java
+import javax.ejb.EJBObject;
+import java.rmi.RemoteException;
+
+public interface UserService extends EJBObject {
+    User findById(Long id) throws RemoteException;
+    void createUser(String name, String email) throws RemoteException;
+}
+```
+
+Why does `findById` throw `RemoteException`? Because EJBs assumed every call might be remote — going over the network to a different machine. Even if your `UserService` and your calling code were in the same JVM, you still had to declare `RemoteException`. Every single method. No exceptions (pun intended).
+
+**2. The Home Interface**
+
+This was a *second* interface just for creating and destroying instances of your bean. Think of it as a factory interface. Had to extend `javax.ejb.EJBHome`.
+
+```java
+import javax.ejb.EJBHome;
+import java.rmi.RemoteException;
+import javax.ejb.CreateException;
+
+public interface UserServiceHome extends EJBHome {
+    UserService create() throws RemoteException, CreateException;
+}
+```
+
+Why? Because the EJB container — not you — managed object lifecycle. You couldn't just `new UserService()`. You had to ask the container to create one for you, via this factory. Hence: a separate interface just for instantiation.
+
+**3. The Bean Implementation**
+
+The actual class. Had to extend `SessionBean` and implement methods you probably didn't care about.
+
+```java
+import javax.ejb.SessionBean;
+import javax.ejb.SessionContext;
+
+public class UserServiceBean implements SessionBean {
+
+    // The actual business logic
+    public User findById(Long id) {
+        // query the database...
+    }
+
+    public void createUser(String name, String email) {
+        // insert into database...
+    }
+
+    // Lifecycle methods you MUST implement even if you don't care
+    public void ejbCreate() {}
+    public void ejbRemove() {}
+    public void ejbActivate() {}
+    public void ejbPassivate() {}
+    public void setSessionContext(SessionContext ctx) {}
+}
+```
+
+Notice `ejbCreate`, `ejbRemove`, `ejbActivate`, `ejbPassivate`, `setSessionContext`. These are EJB lifecycle hooks the container calls. You had to implement all of them even if you had zero logic to put in them. Empty methods. Noise.
+
+**4. The Deployment Descriptor — `ejb-jar.xml`**
+
+An XML file describing your bean to the container. Everything had to be declared explicitly.
+
+```xml
+<ejb-jar>
+  <enterprise-beans>
+    <session>
+      <ejb-name>UserService</ejb-name>
+      <home>com.example.UserServiceHome</home>
+      <remote>com.example.UserService</remote>
+      <ejb-class>com.example.UserServiceBean</ejb-class>
+      <session-type>Stateless</session-type>
+      <transaction-type>Container</transaction-type>
+    </session>
+  </enterprise-beans>
+
+  <assembly-descriptor>
+    <container-transaction>
+      <method>
+        <ejb-name>UserService</ejb-name>
+        <method-name>*</method-name>
+      </method>
+      <trans-attribute>Required</trans-attribute>
+    </container-transaction>
+  </assembly-descriptor>
+</ejb-jar>
+```
+
+**5. The Vendor-Specific Descriptor**
+
+Not enough? Each application server also required its *own* XML file for server-specific configuration — JNDI names, connection pool references, clustering settings.
+
+For JBoss:
+```xml
+<!-- jboss.xml -->
+<jboss>
+  <enterprise-beans>
+    <session>
+      <ejb-name>UserService</ejb-name>
+      <jndi-name>ejb/UserService</jndi-name>
+    </session>
+  </enterprise-beans>
+</jboss>
+```
+
+For WebSphere it looked different. For WebLogic, different again. Your app was now tied to a specific server.
+
+### Counting the Damage
+
+To create one `UserService`, you needed:
+
+| Artefact | Purpose |
+|---|---|
+| `UserService.java` | Remote interface |
+| `UserServiceHome.java` | Factory interface |
+| `UserServiceBean.java` | Implementation |
+| `ejb-jar.xml` | Standard deployment descriptor |
+| `jboss.xml` (or equivalent) | Vendor-specific descriptor |
+
+**Five files for one component.** All of them had to stay perfectly in sync. Rename a method in the bean? Update the remote interface. Update both XML files. Miss one and you find out at runtime — after deploying to the application server and waiting for it to boot.
+
+---
+
+## The Calling Side Wasn't Pretty Either
+
+To actually use your EJB from another component, you couldn't just `new` it up or inject it. You had to look it up manually via JNDI — Java Naming and Directory Interface, essentially a directory service the server maintained.
+
+```java
+// Getting a reference to the UserService EJB
+InitialContext ctx = new InitialContext();
+Object ref = ctx.lookup("java:comp/env/ejb/UserService");
+UserServiceHome home = (UserServiceHome) PortableRemoteObject.narrow(ref, UserServiceHome.class);
+UserService userService = home.create();
+
+// NOW you can call your method
+User user = userService.findById(42L);
+```
+
+Seven lines of boilerplate before you can call a single business method. And if that lookup string is wrong? Runtime error. Not a compile error. Not a test failure. A runtime error, in production, at 2am.
+
+---
+
+## Testing Was Effectively Impossible
+
+EJBs could only run inside an application server. There was no "just run the tests."
+
+To test `UserServiceBean.findById()`, you had to:
+1. Package your entire application into a deployable format
+2. Start a full application server
+3. Deploy to the server
+4. Write a client that performs the JNDI lookup
+5. Call the method
+6. Check the result
+7. Undeploy, fix the code, and repeat from step 1
+
+A single test iteration could take several minutes just in deployment time. Rapid iteration was impossible. Test-driven development was a fantasy.
+
+---
+
+## The Entity Bean Horror
+
+If Session Beans were bad, Entity Beans — the EJB approach to database persistence — were worse.
+
+Every database row was represented by an Entity Bean. The container managed reads and writes. The spec was so complex that most implementations were buggy, slow, or both. Performance was catastrophically bad. Developers routinely worked around Entity Beans entirely, going back to raw JDBC.
+
+The irony: the component meant to make database persistence easier made it so painful that experienced developers refused to use it.
+
+---
+
+## The Verdict
+
+By the early 2000s, EJBs had accumulated a toxic reputation:
+
+- Too complex for what they actually did
+- Too coupled to the application server
+- Too slow — EJB containers added massive overhead
+- Too untestable — you needed a running server for everything
+- Too verbose — thousands of lines of boilerplate for basic functionality
+- Runtime errors everywhere that should have been caught at compile time
+
+The Java community was drowning. Enterprise Java development was a misery of XML files, JNDI lookups, and deployment rituals.
+
+---
+
+## Rod Johnson's Rebellion
+
+In 2002, Rod Johnson — a Java consultant who had spent years fighting EJBs in real enterprise projects — published a book: *"Expert One-on-One J2EE Design and Development."*
+
+The premise was radical: **you don't need EJBs to build good enterprise applications.** In fact, you'll build better applications without them.
+
+The book included, as an appendix, a sample framework called Interface21. Its key ideas:
+- Use **Plain Old Java Objects (POJOs)** — no special base classes, no interface inheritance forced by the framework
+- Wire components together using **Dependency Injection** — the framework provides what each component needs, rather than components hunting for their dependencies via JNDI
+- Make things **testable** — if a component can be instantiated in a test without a running server, you've already won
+
+Interface21 became Spring.
+
+The name "Spring" was chosen deliberately — it represented a spring after the long winter of EJBs.
+
+---
+
+> **Key Takeaway:** EJBs tried to solve real problems (transactions, remote access, security) but buried developers in complexity, coupling, and untestable code. Spring's entire design — POJOs, dependency injection, no required base classes, testability — is a direct reaction to the specific failures of EJBs. Every decision Spring made was made by someone who had suffered through EJB development and refused to repeat it.
+
+In the next lesson, we dig into the idea at the core of Spring: Dependency Injection.

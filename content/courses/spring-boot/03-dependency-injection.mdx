@@ -1,0 +1,302 @@
+---
+title: "Dependency Injection from First Principles"
+courseSlug: "spring-boot"
+lessonNumber: 3
+description: "What is a dependency? What goes wrong when you manage them yourself? How does Dependency Injection fix it — and what are the three ways to do it in Spring?"
+date: "2026-04-14"
+draft: false
+---
+
+## What Is a Dependency?
+
+Before we can talk about injecting dependencies, we need to be precise about what a dependency actually is.
+
+A **dependency** is any object that another object needs to do its job.
+
+If `UserService` queries the database via a `UserRepository`, then `UserRepository` is a dependency of `UserService`. `UserService` cannot function without it.
+
+```java
+public class UserService {
+    // UserService depends on UserRepository
+    private UserRepository repository;
+
+    public User findById(Long id) {
+        return repository.findById(id);  // can't work without repository
+    }
+}
+```
+
+This is unavoidable. In any non-trivial application, objects depend on other objects. The question isn't whether you have dependencies — you always will. The question is: **who is responsible for creating and providing them?**
+
+---
+
+## The Naive Approach: Creating Your Own Dependencies
+
+The most obvious answer: the object creates its own dependencies.
+
+```java
+public class UserService {
+    private UserRepository repository;
+
+    public UserService() {
+        this.repository = new UserRepository();  // I'll make my own
+    }
+
+    public User findById(Long id) {
+        return repository.findById(id);
+    }
+}
+```
+
+This compiles. This runs. In a small, throwaway program, this is fine.
+
+But in a real application, this pattern causes three serious problems.
+
+---
+
+## Problem 1: Tight Coupling
+
+When `UserService` does `new UserRepository()`, it hard-codes a specific class. It is now tightly coupled to that exact implementation.
+
+What happens when requirements change — and they always change?
+
+**Scenario A:** You want to add a caching layer. Instead of always going to the database, you want to first check Redis.
+
+With tight coupling, you have to change `UserService`:
+```java
+// Before
+this.repository = new UserRepository();
+
+// After — UserService now knows about caching details
+this.repository = new CachedUserRepository(new RedisCache(), new UserRepository());
+```
+
+`UserService` is a business logic class. It should know nothing about caching infrastructure. But now it does.
+
+**Scenario B:** You have 15 services all doing `new UserRepository()`. You need to switch from PostgreSQL to MySQL. You change `UserRepository`'s constructor — and now all 15 services have to be updated.
+
+Tight coupling means a change in one place ripples across the entire codebase.
+
+---
+
+## Problem 2: Hidden Dependencies
+
+When you `new` up your own dependencies inside a constructor, those dependencies are invisible from the outside.
+
+```java
+public class OrderService {
+    private UserService userService;
+    private PaymentGateway paymentGateway;
+    private EmailService emailService;
+    private AuditLogger auditLogger;
+
+    public OrderService() {
+        this.userService = new UserService();          // hides: UserRepository, DataSource
+        this.paymentGateway = new StripeGateway();    // hides: API keys, HTTP client
+        this.emailService = new SmtpEmailService();   // hides: SMTP config, MailSender
+        this.auditLogger = new DatabaseAuditLogger(); // hides: another DataSource
+    }
+}
+```
+
+From the outside, `OrderService` looks simple. In reality, it secretly creates an entire object graph — database connections, HTTP clients, SMTP configurations, all buried inside nested constructors.
+
+This is called the **"hidden dependency problem"**. You cannot tell what a class truly depends on without reading its implementation. The complexity is invisible.
+
+---
+
+## Problem 3: Untestability
+
+This is the most immediately painful consequence, and it's what drove the Spring team most.
+
+Suppose you want to test `UserService.findById()`. With tight coupling:
+
+```java
+public class UserService {
+    private UserRepository repository;
+
+    public UserService() {
+        this.repository = new UserRepository(); // connects to real database
+    }
+}
+```
+
+When you instantiate `UserService` in a test, it immediately tries to connect to a real database. No database running in your test environment? The test fails to even instantiate the class. Test fails before it begins.
+
+And even if the database is available — now your test depends on the database having specific data in it. Your test results become tied to database state. Tests affect each other. The order in which tests run matters. Tests that pass locally fail in CI. Tests that passed yesterday fail today because someone changed the data.
+
+This is a fundamentally broken testing story.
+
+---
+
+## The Solution: Don't Create Your Dependencies — Receive Them
+
+Here's the core insight of Dependency Injection:
+
+> **A class should not be responsible for creating its own dependencies. It should declare what it needs and receive them from the outside.**
+
+Applied to `UserService`:
+
+```java
+public class UserService {
+    private final UserRepository repository;
+
+    public UserService(UserRepository repository) {  // receives it, doesn't create it
+        this.repository = repository;
+    }
+
+    public User findById(Long id) {
+        return repository.findById(id);
+    }
+}
+```
+
+Now `UserService` doesn't know *how* `UserRepository` is created. It doesn't know if it talks to PostgreSQL, MySQL, or an in-memory map. It just knows: I have a `UserRepository` and I can call `findById` on it.
+
+The responsibility for creating and providing `UserRepository` has been moved *out* of `UserService` and into the caller.
+
+---
+
+## How This Fixes All Three Problems
+
+**Tight coupling — fixed.**
+
+If you want to swap `UserRepository` for `CachedUserRepository`:
+
+```java
+// The caller (not UserService) makes the decision
+UserRepository repo = new CachedUserRepository(new RedisCache(), new UserRepository());
+UserService service = new UserService(repo);
+```
+
+`UserService` is untouched. It doesn't know — or care — what kind of `UserRepository` it received.
+
+**Hidden dependencies — fixed.**
+
+```java
+public UserService(UserRepository repository) { ... }
+```
+
+The constructor signature is a complete, honest declaration of what `UserService` needs. You don't have to read the implementation. The contract is in the signature.
+
+**Untestability — fixed.**
+
+In a test, you can pass a *fake* `UserRepository` that doesn't touch a database at all:
+
+```java
+class FakeUserRepository implements UserRepository {
+    @Override
+    public User findById(Long id) {
+        return new User(id, "Test User"); // returns hardcoded data
+    }
+}
+
+@Test
+void testFindById() {
+    UserRepository fakeRepo = new FakeUserRepository();
+    UserService service = new UserService(fakeRepo); // no database needed
+
+    User result = service.findById(1L);
+    assertEquals("Test User", result.getName()); // passes every time
+}
+```
+
+No database. No external services. No flaky tests. `UserService` can be tested in complete isolation.
+
+---
+
+## The Three Forms of Dependency Injection
+
+There are three ways to inject a dependency. Each has trade-offs.
+
+### 1. Constructor Injection ✅ (Preferred)
+
+The dependency is provided through the constructor.
+
+```java
+@Service
+public class UserService {
+    private final UserRepository repository;
+
+    public UserService(UserRepository repository) {
+        this.repository = repository;
+    }
+}
+```
+
+**Why this is the best choice:**
+- Dependencies are clearly declared in the constructor signature — impossible to miss
+- The field can be `final` — once set, it cannot be changed. This is a strong guarantee
+- The object is always fully initialised after construction — there is no state where `repository` is null
+- Easiest to test — just call the constructor directly with a fake dependency
+
+As of Spring 4.3, if your class has exactly one constructor, Spring injects it automatically — no `@Autowired` annotation required.
+
+### 2. Setter Injection
+
+The dependency is provided through a setter method.
+
+```java
+@Service
+public class UserService {
+    private UserRepository repository;
+
+    @Autowired
+    public void setUserRepository(UserRepository repository) {
+        this.repository = repository;
+    }
+}
+```
+
+**When to use it:**
+- Optional dependencies — the class can function with or without this dependency
+- Dependencies that need to change after construction (rare)
+
+**The problem:**
+- The field cannot be `final`
+- An object can exist in an incomplete state — if someone forgets to call the setter, `repository` is null
+- Null pointer exceptions waiting to happen
+
+### 3. Field Injection ⚠️ (Avoid)
+
+The dependency is injected directly into the field via reflection.
+
+```java
+@Service
+public class UserService {
+    @Autowired
+    private UserRepository repository;  // Spring injects this directly
+}
+```
+
+You'll see this everywhere in tutorials, Stack Overflow answers, and legacy codebases. It looks clean. It feels easy. But it has significant problems:
+
+- The field cannot be `final`
+- Hidden dependencies — the constructor signature tells you nothing about what this class needs
+- Impossible to test without a Spring context — you can't call a constructor and provide a fake, because there is no constructor that takes the dependency
+- No way to see if you're violating the Single Responsibility Principle — a class with 8 `@Autowired` fields is probably doing too much, but field injection makes it easy to keep adding fields without the pain that signals "this class is too big"
+
+Spring itself recommends against field injection. Use constructor injection.
+
+---
+
+## Who Does the Injecting?
+
+Right now, we've established *what* DI is. But who actually does the injecting?
+
+In our examples above, we manually created dependencies and passed them in:
+
+```java
+UserRepository repo = new UserRepository();
+UserService service = new UserService(repo);
+```
+
+In a real application with hundreds of classes, each with multiple dependencies, manually wiring everything together is its own problem. You'd need one giant piece of code that creates every object in the right order and passes each one its dependencies.
+
+This is exactly what Spring's IoC container does — automatically. You declare what each class needs (via constructor parameters). Spring builds the entire dependency graph, creates everything in the right order, and injects each dependency where it's needed.
+
+That's the next lesson: Inversion of Control.
+
+---
+
+> **Key Takeaway:** Dependency Injection is about honesty and decoupling. A class should declare its dependencies openly — in its constructor — rather than silently creating them. This makes the code testable, flexible, and maintainable. Constructor injection is the right default: dependencies are visible, the object is always complete, and testing requires nothing but a `new` call with fake dependencies.

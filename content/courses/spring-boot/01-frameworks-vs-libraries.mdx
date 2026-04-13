@@ -1,0 +1,180 @@
+---
+title: "Frameworks vs Libraries — The Hollywood Principle"
+courseSlug: "spring-boot"
+lessonNumber: 1
+description: "Understand what a framework actually is — and why it's fundamentally different from a library. This mental model is the foundation everything else in this course builds on."
+date: "2026-04-14"
+draft: false
+---
+
+## Start Here
+
+Before we write a single line of Spring code, we need to answer one question: **what is a framework, and why does it exist?**
+
+Most people skip this. They jump straight to annotations and dependency configuration. Two weeks later, something breaks and they have no mental model to reason about why. We're not doing that.
+
+By the end of this lesson, you'll have a crystal-clear mental model of the difference between a library and a framework — and you'll understand exactly what Spring is doing when it "runs" your application.
+
+---
+
+## Libraries: You Are in Control
+
+You've almost certainly used a library before, even if you've never consciously called it one.
+
+A library is a collection of reusable code that you call on demand. You import it, invoke its functions when you need them, and the control of the program stays entirely with you.
+
+Think of the Apache Commons `StringUtils` library:
+
+```java
+import org.apache.commons.lang3.StringUtils;
+
+public class Main {
+    public static void main(String[] args) {
+        String result = StringUtils.capitalize("hello world");
+        System.out.println(result); // "Hello world"
+    }
+}
+```
+
+Look at the flow of control here:
+
+```
+main()  →  calls  →  StringUtils.capitalize()  →  returns  →  main() continues
+```
+
+*You* decide when `capitalize()` is called. *You* decide what to do with the result. The library is a passive tool. It does nothing until you pick it up.
+
+Another example — Jackson for JSON parsing:
+
+```java
+ObjectMapper mapper = new ObjectMapper();
+User user = mapper.readValue(jsonString, User.class);
+```
+
+You create the `ObjectMapper`. You call `readValue`. You control when and how the library is used. If you never call it, nothing happens. It just sits there.
+
+**A library is like a hammer.** You pick it up, you swing it, you put it down. You are entirely in control of when it acts.
+
+---
+
+## Frameworks: They Are in Control
+
+A framework is the opposite. You don't call the framework — **the framework calls you**.
+
+You write code that conforms to the framework's structure. The framework decides when to invoke your code, in what order, and with what data. You are a participant in a system that the framework orchestrates.
+
+Here's the most important thing to understand:
+
+> **The flow of control is inverted. You hand it over.**
+
+This has a name: the **Hollywood Principle**.
+
+The Hollywood Principle comes from the entertainment industry. When an actor auditions, the casting director says: *"Don't call us — we'll call you."* The actor doesn't decide when they perform. The studio does. The actor just shows up and does their job when called.
+
+In software:
+- The framework is the studio.
+- Your code is the actor.
+- Your code performs when the framework says so.
+
+---
+
+## What This Looks Like in Spring
+
+Here's a concrete example. This is a Spring REST controller:
+
+```java
+@RestController
+public class UserController {
+
+    @GetMapping("/users/{id}")
+    public User getUser(@PathVariable Long id) {
+        // your logic here
+        return new User(id, "Alice");
+    }
+}
+```
+
+Look at this method. It doesn't have a loop listening for HTTP requests. It doesn't open a socket. It doesn't parse HTTP headers. It doesn't know what port the server is running on.
+
+You wrote a method. Spring decides when to call it.
+
+When an HTTP GET request arrives at `/users/42`, Spring:
+1. Parses the raw HTTP bytes off the network socket
+2. Matches the URL pattern `/users/{id}` to your method
+3. Extracts `42` from the path and converts it to a `Long`
+4. **Calls your method** with `id = 42`
+5. Takes your returned `User` object
+6. Serialises it to JSON
+7. Writes the HTTP response back to the client
+
+Your method did one thing: return a `User`. Spring handled everything else — the network, the parsing, the routing, the serialisation, the response. You never even thought about those things.
+
+The flow of control looks like this:
+
+```
+HTTP Request arrives
+        ↓
+Spring Framework (parses, routes, resolves params)
+        ↓
+   Your getUser()   ← Spring calls YOU
+        ↓
+Spring Framework (serialises, writes response)
+        ↓
+HTTP Response sent
+```
+
+You are the actor. Spring is the studio. It calls you when it needs you.
+
+---
+
+## Why This Distinction Matters
+
+It's not just a philosophical difference. It has concrete consequences for how you write code.
+
+**With a library**, if you stop calling it, it has no effect. You can ignore parts of it entirely.
+
+**With a framework**, you have to follow its rules. Your code must conform to the framework's expected structure — method signatures, annotations, inheritance. If you violate the contract, the framework either ignores your code or throws an error.
+
+This is a trade-off:
+
+| | Libraries | Frameworks |
+|---|---|---|
+| Who controls flow | You | The framework |
+| Flexibility | Very high — use what you want | Lower — must follow conventions |
+| Boilerplate | You write all the setup code | Framework handles it |
+| Learning curve | Low — just read the API | Higher — learn the framework's model |
+| What you focus on | Everything | Just your business logic |
+
+Frameworks ask you to give up control in exchange for not having to deal with the hard, solved problems. You don't have to manage HTTP connections. You don't have to manage database connection pools. You don't have to manage thread lifecycles. The framework does it. You just write the part that's specific to your product.
+
+---
+
+## Why Frameworks Exist in the First Place
+
+Before web frameworks, building a web application meant solving the same problems every single time:
+
+- How do you listen on a TCP port for incoming connections?
+- How do you parse raw HTTP request bytes into something meaningful?
+- How do you match a URL to a handler function?
+- How do you manage a pool of threads so you can handle multiple requests at once?
+- How do you turn a Java object into a JSON response?
+- How do you handle malformed requests, timeouts, and connection drops?
+
+These are **solved problems**. Engineers far smarter than any of us spent years getting them right. They wrote performance benchmarks, handled security edge cases, battle-tested the code at millions of requests per second.
+
+A web framework packages all of that work and hands it to you. When you use Spring MVC, you're getting years of expert HTTP handling for free. Your job becomes writing the part only *you* can write — the business logic of your specific application.
+
+This is the only reason frameworks exist: **so you can stand on the shoulders of experts and build things that matter, instead of re-solving infrastructure problems that were solved ten years ago.**
+
+---
+
+## Recap
+
+- A **library** is code you call. You control the flow.
+- A **framework** calls your code. It controls the flow.
+- This inversion is called the **Hollywood Principle**: don't call us, we'll call you.
+- Frameworks exist because solved problems should stay solved. You focus on your business logic; the framework handles the infrastructure.
+
+> **Key Takeaway:** A framework inverts the flow of control. You write code that conforms to the framework's structure, and the framework decides when to execute it. Every Spring annotation you'll ever write — `@RestController`, `@Service`, `@Bean` — is you telling the framework: "here's a piece of code, call it when you need it."
+
+In the next lesson, we'll look at the Java world before Spring — why it was such a mess, and what specific problem Spring was designed to solve.

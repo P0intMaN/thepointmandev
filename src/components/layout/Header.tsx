@@ -8,7 +8,6 @@ import { cn } from "@/lib/utils";
 import { MobileNav } from "./MobileNav";
 
 const navLinks = [
-  { href: "/blog", label: "Blog" },
   { href: "/courses", label: "Courses" },
   { href: "/dsa", label: "DSA" },
   { href: "/roadmap", label: "Roadmap" },
