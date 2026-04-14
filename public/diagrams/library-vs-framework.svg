@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="240" viewBox="0 0 760 240">
+  <rect width="760" height="240" fill="#0d0d0d"/>
+
+  <!-- LEFT PANEL: Library -->
+  <rect x="16" y="16" width="346" height="208" rx="4" fill="#141414" stroke="#262626" stroke-width="1"/>
+  <text x="28" y="34" fill="#656363" font-family="monospace" font-size="10">// library model</text>
+
+  <!-- Your Code box -->
+  <rect x="36" y="56" width="116" height="44" rx="3" fill="#1a1a1a" stroke="#4ade80" stroke-width="1.5"/>
+  <text x="94" y="83" text-anchor="middle" fill="#f1ecec" font-family="monospace" font-size="12" font-weight="bold">Your Code</text>
+
+  <!-- Library box -->
+  <rect x="210" y="56" width="116" height="44" rx="3" fill="#1a1a1a" stroke="#262626" stroke-width="1.5"/>
+  <text x="268" y="83" text-anchor="middle" fill="#b7b1b1" font-family="monospace" font-size="12">Library</text>
+
+  <!-- call() arrow (right) -->
+  <line x1="154" y1="68" x2="208" y2="68" stroke="#4ade80" stroke-width="1.5"/>
+  <polygon points="206,64 214,68 206,72" fill="#4ade80"/>
+  <text x="180" y="63" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="9">call()</text>
+
+  <!-- return arrow (left, dashed) -->
+  <line x1="208" y1="82" x2="156" y2="82" stroke="#656363" stroke-width="1.2" stroke-dasharray="4,3"/>
+  <polygon points="158,78 150,82 158,86" fill="#656363"/>
+  <text x="180" y="96" text-anchor="middle" fill="#656363" font-family="monospace" font-size="9">return</text>
+
+  <text x="189" y="128" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="12" font-weight="bold">You control the flow</text>
+  <text x="189" y="148" text-anchor="middle" fill="#656363" font-family="monospace" font-size="10">call it when you need it</text>
+  <text x="189" y="165" text-anchor="middle" fill="#656363" font-family="monospace" font-size="10">ignore it — nothing happens</text>
+  <text x="189" y="182" text-anchor="middle" fill="#656363" font-family="monospace" font-size="10">result flows back to you</text>
+
+  <!-- RIGHT PANEL: Framework -->
+  <rect x="398" y="16" width="346" height="208" rx="4" fill="#141414" stroke="#262626" stroke-width="1"/>
+  <text x="410" y="34" fill="#656363" font-family="monospace" font-size="10">// framework model</text>
+
+  <!-- Framework box (top) -->
+  <rect x="418" y="48" width="306" height="44" rx="3" fill="#1a1a1a" stroke="#67e8f9" stroke-width="1.5"/>
+  <text x="571" y="75" text-anchor="middle" fill="#67e8f9" font-family="monospace" font-size="12" font-weight="bold">Framework</text>
+
+  <!-- arrow down: calls you -->
+  <line x1="571" y1="94" x2="571" y2="118" stroke="#f87171" stroke-width="1.5"/>
+  <polygon points="567,118 571,126 575,118" fill="#f87171"/>
+  <text x="600" y="112" fill="#f87171" font-family="monospace" font-size="9">calls you</text>
+
+  <!-- Your Code box (bottom) -->
+  <rect x="511" y="128" width="120" height="44" rx="3" fill="#1a1a1a" stroke="#4ade80" stroke-width="1.5"/>
+  <text x="571" y="155" text-anchor="middle" fill="#f1ecec" font-family="monospace" font-size="12" font-weight="bold">Your Code</text>
+
+  <text x="571" y="194" text-anchor="middle" fill="#f87171" font-family="monospace" font-size="12" font-weight="bold">Framework controls the flow</text>
+  <text x="571" y="214" text-anchor="middle" fill="#656363" font-family="monospace" font-size="10">"Don't call us — we'll call you."</text>
+</svg>

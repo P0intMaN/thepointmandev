@@ -1,0 +1,88 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="300" viewBox="0 0 760 300">
+  <rect width="760" height="300" fill="#0d0d0d"/>
+
+  <text x="380" y="20" text-anchor="middle" fill="#656363" font-family="monospace" font-size="10">// two ways to run a hypervisor — the difference is who talks to the hardware first</text>
+
+  <!-- ── LEFT: Type 1 ── -->
+  <rect x="16" y="30" width="348" height="256" rx="4" fill="#141414" stroke="#4ade80" stroke-width="1.5"/>
+  <text x="190" y="50" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="11" font-weight="bold">Type 1 — Bare Metal Hypervisor</text>
+  <text x="190" y="64" text-anchor="middle" fill="#656363" font-family="monospace" font-size="9">VMware ESXi · Microsoft Hyper-V · KVM</text>
+
+  <!-- Hardware -->
+  <rect x="36" y="248" width="308" height="28" rx="3" fill="#1a1a1a" stroke="#262626"/>
+  <text x="190" y="267" text-anchor="middle" fill="#656363" font-family="monospace" font-size="10">Physical Hardware (CPU / RAM / Disk)</text>
+
+  <!-- Hypervisor sits directly on hardware -->
+  <rect x="36" y="212" width="308" height="28" rx="3" fill="#0d1a0d" stroke="#4ade80" stroke-width="1.5"/>
+  <text x="190" y="231" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="10" font-weight="bold">Hypervisor (talks directly to hardware)</text>
+
+  <!-- 3 VMs -->
+  <rect x="36"  y="80" width="88" height="122" rx="3" fill="#141414" stroke="#262626"/>
+  <text x="80" y="97" text-anchor="middle" fill="#b7b1b1" font-family="monospace" font-size="9" font-weight="bold">VM 1</text>
+  <rect x="44" y="104" width="72" height="18" rx="2" fill="#1a1a1a" stroke="#262626"/>
+  <text x="80" y="117" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">Guest OS</text>
+  <rect x="44" y="128" width="72" height="16" rx="2" fill="#1a1a1a" stroke="#262626"/>
+  <text x="80" y="140" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">Runtime</text>
+  <rect x="44" y="150" width="72" height="16" rx="2" fill="#1a1a1a" stroke="#262626"/>
+  <text x="80" y="162" text-anchor="middle" fill="#f1ecec" font-family="monospace" font-size="8">App A</text>
+  <rect x="44" y="172" width="72" height="22" rx="2" fill="#0d1a0d" stroke="#4ade80" stroke-width="1"/>
+  <text x="80" y="187" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="8">isolated ✓</text>
+
+  <rect x="146" y="80" width="88" height="122" rx="3" fill="#141414" stroke="#262626"/>
+  <text x="190" y="97" text-anchor="middle" fill="#b7b1b1" font-family="monospace" font-size="9" font-weight="bold">VM 2</text>
+  <rect x="154" y="104" width="72" height="18" rx="2" fill="#1a1a1a" stroke="#262626"/>
+  <text x="190" y="117" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">Guest OS</text>
+  <rect x="154" y="128" width="72" height="16" rx="2" fill="#1a1a1a" stroke="#262626"/>
+  <text x="190" y="140" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">Runtime</text>
+  <rect x="154" y="150" width="72" height="16" rx="2" fill="#1a1a1a" stroke="#262626"/>
+  <text x="190" y="162" text-anchor="middle" fill="#f1ecec" font-family="monospace" font-size="8">App B</text>
+  <rect x="154" y="172" width="72" height="22" rx="2" fill="#0d1a0d" stroke="#4ade80" stroke-width="1"/>
+  <text x="190" y="187" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="8">isolated ✓</text>
+
+  <rect x="256" y="80" width="88" height="122" rx="3" fill="#141414" stroke="#262626"/>
+  <text x="300" y="97" text-anchor="middle" fill="#b7b1b1" font-family="monospace" font-size="9" font-weight="bold">VM 3</text>
+  <rect x="264" y="104" width="72" height="18" rx="2" fill="#1a1a1a" stroke="#262626"/>
+  <text x="300" y="117" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">Guest OS</text>
+  <rect x="264" y="128" width="72" height="16" rx="2" fill="#1a1a1a" stroke="#262626"/>
+  <text x="300" y="140" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">Runtime</text>
+  <rect x="264" y="150" width="72" height="16" rx="2" fill="#1a1a1a" stroke="#262626"/>
+  <text x="300" y="162" text-anchor="middle" fill="#f1ecec" font-family="monospace" font-size="8">App C</text>
+  <rect x="264" y="172" width="72" height="22" rx="2" fill="#0d1a0d" stroke="#4ade80" stroke-width="1"/>
+  <text x="300" y="187" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="8">isolated ✓</text>
+
+  <!-- ── RIGHT: Type 2 ── -->
+  <rect x="396" y="30" width="348" height="256" rx="4" fill="#141414" stroke="#67e8f9" stroke-width="1.5"/>
+  <text x="570" y="50" text-anchor="middle" fill="#67e8f9" font-family="monospace" font-size="11" font-weight="bold">Type 2 — Hosted Hypervisor</text>
+  <text x="570" y="64" text-anchor="middle" fill="#656363" font-family="monospace" font-size="9">VirtualBox · VMware Workstation · Parallels</text>
+
+  <!-- Hardware -->
+  <rect x="416" y="248" width="308" height="28" rx="3" fill="#1a1a1a" stroke="#262626"/>
+  <text x="570" y="267" text-anchor="middle" fill="#656363" font-family="monospace" font-size="10">Physical Hardware (CPU / RAM / Disk)</text>
+
+  <!-- Host OS -->
+  <rect x="416" y="212" width="308" height="28" rx="3" fill="#1a1a1a" stroke="#262626"/>
+  <text x="570" y="231" text-anchor="middle" fill="#b7b1b1" font-family="monospace" font-size="10">Host OS (macOS / Windows / Linux)</text>
+
+  <!-- Hypervisor on top of host OS -->
+  <rect x="416" y="176" width="308" height="28" rx="3" fill="#0a1318" stroke="#67e8f9" stroke-width="1.5"/>
+  <text x="570" y="195" text-anchor="middle" fill="#67e8f9" font-family="monospace" font-size="10" font-weight="bold">Hypervisor (runs as a process in Host OS)</text>
+
+  <!-- 2 VMs -->
+  <rect x="416" y="80" width="138" height="86" rx="3" fill="#141414" stroke="#262626"/>
+  <text x="485" y="97" text-anchor="middle" fill="#b7b1b1" font-family="monospace" font-size="9" font-weight="bold">VM 1</text>
+  <rect x="424" y="104" width="122" height="16" rx="2" fill="#1a1a1a" stroke="#262626"/>
+  <text x="485" y="116" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">Guest OS (Ubuntu)</text>
+  <rect x="424" y="126" width="122" height="16" rx="2" fill="#1a1a1a" stroke="#262626"/>
+  <text x="485" y="138" text-anchor="middle" fill="#f1ecec" font-family="monospace" font-size="8">App A (Python 3.6)</text>
+  <rect x="424" y="148" width="122" height="14" rx="2" fill="#0d1a0d" stroke="#4ade80" stroke-width="1"/>
+  <text x="485" y="159" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="8">isolated ✓</text>
+
+  <rect x="586" y="80" width="138" height="86" rx="3" fill="#141414" stroke="#262626"/>
+  <text x="655" y="97" text-anchor="middle" fill="#b7b1b1" font-family="monospace" font-size="9" font-weight="bold">VM 2</text>
+  <rect x="594" y="104" width="122" height="16" rx="2" fill="#1a1a1a" stroke="#262626"/>
+  <text x="655" y="116" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">Guest OS (CentOS)</text>
+  <rect x="594" y="126" width="122" height="16" rx="2" fill="#1a1a1a" stroke="#262626"/>
+  <text x="655" y="138" text-anchor="middle" fill="#f1ecec" font-family="monospace" font-size="8">App B (Node 14)</text>
+  <rect x="594" y="148" width="122" height="14" rx="2" fill="#0d1a0d" stroke="#4ade80" stroke-width="1"/>
+  <text x="655" y="159" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="8">isolated ✓</text>
+</svg>

@@ -213,6 +213,13 @@ To run a web application, you also needed a `web.xml` deployment descriptor in `
 
 And yes — `dispatcher-servlet.xml` was a *second* XML configuration file, just for the web layer.
 
+<Figure
+  src="/diagrams/xml-config-files.svg"
+  alt="Four disconnected XML configuration files in a Spring web application"
+  caption="Four separate XML files that all had to stay in sync with each other and with your Java code. Any mismatch produced a runtime error."
+  label="xml-config-files.svg"
+/>
+
 ---
 
 ## Why It Was So Painful

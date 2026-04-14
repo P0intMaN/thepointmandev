@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="310" viewBox="0 0 760 310">
+  <rect width="760" height="310" fill="#0d0d0d"/>
+
+  <text x="380" y="22" text-anchor="middle" fill="#656363" font-family="monospace" font-size="10">// Spring resolves construction order automatically — leaves first, dependents last</text>
+
+  <!-- Row 1: DataSource (no deps) -->
+  <rect x="270" y="34" width="220" height="52" rx="3" fill="#141414" stroke="#4ade80" stroke-width="1.5"/>
+  <text x="380" y="57" text-anchor="middle" fill="#f1ecec" font-family="monospace" font-size="13" font-weight="bold">DataSource</text>
+  <text x="380" y="74" text-anchor="middle" fill="#656363" font-family="monospace" font-size="9">no dependencies — created first</text>
+  <rect x="504" y="42" width="108" height="22" rx="10" fill="#0d1a0d" stroke="#4ade80" stroke-width="1"/>
+  <text x="558" y="58" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="9" font-weight="bold">① created first</text>
+
+  <!-- Arrow 1→2 -->
+  <line x1="380" y1="88" x2="380" y2="108" stroke="#4ade80" stroke-width="1.5" stroke-dasharray="3,2"/>
+  <polygon points="376,106 380,114 384,106" fill="#4ade80"/>
+  <text x="420" y="103" fill="#656363" font-family="monospace" font-size="9">injects into ↓</text>
+
+  <!-- Row 2: UserRepository -->
+  <rect x="270" y="116" width="220" height="52" rx="3" fill="#141414" stroke="#67e8f9" stroke-width="1.5"/>
+  <text x="380" y="139" text-anchor="middle" fill="#f1ecec" font-family="monospace" font-size="13" font-weight="bold">UserRepository</text>
+  <text x="380" y="156" text-anchor="middle" fill="#656363" font-family="monospace" font-size="9">needs DataSource</text>
+  <rect x="504" y="124" width="108" height="22" rx="10" fill="#0a1318" stroke="#67e8f9" stroke-width="1"/>
+  <text x="558" y="140" text-anchor="middle" fill="#67e8f9" font-family="monospace" font-size="9" font-weight="bold">② created next</text>
+
+  <!-- Arrow 2→3 -->
+  <line x1="380" y1="170" x2="380" y2="190" stroke="#67e8f9" stroke-width="1.5" stroke-dasharray="3,2"/>
+  <polygon points="376,188 380,196 384,188" fill="#67e8f9"/>
+  <text x="420" y="185" fill="#656363" font-family="monospace" font-size="9">injects into ↓</text>
+
+  <!-- Row 3: UserService -->
+  <rect x="270" y="198" width="220" height="52" rx="3" fill="#141414" stroke="#67e8f9" stroke-width="1.5"/>
+  <text x="380" y="221" text-anchor="middle" fill="#f1ecec" font-family="monospace" font-size="13" font-weight="bold">UserService</text>
+  <text x="380" y="238" text-anchor="middle" fill="#656363" font-family="monospace" font-size="9">needs UserRepository</text>
+  <rect x="504" y="206" width="108" height="22" rx="10" fill="#0a1318" stroke="#67e8f9" stroke-width="1"/>
+  <text x="558" y="222" text-anchor="middle" fill="#67e8f9" font-family="monospace" font-size="9" font-weight="bold">③ created next</text>
+
+  <!-- Arrow 3→4 -->
+  <line x1="380" y1="252" x2="380" y2="272" stroke="#b7b1b1" stroke-width="1.5" stroke-dasharray="3,2"/>
+  <polygon points="376,270 380,278 384,270" fill="#b7b1b1"/>
+  <text x="420" y="267" fill="#656363" font-family="monospace" font-size="9">injects into ↓</text>
+
+  <!-- Row 4: UserController -->
+  <rect x="270" y="280" width="220" height="22" rx="3" fill="#141414" stroke="#b7b1b1" stroke-width="1.5"/>
+  <text x="380" y="296" text-anchor="middle" fill="#b7b1b1" font-family="monospace" font-size="12" font-weight="bold">UserController</text>
+  <rect x="504" y="280" width="108" height="22" rx="10" fill="#141414" stroke="#b7b1b1" stroke-width="1"/>
+  <text x="558" y="296" text-anchor="middle" fill="#b7b1b1" font-family="monospace" font-size="9" font-weight="bold">④ created last</text>
+
+  <!-- Left side label -->
+  <text x="148" y="156" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="10" font-weight="bold">Spring figures</text>
+  <text x="148" y="172" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="10" font-weight="bold">this order out</text>
+  <text x="148" y="192" text-anchor="middle" fill="#656363" font-family="monospace" font-size="9">automatically.</text>
+  <text x="148" y="208" text-anchor="middle" fill="#656363" font-family="monospace" font-size="9">You never</text>
+  <text x="148" y="224" text-anchor="middle" fill="#656363" font-family="monospace" font-size="9">specify it.</text>
+</svg>

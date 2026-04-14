@@ -5,6 +5,7 @@ import { Pre, Code } from "./CodeBlock";
 import { Callout } from "./Callout";
 import { H2, H3, H4 } from "./Heading";
 import { Complexity } from "./ComplexityBadge";
+import { Figure } from "./Figure";
 
 const components = {
   // Override HTML elements
@@ -16,6 +17,7 @@ const components = {
   // Custom MDX components (used as JSX in .mdx files)
   Callout,
   Complexity,
+  Figure,
 };
 
 interface MDXContentProps {

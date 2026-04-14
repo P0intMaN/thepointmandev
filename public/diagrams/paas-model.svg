@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="260" viewBox="0 0 760 260">
+  <rect width="760" height="260" fill="#0d0d0d"/>
+
+  <text x="380" y="20" text-anchor="middle" fill="#656363" font-family="monospace" font-size="10">// PaaS promise: you write code, we handle everything else</text>
+
+  <!-- Developer side -->
+  <rect x="16" y="32" width="180" height="216" rx="4" fill="#141414" stroke="#262626" stroke-width="1"/>
+  <text x="106" y="52" text-anchor="middle" fill="#b7b1b1" font-family="monospace" font-size="10" font-weight="bold">Developer</text>
+
+  <rect x="32" y="64" width="148" height="60" rx="3" fill="#1a1a1a" stroke="#262626"/>
+  <text x="106" y="82" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">write code</text>
+  <text x="106" y="98" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="9" font-weight="bold">git push heroku main</text>
+  <text x="106" y="112" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">that's it. you're done.</text>
+
+  <rect x="32" y="140" width="148" height="96" rx="3" fill="#1a1a1a" stroke="#262626"/>
+  <text x="106" y="158" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">you never think about:</text>
+  <text x="106" y="174" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">— which OS runs the app</text>
+  <text x="106" y="190" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">— how dependencies install</text>
+  <text x="106" y="206" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">— how it scales</text>
+  <text x="106" y="222" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">— how routing works</text>
+
+  <!-- Arrow -->
+  <line x1="198" y1="140" x2="224" y2="140" stroke="#4ade80" stroke-width="2"/>
+  <polygon points="222,136 230,140 222,144" fill="#4ade80"/>
+
+  <!-- PaaS platform -->
+  <rect x="232" y="32" width="512" height="216" rx="4" fill="#141414" stroke="#4ade80" stroke-width="1.5"/>
+  <text x="488" y="52" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="10" font-weight="bold">PaaS Platform (Heroku / dotCloud)</text>
+  <text x="488" y="66" text-anchor="middle" fill="#656363" font-family="monospace" font-size="9">everything the developer doesn't want to care about</text>
+
+  <rect x="248" y="78" width="112" height="52" rx="3" fill="#1a1a1a" stroke="#262626"/>
+  <text x="304" y="98" text-anchor="middle" fill="#b7b1b1" font-family="monospace" font-size="9" font-weight="bold">Build</text>
+  <text x="304" y="113" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">detect runtime</text>
+  <text x="304" y="125" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">install deps</text>
+
+  <rect x="376" y="78" width="112" height="52" rx="3" fill="#1a1a1a" stroke="#262626"/>
+  <text x="432" y="98" text-anchor="middle" fill="#b7b1b1" font-family="monospace" font-size="9" font-weight="bold">Run</text>
+  <text x="432" y="113" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">start processes</text>
+  <text x="432" y="125" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">manage lifecycle</text>
+
+  <rect x="504" y="78" width="112" height="52" rx="3" fill="#1a1a1a" stroke="#262626"/>
+  <text x="560" y="98" text-anchor="middle" fill="#b7b1b1" font-family="monospace" font-size="9" font-weight="bold">Route</text>
+  <text x="560" y="113" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">DNS + load balance</text>
+  <text x="560" y="125" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">SSL termination</text>
+
+  <rect x="632" y="78" width="96" height="52" rx="3" fill="#1a1a1a" stroke="#262626"/>
+  <text x="680" y="98" text-anchor="middle" fill="#b7b1b1" font-family="monospace" font-size="9" font-weight="bold">Scale</text>
+  <text x="680" y="113" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">more dynos</text>
+  <text x="680" y="125" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">on demand</text>
+
+  <!-- Internal isolation layer -->
+  <rect x="248" y="148" width="480" height="88" rx="3" fill="#0d1a0d" stroke="#4ade80" stroke-width="1"/>
+  <text x="488" y="166" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="9" font-weight="bold">Internal Isolation Layer — the hard problem</text>
+  <text x="488" y="182" text-anchor="middle" fill="#656363" font-family="monospace" font-size="9">customer A's Python app must not interfere with customer B's Node app</text>
+  <text x="488" y="198" text-anchor="middle" fill="#656363" font-family="monospace" font-size="9">both run on the same physical servers — they must be completely isolated</text>
+  <text x="488" y="218" text-anchor="middle" fill="#fbbf24" font-family="monospace" font-size="9">this is the problem dotCloud solved internally — and then open-sourced</text>
+</svg>

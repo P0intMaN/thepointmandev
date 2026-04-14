@@ -153,6 +153,13 @@ UserController (needs UserService — created last)
 
 Spring figures this order out automatically. You never specify it.
 
+<Figure
+  src="/diagrams/dependency-graph.svg"
+  alt="Spring dependency graph resolution — beans created leaves first"
+  caption="Spring topologically sorts your beans and creates them in dependency order. You declare what each class needs; Spring builds the graph."
+  label="dependency-graph.svg"
+/>
+
 ### What Happens When a Dependency Is Missing?
 
 Say `UserService` requires a `PaymentGateway` but you forgot to annotate `PaymentGateway` with `@Component`:

@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="250" viewBox="0 0 760 250">
+  <rect width="760" height="250" fill="#0d0d0d"/>
+
+  <text x="380" y="20" text-anchor="middle" fill="#656363" font-family="monospace" font-size="10">// how Spring Boot decides what to configure for you</text>
+
+  <!-- Step 1: Classpath -->
+  <rect x="290" y="32" width="180" height="44" rx="3" fill="#141414" stroke="#262626" stroke-width="1.5"/>
+  <text x="380" y="51" text-anchor="middle" fill="#b7b1b1" font-family="monospace" font-size="11" font-weight="bold">Classpath</text>
+  <text x="380" y="67" text-anchor="middle" fill="#656363" font-family="monospace" font-size="9">HikariCP, Jackson, Tomcat…</text>
+
+  <!-- Arrow down -->
+  <line x1="380" y1="78" x2="380" y2="96" stroke="#262626" stroke-width="1.5"/>
+  <polygon points="376,94 380,102 384,94" fill="#262626"/>
+
+  <!-- Step 2: Load auto-config candidates -->
+  <rect x="248" y="104" width="264" height="44" rx="3" fill="#141414" stroke="#262626" stroke-width="1.5"/>
+  <text x="380" y="122" text-anchor="middle" fill="#b7b1b1" font-family="monospace" font-size="11" font-weight="bold">Load auto-config candidates</text>
+  <text x="380" y="138" text-anchor="middle" fill="#656363" font-family="monospace" font-size="9">hundreds from spring.factories / .imports</text>
+
+  <!-- Arrow down -->
+  <line x1="380" y1="150" x2="380" y2="166" stroke="#262626" stroke-width="1.5"/>
+  <polygon points="376,164 380,172 384,164" fill="#262626"/>
+
+  <!-- Step 3: @Conditional check -->
+  <!-- Diamond shape for decision -->
+  <polygon points="380,174 440,200 380,226 320,200" fill="#141414" stroke="#fbbf24" stroke-width="1.5"/>
+  <text x="380" y="196" text-anchor="middle" fill="#fbbf24" font-family="monospace" font-size="9" font-weight="bold">@Conditional</text>
+  <text x="380" y="210" text-anchor="middle" fill="#fbbf24" font-family="monospace" font-size="9" font-weight="bold">check</text>
+
+  <!-- Arrow right: condition true → bean created -->
+  <line x1="442" y1="200" x2="496" y2="200" stroke="#4ade80" stroke-width="1.5"/>
+  <polygon points="494,196 502,200 494,204" fill="#4ade80"/>
+  <text x="469" y="195" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="9">true</text>
+
+  <rect x="504" y="178" width="144" height="44" rx="3" fill="#0d1a0d" stroke="#4ade80" stroke-width="1.5"/>
+  <text x="576" y="197" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="11" font-weight="bold">Bean created ✓</text>
+  <text x="576" y="213" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">@ConditionalOnClass matched</text>
+
+  <!-- Arrow left: condition false → skipped -->
+  <line x1="320" y1="200" x2="262" y2="200" stroke="#f87171" stroke-width="1.5"/>
+  <polygon points="264,196 256,200 264,204" fill="#f87171"/>
+  <text x="291" y="195" text-anchor="middle" fill="#f87171" font-family="monospace" font-size="9">false</text>
+
+  <rect x="114" y="178" width="140" height="44" rx="3" fill="#1c0a0a" stroke="#f87171" stroke-width="1.5"/>
+  <text x="184" y="197" text-anchor="middle" fill="#f87171" font-family="monospace" font-size="11" font-weight="bold">Skipped ✗</text>
+  <text x="184" y="213" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">class not on classpath</text>
+</svg>

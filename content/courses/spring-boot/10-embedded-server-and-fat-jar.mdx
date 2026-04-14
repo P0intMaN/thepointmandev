@@ -64,6 +64,13 @@ When `SpringApplication.run()` is called:
 
 Your application *is* the server. The JVM process that runs your code is also the process that handles HTTP connections.
 
+<Figure
+  src="/diagrams/fat-jar-vs-war.svg"
+  alt="Comparison of old WAR-in-Tomcat model versus new JAR-with-embedded-Tomcat model"
+  caption="Before: your app lived inside an external server shared with others. After: the server lives inside your JAR. One file, one command, complete isolation."
+  label="fat-jar-vs-war.svg"
+/>
+
 ---
 
 ## What Is a Fat JAR?

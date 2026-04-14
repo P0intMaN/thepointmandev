@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="290" viewBox="0 0 760 290">
+  <rect width="760" height="290" fill="#0d0d0d"/>
+
+  <text x="380" y="22" text-anchor="middle" fill="#f87171" font-family="monospace" font-size="10">// four disconnected files — any mismatch is a runtime error, not a compile error</text>
+
+  <!-- Java Code (top center) -->
+  <rect x="290" y="34" width="180" height="52" rx="3" fill="#141414" stroke="#4ade80" stroke-width="1.5"/>
+  <text x="380" y="56" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="12" font-weight="bold">Java Code</text>
+  <text x="380" y="73" text-anchor="middle" fill="#656363" font-family="monospace" font-size="9">UserService.java etc.</text>
+
+  <!-- Disconnect lines from Java Code to XML files (dashed red) -->
+  <!-- Java Code → applicationContext.xml (bottom-left) -->
+  <line x1="320" y1="86" x2="166" y2="148" stroke="#f87171" stroke-width="1" stroke-dasharray="5,3"/>
+  <!-- Java Code → web.xml (bottom-left-center) -->
+  <line x1="360" y1="86" x2="280" y2="148" stroke="#f87171" stroke-width="1" stroke-dasharray="5,3"/>
+  <!-- Java Code → dispatcher-servlet.xml (bottom-right-center) -->
+  <line x1="400" y1="86" x2="480" y2="148" stroke="#f87171" stroke-width="1" stroke-dasharray="5,3"/>
+  <!-- Java Code → jboss.xml (bottom-right) -->
+  <line x1="440" y1="86" x2="594" y2="148" stroke="#f87171" stroke-width="1" stroke-dasharray="5,3"/>
+
+  <!-- XML files row -->
+  <!-- applicationContext.xml -->
+  <rect x="24" y="150" width="168" height="80" rx="3" fill="#141414" stroke="#fbbf24" stroke-width="1.5"/>
+  <rect x="24" y="150" width="168" height="22" rx="3" fill="#1c1400" stroke="#fbbf24" stroke-width="1"/>
+  <text x="108" y="165" text-anchor="middle" fill="#fbbf24" font-family="monospace" font-size="9" font-weight="bold">applicationContext.xml</text>
+  <text x="108" y="184" text-anchor="middle" fill="#b7b1b1" font-family="monospace" font-size="9">root Spring beans</text>
+  <text x="108" y="200" text-anchor="middle" fill="#656363" font-family="monospace" font-size="9">datasource, services,</text>
+  <text x="108" y="218" text-anchor="middle" fill="#656363" font-family="monospace" font-size="9">repositories</text>
+
+  <!-- web.xml -->
+  <rect x="210" y="150" width="148" height="80" rx="3" fill="#141414" stroke="#fbbf24" stroke-width="1.5"/>
+  <rect x="210" y="150" width="148" height="22" rx="3" fill="#1c1400" stroke="#fbbf24" stroke-width="1"/>
+  <text x="284" y="165" text-anchor="middle" fill="#fbbf24" font-family="monospace" font-size="9" font-weight="bold">web.xml</text>
+  <text x="284" y="184" text-anchor="middle" fill="#b7b1b1" font-family="monospace" font-size="9">servlet container</text>
+  <text x="284" y="200" text-anchor="middle" fill="#b7b1b1" font-family="monospace" font-size="9">bootstrap</text>
+  <text x="284" y="218" text-anchor="middle" fill="#656363" font-family="monospace" font-size="9">refs context.xml</text>
+
+  <!-- dispatcher-servlet.xml -->
+  <rect x="402" y="150" width="168" height="80" rx="3" fill="#141414" stroke="#fbbf24" stroke-width="1.5"/>
+  <rect x="402" y="150" width="168" height="22" rx="3" fill="#1c1400" stroke="#fbbf24" stroke-width="1"/>
+  <text x="486" y="165" text-anchor="middle" fill="#fbbf24" font-family="monospace" font-size="9" font-weight="bold">dispatcher-servlet.xml</text>
+  <text x="486" y="184" text-anchor="middle" fill="#b7b1b1" font-family="monospace" font-size="9">Spring MVC layer</text>
+  <text x="486" y="200" text-anchor="middle" fill="#656363" font-family="monospace" font-size="9">controllers, view</text>
+  <text x="486" y="218" text-anchor="middle" fill="#656363" font-family="monospace" font-size="9">resolvers, mappings</text>
+
+  <!-- jboss.xml -->
+  <rect x="584" y="150" width="152" height="80" rx="3" fill="#141414" stroke="#fbbf24" stroke-width="1.5"/>
+  <rect x="584" y="150" width="152" height="22" rx="3" fill="#1c1400" stroke="#fbbf24" stroke-width="1"/>
+  <text x="660" y="165" text-anchor="middle" fill="#fbbf24" font-family="monospace" font-size="9" font-weight="bold">jboss.xml</text>
+  <text x="660" y="184" text-anchor="middle" fill="#b7b1b1" font-family="monospace" font-size="9">vendor-specific</text>
+  <text x="660" y="200" text-anchor="middle" fill="#b7b1b1" font-family="monospace" font-size="9">JNDI names</text>
+  <text x="660" y="218" text-anchor="middle" fill="#656363" font-family="monospace" font-size="9">ties to one server</text>
+
+  <!-- Warning bar at bottom -->
+  <rect x="24" y="248" width="712" height="30" rx="3" fill="#1c0a0a" stroke="#f87171" stroke-width="1"/>
+  <text x="380" y="267" text-anchor="middle" fill="#f87171" font-family="monospace" font-size="10">rename a class → update every XML by hand → miss one → runtime error in production</text>
+</svg>

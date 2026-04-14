@@ -194,6 +194,13 @@ spring.datasource.password=secret
 
 You wrote zero configuration. Spring Boot read the classpath, read your properties, and assembled a fully working database layer.
 
+<Figure
+  src="/diagrams/auto-config-flow.svg"
+  alt="Spring Boot auto-configuration conditional decision flow"
+  caption="Auto-configuration is not magic — it's a conditional bean registration system. Every decision is made by a @Conditional annotation you can read and override."
+  label="auto-config-flow.svg"
+/>
+
 ---
 
 ## Seeing What Spring Boot Is Actually Doing

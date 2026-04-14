@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="300" viewBox="0 0 760 300">
+  <rect width="760" height="300" fill="#0d0d0d"/>
+
+  <text x="380" y="18" text-anchor="middle" fill="#656363" font-family="monospace" font-size="10">// same machine, two different views of reality</text>
+
+  <!-- LEFT: Real filesystem -->
+  <text x="178" y="38" text-anchor="middle" fill="#b7b1b1" font-family="monospace" font-size="10" font-weight="bold">Real Filesystem</text>
+  <text x="178" y="52" text-anchor="middle" fill="#656363" font-family="monospace" font-size="9">what the host kernel sees</text>
+
+  <!-- root -->
+  <rect x="130" y="62" width="96" height="26" rx="3" fill="#141414" stroke="#262626"/>
+  <text x="178" y="79" text-anchor="middle" fill="#b7b1b1" font-family="monospace" font-size="9">/  (true root)</text>
+
+  <!-- lines from root -->
+  <line x1="178" y1="88" x2="178" y2="100" stroke="#262626" stroke-width="1"/>
+  <line x1="58" y1="100" x2="300" y2="100" stroke="#262626" stroke-width="1"/>
+  <line x1="58" y1="100" x2="58" y2="112" stroke="#262626" stroke-width="1"/>
+  <line x1="138" y1="100" x2="138" y2="112" stroke="#262626" stroke-width="1"/>
+  <line x1="218" y1="100" x2="218" y2="112" stroke="#262626" stroke-width="1"/>
+  <line x1="300" y1="100" x2="300" y2="112" stroke="#262626" stroke-width="1"/>
+
+  <rect x="22" y="112" width="72" height="22" rx="2" fill="#141414" stroke="#262626"/>
+  <text x="58" y="127" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">/bin</text>
+
+  <rect x="102" y="112" width="72" height="22" rx="2" fill="#141414" stroke="#262626"/>
+  <text x="138" y="127" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">/home</text>
+
+  <rect x="182" y="112" width="72" height="22" rx="2" fill="#141414" stroke="#262626"/>
+  <text x="218" y="127" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">/proc</text>
+
+  <rect x="264" y="112" width="72" height="22" rx="2" fill="#141414" stroke="#262626"/>
+  <text x="300" y="127" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">/var</text>
+
+  <!-- /var → chroot -->
+  <line x1="300" y1="134" x2="300" y2="146" stroke="#262626" stroke-width="1"/>
+  <rect x="254" y="146" width="92" height="22" rx="2" fill="#0d1a0d" stroke="#4ade80" stroke-width="1"/>
+  <text x="300" y="161" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="8">/var/chroot/jail</text>
+
+  <!-- jail contents -->
+  <line x1="300" y1="168" x2="300" y2="180" stroke="#4ade80" stroke-width="1"/>
+  <line x1="268" y1="180" x2="332" y2="180" stroke="#4ade80" stroke-width="1"/>
+  <line x1="268" y1="180" x2="268" y2="192" stroke="#4ade80" stroke-width="1"/>
+  <line x1="332" y1="180" x2="332" y2="192" stroke="#4ade80" stroke-width="1"/>
+
+  <rect x="232" y="192" width="72" height="22" rx="2" fill="#141414" stroke="#4ade80" stroke-width="1"/>
+  <text x="268" y="207" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="8">bin/</text>
+
+  <rect x="296" y="192" width="72" height="22" rx="2" fill="#141414" stroke="#4ade80" stroke-width="1"/>
+  <text x="332" y="207" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="8">lib/</text>
+
+  <text x="178" y="248" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">/home, /proc, /bin all visible</text>
+  <text x="178" y="264" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">host processes visible in /proc</text>
+  <text x="178" y="280" text-anchor="middle" fill="#fbbf24" font-family="monospace" font-size="8">no isolation beyond filesystem</text>
+
+  <!-- Divider -->
+  <line x1="380" y1="32" x2="380" y2="290" stroke="#262626" stroke-width="1" stroke-dasharray="4,3"/>
+
+  <!-- RIGHT: chroot'd process view -->
+  <text x="570" y="38" text-anchor="middle" fill="#b7b1b1" font-family="monospace" font-size="10" font-weight="bold">Chroot'd Process View</text>
+  <text x="570" y="52" text-anchor="middle" fill="#656363" font-family="monospace" font-size="9">what the jailed process believes</text>
+
+  <!-- fake root -->
+  <rect x="522" y="62" width="96" height="26" rx="3" fill="#0d1a0d" stroke="#4ade80" stroke-width="1.5"/>
+  <text x="570" y="73" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="8" font-weight="bold">/  (fake root)</text>
+  <text x="570" y="84" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">= /var/chroot/jail on host</text>
+
+  <!-- lines from fake root -->
+  <line x1="570" y1="88" x2="570" y2="100" stroke="#4ade80" stroke-width="1"/>
+  <line x1="538" y1="100" x2="602" y2="100" stroke="#4ade80" stroke-width="1"/>
+  <line x1="538" y1="100" x2="538" y2="112" stroke="#4ade80" stroke-width="1"/>
+  <line x1="602" y1="100" x2="602" y2="112" stroke="#4ade80" stroke-width="1"/>
+
+  <rect x="502" y="112" width="72" height="22" rx="2" fill="#141414" stroke="#4ade80" stroke-width="1"/>
+  <text x="538" y="127" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="8">/bin</text>
+
+  <rect x="566" y="112" width="72" height="22" rx="2" fill="#141414" stroke="#4ade80" stroke-width="1"/>
+  <text x="602" y="127" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="8">/lib</text>
+
+  <!-- can't see -->
+  <text x="570" y="170" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">cannot see /home</text>
+  <text x="570" y="186" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">cannot see /proc (real one)</text>
+  <text x="570" y="202" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">cannot cd .. past /</text>
+
+  <!-- limitation callout -->
+  <rect x="412" y="220" width="316" height="56" rx="3" fill="#1a0d0d" stroke="#f87171" stroke-width="1"/>
+  <text x="570" y="238" text-anchor="middle" fill="#f87171" font-family="monospace" font-size="9" font-weight="bold">What chroot does NOT isolate</text>
+  <text x="570" y="254" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">processes — host PIDs still visible via /proc</text>
+  <text x="570" y="268" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">network — same interfaces, same ports</text>
+</svg>

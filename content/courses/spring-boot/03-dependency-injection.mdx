@@ -135,6 +135,13 @@ Here's the core insight of Dependency Injection:
 
 > **A class should not be responsible for creating its own dependencies. It should declare what it needs and receive them from the outside.**
 
+<Figure
+  src="/diagrams/di-diagram.svg"
+  alt="Diagram comparing tight coupling versus dependency injection"
+  caption="Left: UserService creates its own UserRepository — tightly coupled. Right: Spring IoC creates both and injects the dependency — loosely coupled and testable."
+  label="dependency-injection.svg"
+/>
+
 Applied to `UserService`:
 
 ```java

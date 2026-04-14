@@ -64,6 +64,14 @@ const icons: Record<string, React.ReactNode> = {
       <path d="M12 22V10" stroke="currentColor" strokeWidth="1.2" fill="none" strokeLinecap="round" opacity=".4"/>
     </svg>
   ),
+  container: (
+    // Stacked container layers — Docker / containers courses
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <rect x="2" y="15" width="20" height="5" rx="1.5" fill="currentColor"/>
+      <rect x="2" y="9"  width="20" height="5" rx="1.5" fill="currentColor" opacity=".65"/>
+      <rect x="2" y="3"  width="20" height="5" rx="1.5" fill="currentColor" opacity=".3"/>
+    </svg>
+  ),
 };
 
 const levelDefault: Record<string, string> = {

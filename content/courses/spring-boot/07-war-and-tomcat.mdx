@@ -60,6 +60,13 @@ Spring MVC doesn't replace servlets — it uses them. At its core, Spring MVC re
 
 Every HTTP request to a Spring MVC application goes to this one servlet. The DispatcherServlet then consults your `@RequestMapping` annotations to find the right `@Controller` method, calls it, and writes the response. The DispatcherServlet is the framework calling your code.
 
+<Figure
+  src="/diagrams/dispatcher-servlet-flow.svg"
+  alt="HTTP request flow through Tomcat, DispatcherServlet, and your controller"
+  caption="Every request flows through Tomcat → DispatcherServlet → your @Controller. You only write the controller method — Spring handles everything else."
+  label="dispatcher-servlet-flow.svg"
+/>
+
 ---
 
 ## What Is a WAR File?

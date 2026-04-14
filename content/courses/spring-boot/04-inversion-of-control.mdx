@@ -205,6 +205,13 @@ Here's what happens to a singleton bean from application start to shutdown:
 6. DESTRUCTION — the bean is released
 ```
 
+<Figure
+  src="/diagrams/bean-lifecycle.svg"
+  alt="Spring bean lifecycle: six stages from instantiation to destruction"
+  caption="The six stages of a Spring singleton bean's life — from constructor call to graceful shutdown."
+  label="bean-lifecycle.svg"
+/>
+
 ### @PostConstruct — Initialisation Hook
 
 You might need to do something *after* Spring has created and injected your bean — like loading a cache, validating configuration, or establishing a connection.

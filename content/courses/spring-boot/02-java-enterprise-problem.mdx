@@ -181,6 +181,13 @@ To create one `UserService`, you needed:
 
 **Five files for one component.** All of them had to stay perfectly in sync. Rename a method in the bean? Update the remote interface. Update both XML files. Miss one and you find out at runtime — after deploying to the application server and waiting for it to boot.
 
+<Figure
+  src="/diagrams/ejb-5-files.svg"
+  alt="The five files required to create one EJB component"
+  caption="Five files to create one UserService. All must stay in sync. Any mismatch is a runtime error found at 2am."
+  label="ejb-5-files.svg"
+/>
+
 ---
 
 ## The Calling Side Wasn't Pretty Either

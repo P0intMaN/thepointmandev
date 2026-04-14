@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="240" viewBox="0 0 760 240">
+  <rect width="760" height="240" fill="#0d0d0d"/>
+
+  <text x="380" y="20" text-anchor="middle" fill="#656363" font-family="monospace" font-size="10">// the VM image IS the environment — ship the image, not the instructions</text>
+
+  <!-- LEFT: Old way -->
+  <rect x="16" y="32" width="330" height="192" rx="4" fill="#141414" stroke="#f87171" stroke-width="1"/>
+  <text x="181" y="50" text-anchor="middle" fill="#f87171" font-family="monospace" font-size="10" font-weight="bold">Bare Metal — Ship Code + Hope</text>
+
+  <rect x="34" y="60" width="294" height="32" rx="3" fill="#1a1a1a" stroke="#262626"/>
+  <text x="181" y="76" text-anchor="middle" fill="#b7b1b1" font-family="monospace" font-size="9">git clone + setup.sh + pip install</text>
+  <text x="181" y="88" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">result depends on server's current state</text>
+
+  <rect x="34" y="100" width="294" height="22" rx="3" fill="#1c0a0a" stroke="#f87171"/>
+  <text x="181" y="116" text-anchor="middle" fill="#f87171" font-family="monospace" font-size="9">Dev: Python 3.11 · libssl 3.0 · Django 4.2</text>
+  <rect x="34" y="128" width="294" height="22" rx="3" fill="#1c0a0a" stroke="#f87171"/>
+  <text x="181" y="144" text-anchor="middle" fill="#f87171" font-family="monospace" font-size="9">Staging: Python 3.8 · libssl 1.1 · Django 3.2</text>
+  <rect x="34" y="156" width="294" height="22" rx="3" fill="#1c0a0a" stroke="#f87171"/>
+  <text x="181" y="172" text-anchor="middle" fill="#f87171" font-family="monospace" font-size="9">Prod: Python 3.6 · libssl 1.0 · Django 3.0</text>
+
+  <text x="181" y="208" text-anchor="middle" fill="#f87171" font-family="monospace" font-size="9">3 environments. 3 different outcomes. ✗</text>
+
+  <!-- Arrow -->
+  <line x1="350" y1="128" x2="370" y2="128" stroke="#4ade80" stroke-width="2"/>
+  <polygon points="368,124 376,128 368,132" fill="#4ade80"/>
+  <text x="360" y="120" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="9">VM</text>
+
+  <!-- RIGHT: VM way -->
+  <rect x="378" y="32" width="366" height="192" rx="4" fill="#141414" stroke="#4ade80" stroke-width="1.5"/>
+  <text x="561" y="50" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="10" font-weight="bold">VM — Ship the Whole Environment</text>
+
+  <!-- VM image box -->
+  <rect x="396" y="60" width="330" height="80" rx="3" fill="#0d1a0d" stroke="#4ade80" stroke-width="1.5"/>
+  <text x="561" y="78" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="9" font-weight="bold">myapp-v1.2.0.ova  (VM Image)</text>
+  <text x="561" y="94" text-anchor="middle" fill="#b7b1b1" font-family="monospace" font-size="9">Ubuntu 22.04 · Python 3.11 · libssl 3.0</text>
+  <text x="561" y="108" text-anchor="middle" fill="#b7b1b1" font-family="monospace" font-size="9">Django 4.2.1 · all dependencies locked</text>
+  <text x="561" y="124" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">frozen snapshot of the entire environment</text>
+
+  <!-- 3 identical deploys -->
+  <rect x="396" y="150" width="96" height="30" rx="3" fill="#141414" stroke="#262626"/>
+  <text x="444" y="162" text-anchor="middle" fill="#b7b1b1" font-family="monospace" font-size="8">Dev VM</text>
+  <text x="444" y="175" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="8">identical ✓</text>
+
+  <rect x="512" y="150" width="96" height="30" rx="3" fill="#141414" stroke="#262626"/>
+  <text x="560" y="162" text-anchor="middle" fill="#b7b1b1" font-family="monospace" font-size="8">Staging VM</text>
+  <text x="560" y="175" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="8">identical ✓</text>
+
+  <rect x="628" y="150" width="96" height="30" rx="3" fill="#141414" stroke="#262626"/>
+  <text x="676" y="162" text-anchor="middle" fill="#b7b1b1" font-family="monospace" font-size="8">Prod VM</text>
+  <text x="676" y="175" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="8">identical ✓</text>
+
+  <text x="561" y="210" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="9">1 image. 3 identical environments. ✓</text>
+</svg>

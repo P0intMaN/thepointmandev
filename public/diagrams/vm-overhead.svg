@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="300" viewBox="0 0 760 300">
+  <rect width="760" height="300" fill="#0d0d0d"/>
+
+  <text x="380" y="20" text-anchor="middle" fill="#656363" font-family="monospace" font-size="10">// what you actually pay for when you run three VMs on one server</text>
+
+  <!-- Server outline -->
+  <rect x="16" y="30" width="728" height="258" rx="4" fill="#141414" stroke="#262626" stroke-width="1.5"/>
+  <text x="380" y="48" text-anchor="middle" fill="#656363" font-family="monospace" font-size="10">Physical Server — 32 GB RAM total</text>
+
+  <!-- VM 1 -->
+  <rect x="32" y="56" width="216" height="220" rx="3" fill="#0d0d0d" stroke="#fbbf24" stroke-width="1.5"/>
+  <text x="140" y="74" text-anchor="middle" fill="#fbbf24" font-family="monospace" font-size="10" font-weight="bold">VM 1</text>
+
+  <!-- Guest OS portion (big, red-tinted) -->
+  <rect x="44" y="82" width="192" height="140" rx="2" fill="#1c1400" stroke="#fbbf24" stroke-width="1"/>
+  <text x="140" y="100" text-anchor="middle" fill="#fbbf24" font-family="monospace" font-size="9" font-weight="bold">Guest OS — Ubuntu 22.04</text>
+  <text x="140" y="116" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">Linux kernel (~100 MB)</text>
+  <text x="140" y="130" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">systemd + init (~50 MB)</text>
+  <text x="140" y="144" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">system libraries (~200 MB)</text>
+  <text x="140" y="158" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">cron, ssh, syslog... (~80 MB)</text>
+  <text x="140" y="172" text-anchor="middle" fill="#fbbf24" font-family="monospace" font-size="9" font-weight="bold">~2 GB RAM just for OS</text>
+  <text x="140" y="188" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">none of this is your code</text>
+  <text x="140" y="208" text-anchor="middle" fill="#fbbf24" font-family="monospace" font-size="8">boot time: ~45 seconds</text>
+
+  <!-- App portion (small, green) -->
+  <rect x="44" y="228" width="192" height="38" rx="2" fill="#0d1a0d" stroke="#4ade80" stroke-width="1.5"/>
+  <text x="140" y="245" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="9" font-weight="bold">Your App</text>
+  <text x="140" y="259" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">~150 MB RAM (actual work)</text>
+
+  <!-- VM 2 -->
+  <rect x="272" y="56" width="216" height="220" rx="3" fill="#0d0d0d" stroke="#fbbf24" stroke-width="1.5"/>
+  <text x="380" y="74" text-anchor="middle" fill="#fbbf24" font-family="monospace" font-size="10" font-weight="bold">VM 2</text>
+
+  <rect x="284" y="82" width="192" height="140" rx="2" fill="#1c1400" stroke="#fbbf24" stroke-width="1"/>
+  <text x="380" y="100" text-anchor="middle" fill="#fbbf24" font-family="monospace" font-size="9" font-weight="bold">Guest OS — Ubuntu 22.04</text>
+  <text x="380" y="116" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">Linux kernel (~100 MB)</text>
+  <text x="380" y="130" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">systemd + init (~50 MB)</text>
+  <text x="380" y="144" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">system libraries (~200 MB)</text>
+  <text x="380" y="158" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">cron, ssh, syslog... (~80 MB)</text>
+  <text x="380" y="172" text-anchor="middle" fill="#fbbf24" font-family="monospace" font-size="9" font-weight="bold">~2 GB RAM just for OS</text>
+  <text x="380" y="188" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">none of this is your code</text>
+  <text x="380" y="208" text-anchor="middle" fill="#fbbf24" font-family="monospace" font-size="8">boot time: ~45 seconds</text>
+
+  <rect x="284" y="228" width="192" height="38" rx="2" fill="#0d1a0d" stroke="#4ade80" stroke-width="1.5"/>
+  <text x="380" y="245" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="9" font-weight="bold">Your App</text>
+  <text x="380" y="259" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">~150 MB RAM (actual work)</text>
+
+  <!-- VM 3 -->
+  <rect x="512" y="56" width="216" height="220" rx="3" fill="#0d0d0d" stroke="#fbbf24" stroke-width="1.5"/>
+  <text x="620" y="74" text-anchor="middle" fill="#fbbf24" font-family="monospace" font-size="10" font-weight="bold">VM 3</text>
+
+  <rect x="524" y="82" width="192" height="140" rx="2" fill="#1c1400" stroke="#fbbf24" stroke-width="1"/>
+  <text x="620" y="100" text-anchor="middle" fill="#fbbf24" font-family="monospace" font-size="9" font-weight="bold">Guest OS — Ubuntu 22.04</text>
+  <text x="620" y="116" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">Linux kernel (~100 MB)</text>
+  <text x="620" y="130" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">systemd + init (~50 MB)</text>
+  <text x="620" y="144" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">system libraries (~200 MB)</text>
+  <text x="620" y="158" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">cron, ssh, syslog... (~80 MB)</text>
+  <text x="620" y="172" text-anchor="middle" fill="#fbbf24" font-family="monospace" font-size="9" font-weight="bold">~2 GB RAM just for OS</text>
+  <text x="620" y="188" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">none of this is your code</text>
+  <text x="620" y="208" text-anchor="middle" fill="#fbbf24" font-family="monospace" font-size="8">boot time: ~45 seconds</text>
+
+  <rect x="524" y="228" width="192" height="38" rx="2" fill="#0d1a0d" stroke="#4ade80" stroke-width="1.5"/>
+  <text x="620" y="245" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="9" font-weight="bold">Your App</text>
+  <text x="620" y="259" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">~150 MB RAM (actual work)</text>
+</svg>

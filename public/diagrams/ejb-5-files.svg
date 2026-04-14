@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="210" viewBox="0 0 760 210">
+  <rect width="760" height="210" fill="#0d0d0d"/>
+
+  <text x="380" y="24" text-anchor="middle" fill="#f87171" font-family="monospace" font-size="11" font-weight="bold">5 files required for one simple component</text>
+
+  <!-- Card widths: 126px each, 11px gaps, margin: (760 - 5*126 - 4*11) / 2 = (760-630-44)/2 = 43 -->
+
+  <!-- Card 1: UserService.java (Remote Interface) -->
+  <rect x="43" y="38" width="126" height="152" rx="3" fill="#141414" stroke="#f87171" stroke-width="1"/>
+  <rect x="43" y="38" width="126" height="26" rx="3" fill="#1c1010" stroke="#f87171" stroke-width="1"/>
+  <text x="106" y="56" text-anchor="middle" fill="#f87171" font-family="monospace" font-size="9" font-weight="bold">UserService.java</text>
+  <text x="106" y="82" text-anchor="middle" fill="#f1ecec" font-family="monospace" font-size="10" font-weight="bold">Remote</text>
+  <text x="106" y="97" text-anchor="middle" fill="#f1ecec" font-family="monospace" font-size="10" font-weight="bold">Interface</text>
+  <text x="106" y="118" text-anchor="middle" fill="#656363" font-family="monospace" font-size="9">extends EJBObject</text>
+  <text x="106" y="136" text-anchor="middle" fill="#656363" font-family="monospace" font-size="9">every method must</text>
+  <text x="106" y="152" text-anchor="middle" fill="#656363" font-family="monospace" font-size="9">throws Remote-</text>
+  <text x="106" y="168" text-anchor="middle" fill="#656363" font-family="monospace" font-size="9">Exception</text>
+  <text x="106" y="184" text-anchor="middle" fill="#f87171" font-family="monospace" font-size="8">file 1 of 5</text>
+
+  <!-- Card 2: UserServiceHome.java -->
+  <rect x="180" y="38" width="126" height="152" rx="3" fill="#141414" stroke="#f87171" stroke-width="1"/>
+  <rect x="180" y="38" width="126" height="26" rx="3" fill="#1c1010" stroke="#f87171" stroke-width="1"/>
+  <text x="243" y="56" text-anchor="middle" fill="#f87171" font-family="monospace" font-size="9" font-weight="bold">UserServiceHome.java</text>
+  <text x="243" y="82" text-anchor="middle" fill="#f1ecec" font-family="monospace" font-size="10" font-weight="bold">Home</text>
+  <text x="243" y="97" text-anchor="middle" fill="#f1ecec" font-family="monospace" font-size="10" font-weight="bold">Interface</text>
+  <text x="243" y="118" text-anchor="middle" fill="#656363" font-family="monospace" font-size="9">extends EJBHome</text>
+  <text x="243" y="136" text-anchor="middle" fill="#656363" font-family="monospace" font-size="9">factory for creating</text>
+  <text x="243" y="152" text-anchor="middle" fill="#656363" font-family="monospace" font-size="9">bean instances</text>
+  <text x="243" y="168" text-anchor="middle" fill="#656363" font-family="monospace" font-size="9">can't just new()</text>
+  <text x="243" y="184" text-anchor="middle" fill="#f87171" font-family="monospace" font-size="8">file 2 of 5</text>
+
+  <!-- Card 3: UserServiceBean.java -->
+  <rect x="317" y="38" width="126" height="152" rx="3" fill="#141414" stroke="#f87171" stroke-width="1"/>
+  <rect x="317" y="38" width="126" height="26" rx="3" fill="#1c1010" stroke="#f87171" stroke-width="1"/>
+  <text x="380" y="56" text-anchor="middle" fill="#f87171" font-family="monospace" font-size="9" font-weight="bold">UserServiceBean.java</text>
+  <text x="380" y="82" text-anchor="middle" fill="#f1ecec" font-family="monospace" font-size="10" font-weight="bold">Bean</text>
+  <text x="380" y="97" text-anchor="middle" fill="#f1ecec" font-family="monospace" font-size="10" font-weight="bold">Implementation</text>
+  <text x="380" y="118" text-anchor="middle" fill="#656363" font-family="monospace" font-size="9">implements</text>
+  <text x="380" y="134" text-anchor="middle" fill="#656363" font-family="monospace" font-size="9">SessionBean</text>
+  <text x="380" y="152" text-anchor="middle" fill="#656363" font-family="monospace" font-size="9">5 empty lifecycle</text>
+  <text x="380" y="168" text-anchor="middle" fill="#656363" font-family="monospace" font-size="9">stubs required</text>
+  <text x="380" y="184" text-anchor="middle" fill="#f87171" font-family="monospace" font-size="8">file 3 of 5</text>
+
+  <!-- Card 4: ejb-jar.xml -->
+  <rect x="454" y="38" width="126" height="152" rx="3" fill="#141414" stroke="#fbbf24" stroke-width="1"/>
+  <rect x="454" y="38" width="126" height="26" rx="3" fill="#1c1400" stroke="#fbbf24" stroke-width="1"/>
+  <text x="517" y="56" text-anchor="middle" fill="#fbbf24" font-family="monospace" font-size="9" font-weight="bold">ejb-jar.xml</text>
+  <text x="517" y="82" text-anchor="middle" fill="#f1ecec" font-family="monospace" font-size="10" font-weight="bold">Standard</text>
+  <text x="517" y="97" text-anchor="middle" fill="#f1ecec" font-family="monospace" font-size="10" font-weight="bold">Deployment</text>
+  <text x="517" y="113" text-anchor="middle" fill="#f1ecec" font-family="monospace" font-size="10" font-weight="bold">Descriptor</text>
+  <text x="517" y="136" text-anchor="middle" fill="#656363" font-family="monospace" font-size="9">wrong class name</text>
+  <text x="517" y="152" text-anchor="middle" fill="#656363" font-family="monospace" font-size="9">→ runtime error</text>
+  <text x="517" y="168" text-anchor="middle" fill="#656363" font-family="monospace" font-size="9">(not compile)</text>
+  <text x="517" y="184" text-anchor="middle" fill="#fbbf24" font-family="monospace" font-size="8">file 4 of 5</text>
+
+  <!-- Card 5: jboss.xml -->
+  <rect x="591" y="38" width="126" height="152" rx="3" fill="#141414" stroke="#fbbf24" stroke-width="1"/>
+  <rect x="591" y="38" width="126" height="26" rx="3" fill="#1c1400" stroke="#fbbf24" stroke-width="1"/>
+  <text x="654" y="56" text-anchor="middle" fill="#fbbf24" font-family="monospace" font-size="9" font-weight="bold">jboss.xml</text>
+  <text x="654" y="82" text-anchor="middle" fill="#f1ecec" font-family="monospace" font-size="10" font-weight="bold">Vendor-Specific</text>
+  <text x="654" y="97" text-anchor="middle" fill="#f1ecec" font-family="monospace" font-size="10" font-weight="bold">Descriptor</text>
+  <text x="654" y="118" text-anchor="middle" fill="#656363" font-family="monospace" font-size="9">different per</text>
+  <text x="654" y="134" text-anchor="middle" fill="#656363" font-family="monospace" font-size="9">JBoss / WebSphere</text>
+  <text x="654" y="150" text-anchor="middle" fill="#656363" font-family="monospace" font-size="9">/ WebLogic</text>
+  <text x="654" y="168" text-anchor="middle" fill="#656363" font-family="monospace" font-size="9">locks to one server</text>
+  <text x="654" y="184" text-anchor="middle" fill="#fbbf24" font-family="monospace" font-size="8">file 5 of 5</text>
+</svg>

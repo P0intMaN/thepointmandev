@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="160" viewBox="0 0 760 160">
+  <rect width="760" height="160" fill="#0d0d0d"/>
+
+  <text x="380" y="20" text-anchor="middle" fill="#656363" font-family="monospace" font-size="10">// every HTTP request passes through this chain</text>
+
+  <!-- 5 stages: box w=110, gap=18, total=5*110+4*18=622, margin=(760-622)/2=69 -->
+  <!-- Positions: 69, 197, 325, 453, 581 -->
+
+  <!-- Stage 1: HTTP Client -->
+  <rect x="69" y="34" width="110" height="88" rx="3" fill="#141414" stroke="#262626" stroke-width="1.5"/>
+  <text x="124" y="70" text-anchor="middle" fill="#b7b1b1" font-family="monospace" font-size="11" font-weight="bold">HTTP</text>
+  <text x="124" y="85" text-anchor="middle" fill="#b7b1b1" font-family="monospace" font-size="11" font-weight="bold">Client</text>
+  <text x="124" y="108" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">GET /users/42</text>
+
+  <!-- Arrow 1→2 -->
+  <line x1="181" y1="78" x2="195" y2="78" stroke="#262626" stroke-width="1.5"/>
+  <polygon points="193,74 201,78 193,82" fill="#262626"/>
+
+  <!-- Stage 2: Tomcat -->
+  <rect x="203" y="34" width="110" height="88" rx="3" fill="#141414" stroke="#67e8f9" stroke-width="1.5"/>
+  <text x="258" y="63" text-anchor="middle" fill="#67e8f9" font-family="monospace" font-size="11" font-weight="bold">Tomcat</text>
+  <text x="258" y="80" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">parses raw TCP</text>
+  <text x="258" y="94" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">into Http</text>
+  <text x="258" y="108" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">ServletRequest</text>
+
+  <!-- Arrow 2→3 -->
+  <line x1="315" y1="78" x2="323" y2="78" stroke="#262626" stroke-width="1.5"/>
+  <polygon points="321,74 329,78 321,82" fill="#262626"/>
+
+  <!-- Stage 3: DispatcherServlet -->
+  <rect x="331" y="34" width="110" height="88" rx="3" fill="#141414" stroke="#67e8f9" stroke-width="1.5"/>
+  <text x="386" y="60" text-anchor="middle" fill="#67e8f9" font-family="monospace" font-size="10" font-weight="bold">Dispatcher-</text>
+  <text x="386" y="74" text-anchor="middle" fill="#67e8f9" font-family="monospace" font-size="10" font-weight="bold">Servlet</text>
+  <text x="386" y="91" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">routes to correct</text>
+  <text x="386" y="105" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">@Controller</text>
+
+  <!-- Arrow 3→4 -->
+  <line x1="443" y1="78" x2="451" y2="78" stroke="#4ade80" stroke-width="1.5"/>
+  <polygon points="449,74 457,78 449,82" fill="#4ade80"/>
+  <text x="447" y="70" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="8">calls you</text>
+
+  <!-- Stage 4: @Controller (Your Code) -->
+  <rect x="459" y="34" width="110" height="88" rx="3" fill="#141414" stroke="#4ade80" stroke-width="1.5"/>
+  <text x="514" y="60" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="10" font-weight="bold">@Controller</text>
+  <text x="514" y="76" text-anchor="middle" fill="#f1ecec" font-family="monospace" font-size="9" font-weight="bold">Your Code</text>
+  <text x="514" y="94" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">just return</text>
+  <text x="514" y="108" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">an object</text>
+
+  <!-- Arrow 4→5 -->
+  <line x1="571" y1="78" x2="579" y2="78" stroke="#262626" stroke-width="1.5"/>
+  <polygon points="577,74 585,78 577,82" fill="#262626"/>
+
+  <!-- Stage 5: HTTP Response -->
+  <rect x="587" y="34" width="110" height="88" rx="3" fill="#141414" stroke="#262626" stroke-width="1.5"/>
+  <text x="642" y="66" text-anchor="middle" fill="#b7b1b1" font-family="monospace" font-size="11" font-weight="bold">HTTP</text>
+  <text x="642" y="81" text-anchor="middle" fill="#b7b1b1" font-family="monospace" font-size="11" font-weight="bold">Response</text>
+  <text x="642" y="101" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">200 OK + JSON</text>
+
+  <!-- Bottom note -->
+  <text x="380" y="144" text-anchor="middle" fill="#656363" font-family="monospace" font-size="9">Spring MVC registers exactly one servlet with Tomcat — the DispatcherServlet. It calls the rest.</text>
+</svg>

@@ -1,0 +1,200 @@
+---
+title: "The Birth of dotCloud"
+courseSlug: "docker"
+lessonNumber: 4
+description: "How a struggling French PaaS startup accidentally built the most important developer tool of the decade — and had the wisdom to give it away."
+date: "2026-04-15"
+draft: false
+---
+
+## A Company Trying to Compete with Heroku
+
+It's 2008. Heroku has just launched, and it's doing something remarkable: you push code, your app appears on the internet. No servers. No SSH. No deployment ceremony. Just `git push` and done.
+
+The developer world collectively exhales. *This is what it should have always been.*
+
+A few years later, in 2010, a French developer named Solomon Hykes and his co-founders start a company in the Y Combinator batch. It's called **dotCloud**. The mission: build a better Heroku. A PaaS that supports multiple languages, multiple frameworks, multiple runtime environments — not just Ruby like Heroku.
+
+This sounds like a business problem. But to build it, they had to solve an infrastructure problem so deep it would change the industry.
+
+---
+
+## What PaaS Actually Promises
+
+To understand what dotCloud was building, you need to understand what a PaaS promises its users.
+
+<Figure
+  src="/diagrams/paas-model.svg"
+  alt="Developer does git push, PaaS handles build, run, route, and scale with internal isolation"
+  caption="The PaaS contract: you write code, we handle everything else. The hard part is in the fine print — the isolation layer."
+  label="paas-model.svg"
+/>
+
+From the developer's perspective, the interface is brutally simple:
+
+```bash
+git push heroku main
+```
+
+That one command triggers an entire pipeline the developer never sees:
+
+1. The platform detects your runtime (Python? Node? Ruby? Java?)
+2. Downloads and installs your dependencies
+3. Builds your application
+4. Starts your process
+5. Routes traffic to it through a load balancer
+6. Scales it when load increases
+
+No Nginx config. No systemd unit files. No deployment scripts. The developer writes code; the platform handles everything else.
+
+That's the promise. The implementation is where it gets interesting.
+
+---
+
+## The Hard Problem Nobody Talks About
+
+Here's the thing Heroku's marketing didn't advertise: every app on Heroku is running on shared infrastructure. Your Flask app and someone else's Node.js API are, physically, running on the same machines.
+
+For this to work, those applications must be completely isolated from each other:
+
+- Customer A's Python app must not be able to read Customer B's files
+- Customer A's runaway process must not be able to starve Customer B's app of CPU
+- Customer A's app must not be able to access Customer B's network traffic
+- If Customer A's app crashes spectacularly, Customer B's app must keep running
+
+And it has to work across completely different technology stacks. Customer A is running Python 2.7. Customer B is running Node.js 0.10. Customer C is running Java 7 with a custom native library. All three are on the same server, believing they have it to themselves.
+
+This is not a solved problem you can pull off a shelf in 2010. There is no "multi-tenant isolation" package you can `apt install`. You have to build it.
+
+dotCloud built it.
+
+---
+
+## What They Built: Containers Without the Name
+
+dotCloud's engineers went deep into the Linux kernel. They found two features that, together, gave them exactly what they needed:
+
+**Namespaces** let you create isolated views of system resources. A process inside a namespace sees only the processes, filesystems, and network interfaces you allow it to see. From its perspective, it's the only thing running on the machine — even though it's sharing a host with hundreds of other processes.
+
+**Control groups (cgroups)** let you limit and account for resource usage. You can say: this group of processes gets at most 512 MB of RAM and 20% of one CPU core. If they try to use more, the kernel enforces the limit. No process can accidentally starve its neighbors.
+
+Neither of these was new. Namespaces had been in the Linux kernel since 2002. Cgroups were merged in 2007. What dotCloud did was wrap them in tooling that made them practical to use at scale.
+
+They combined namespaces and cgroups with **LXC** (Linux Containers) — a userspace tool that had emerged to make these kernel features accessible — and built their own orchestration layer on top. Their internal tooling could spin up an isolated container for any customer's app in seconds, enforce resource limits, and tear it down just as fast.
+
+The result: dozens of customer applications running on the same physical server, each in complete isolation, each believing it had the machine to itself.
+
+---
+
+## The Business Wasn't Working
+
+The technical problem was solved. The business problem was harder.
+
+By 2012, dotCloud was struggling. Heroku had a head start, brand recognition, and Salesforce's acquisition backing. Google App Engine was offering free quotas to lock in developers. Amazon was building out Elastic Beanstalk. The PaaS market was getting crowded and expensive to compete in.
+
+dotCloud had good technology. It had customers. But it wasn't winning. Growth was slower than the runway was shrinking.
+
+The founders were sitting with an uncomfortable question: we've built this incredible internal container runtime. Our customers are using it every day without knowing it. It's the most sophisticated multi-tenant isolation system anyone has built outside of Google. And we're using it to... compete on features with Heroku?
+
+The insight that changed everything wasn't about PaaS at all.
+
+---
+
+## The Insight
+
+Solomon Hykes and the team looked at what they had built and asked a different question: *what if the container runtime itself is the product?*
+
+Not the PaaS API. Not the routing layer. Not the billing system. Just the piece that said: *take any application, wrap it in a container, run it on any Linux host, guaranteed isolated*.
+
+Because that solved a problem that wasn't just dotCloud's problem. That was *everyone's* problem. Every company deploying software had the same nightmare:
+
+- Works on my laptop, fails in staging
+- Staging is fine, production fails
+- Works on production, breaks after the OS update
+- Works here, can't reproduce it anywhere else
+
+If you could package an application and its entire environment — its filesystem, its dependencies, its runtime, its config — into a single portable unit that ran identically on any Linux machine, you'd solved environment drift forever. Not for one company's PaaS platform. For the entire industry.
+
+They had already built this. They just hadn't realized it was the main event.
+
+---
+
+## PyCon 2013: Five Minutes That Changed Everything
+
+On March 15, 2013, at PyCon in Santa Clara, Solomon Hykes took the stage for a lightning talk. Five minutes, no ceremony.
+
+He showed a command that looked like this:
+
+```bash
+docker run ubuntu echo hello world
+```
+
+And it ran. An Ubuntu environment, spun up from nothing, executed a command, and exited. On a MacBook. In seconds. With no VM running.
+
+```
+hello world
+```
+
+Then he showed shipping that environment to a server — any server — and running it identically. Same image, same environment, same result.
+
+The audience was quiet for a moment. Then the questions started. Can it do X? What about Y? How does it handle Z?
+
+The GitHub repository went up that same day. Within a week, it had over 10,000 stars.
+
+---
+
+## What They Actually Open-Sourced
+
+The key decision wasn't just "let's open-source our internal tool." It was: *what exactly do we open-source, and what do we hold back?*
+
+<Figure
+  src="/diagrams/dotcloud-to-docker.svg"
+  alt="dotCloud's internal stack showing PaaS API layer dropped and container runtime open-sourced as Docker"
+  caption="The pivot: drop the PaaS business layer, open-source the container runtime underneath it. The Linux kernel primitives stay unchanged — that's never been the hard part."
+  label="dotcloud-to-docker.svg"
+/>
+
+They open-sourced the container runtime — the part that could build, ship, and run containers on any Linux host. They called it **Docker**.
+
+They did not open-source the PaaS orchestration layer, the billing system, or the customer-facing API. Those were the dotCloud business. Docker was the infrastructure beneath it.
+
+The Linux kernel features underneath — namespaces and cgroups — were always there, always public. Docker didn't invent them. What Docker did was make them accessible. It put a clean, opinionated interface on top of three years of production battle-testing and said: here, anyone can use this now.
+
+---
+
+## The Company Becomes the Tool
+
+The response was so overwhelming that dotCloud made a final, irreversible decision: shut down the PaaS business and become Docker, Inc.
+
+The company that was trying to compete with Heroku became the company that made Heroku-style deployment accessible to every developer, on their own infrastructure, without paying a platform fee.
+
+They renamed the company. Changed the domain. Deprecated the PaaS. Hired engineers to work full-time on Docker. And watched as a tidal wave of adoption came in from every direction — individual developers, startups, enterprise teams, cloud providers.
+
+```
+2010      — dotCloud founded (Y Combinator batch)
+2012      — Container runtime mature, PaaS struggling
+Mar 2013  — PyCon lightning talk, GitHub repo published
+Late 2013 — dotCloud PaaS shut down, company renamed Docker, Inc.
+2014      — Docker 1.0 released, major cloud providers add support
+2015      — Docker Compose, Docker Swarm; Kubernetes emerges as orchestrator
+```
+
+---
+
+## Why It Mattered
+
+The timing was not coincidental. Docker arrived at the exact moment the industry needed it.
+
+The microservices movement was accelerating. Teams were splitting monoliths into dozens of small services, each in its own language, each with its own dependencies, each needing to be deployed independently. The VM overhead tax from the previous lesson was becoming unbearable. But the alternative — bare metal with manual dependency management — had already proven unworkable.
+
+Docker threaded the needle. Containers were isolated like VMs but started in milliseconds, not seconds. They were portable like VM images but measured in megabytes, not gigabytes. They were reproducible like Vagrant boxes but ran natively on Linux without a hypervisor tax.
+
+And crucially, they were simple. One CLI. One `Dockerfile`. One workflow. A developer on a Mac laptop could build a container, push it to a registry, and have it running on a Linux server in production — identically — in a single pipeline.
+
+The industry hadn't been waiting for containers. The kernel features were already there. It had been waiting for *Docker* — for someone to make containers so simple that reaching for a VM felt unnecessary.
+
+dotCloud, struggling to compete with Heroku, did it by accident.
+
+---
+
+> **Key Takeaway:** dotCloud was a PaaS startup trying to beat Heroku. To do so, they built a sophisticated container runtime using Linux namespaces and cgroups that could run any customer's app in complete isolation on shared hardware. When the PaaS business stalled, they recognized that the runtime itself — not the platform on top of it — was the real product. On March 15, 2013, Solomon Hykes gave a five-minute PyCon demo, pushed Docker to GitHub, and the industry's next decade began. Docker didn't invent container technology. It made it accessible.

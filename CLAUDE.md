@@ -88,6 +88,41 @@ Current courses:
 
 **Animations in globals.css:** `blink`, `terminal-in`, `glow-pulse` — used by uptime page and header nav tab.
 
+## Injecting Images into Lessons
+
+Use the `<Figure>` MDX component to embed images with a terminal-style frame and lightbox zoom.
+
+**Usage in any `.mdx` file:**
+```mdx
+<Figure
+  src="/diagrams/my-diagram.svg"
+  alt="Description for screen readers"
+  caption="Shown below the image as a // comment line"
+  label="filename-shown-in-chrome-bar.svg"
+/>
+```
+
+**Props:**
+- `src` — path relative to `/public/` (e.g. `/diagrams/di-diagram.svg`)
+- `alt` — required for accessibility
+- `caption` — optional, rendered as `// caption text` in faint mono below image
+- `label` — optional, shown top-right in the terminal chrome bar (use as a filename hint)
+
+**Component files:**
+- `src/components/mdx/Figure.tsx` — server component, renders the terminal frame + caption
+- `src/components/mdx/FigureLightbox.tsx` — client component, handles click-to-open, scroll-to-zoom, drag-to-pan
+- Registered in `src/components/mdx/MDXContent.tsx` as `Figure`
+
+**Lightbox behaviour:**
+- Thumbnail shows a `⊕ click to zoom` badge (bottom-right, dimmed at rest, full opacity on hover)
+- Click opens a dark frosted overlay with the image centred
+- Scroll wheel zooms in/out (0.5× – 6× range)
+- Drag to pan when zoomed in
+- Bottom pill shows current zoom % with a reset click target
+- Escape / click backdrop / ✕ closes and resets zoom
+
+**Diagrams live in `/public/diagrams/`**. Use dark-themed SVGs matching the site palette (`#141414` bg, `#4ade80` accent, `#f87171` for "bad" paths, `#262626` borders, monospace font).
+
 ## Key Decisions
 
 - **Custom `lib/mdx/` layer** — contentlayer2 is broken on Windows + Next.js 15
@@ -128,5 +163,9 @@ When writing course lessons (not DSA write-ups), follow this narrative voice:
 - **Connect everything.** After explaining a concept, link it to where it shows up elsewhere ("this is why Spring Boot's `@ConditionalOnMissingBean` exists", "this is what makes Docker packaging trivial").
 - **Tone:** Conversational but precise. Write like you're pair-programming with someone smart who is new to the domain. No padding, no filler — but no skipping either.
 - **End with a Key Takeaway** block that crystallises the entire lesson into 2-3 sentences.
+- **Get your hands dirty.** Where a concept can be demonstrated by running something, run it. Don't just describe what `docker run` does — show the command, show the output, walk through what each line means. Theory and practice must arrive together. A concept explained without a working example is half a concept.
+- **Build toward something real.** Individual commands and snippets should ladder up to something the reader could actually use. By the end of a practical section, the reader should have run something, seen it work, and understood *why* it worked — not just copied a recipe.
+- **Narrate the terminal.** When showing shell commands, don't dump them bare. Explain what you're about to do, show the command, then explain what the output tells you. The reader should feel like they're sitting next to you at a terminal.
+- **Expected output is not optional.** Show what success looks like. Show what failure looks like. If a command produces output the reader needs to interpret, include it and explain it line by line where necessary.
 
-The measure of a good lesson: a reader with zero prior knowledge of the topic should finish it with a complete mental model, able to reason about new situations — not just repeat memorised facts.
+The measure of a good lesson: a reader with zero prior knowledge of the topic should finish it with a complete mental model, able to reason about new situations — not just repeat memorised facts. For practical topics, they should also be able to sit down at a terminal and do it themselves.
