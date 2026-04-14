@@ -8,6 +8,8 @@ interface FigureProps {
 }
 
 export function Figure({ src, alt, caption, label }: FigureProps) {
+  const base = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+  const resolvedSrc = `${base}${src}`;
   return (
     <figure className="my-8 overflow-hidden rounded-[var(--radius-lg)] border border-[var(--color-bg-border)]">
       {/* Terminal chrome bar */}
@@ -24,7 +26,7 @@ export function Figure({ src, alt, caption, label }: FigureProps) {
 
       {/* Image — clickable, opens lightbox */}
       <div className="flex items-center justify-center bg-[var(--color-bg-base)] p-6">
-        <FigureLightbox src={src} alt={alt} />
+        <FigureLightbox src={resolvedSrc} alt={alt} />
       </div>
 
       {/* Caption */}
