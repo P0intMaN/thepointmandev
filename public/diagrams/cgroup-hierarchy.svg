@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="310" viewBox="0 0 760 310">
+  <rect width="760" height="310" fill="#0d0d0d"/>
+
+  <text x="380" y="18" text-anchor="middle" fill="#656363" font-family="monospace" font-size="10">// limits cascade down the tree — a child can never exceed its parent's ceiling</text>
+
+  <!-- Root cgroup -->
+  <rect x="290" y="28" width="180" height="36" rx="3" fill="#141414" stroke="#262626" stroke-width="1.5"/>
+  <text x="380" y="43" text-anchor="middle" fill="#b7b1b1" font-family="monospace" font-size="9" font-weight="bold">/ (root cgroup)</text>
+  <text x="380" y="57" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">no limit — owns all system resources</text>
+
+  <!-- Lines from root -->
+  <line x1="380" y1="64" x2="380" y2="76" stroke="#262626" stroke-width="1"/>
+  <line x1="130" y1="76" x2="630" y2="76" stroke="#262626" stroke-width="1"/>
+  <line x1="130" y1="76" x2="130" y2="88" stroke="#262626" stroke-width="1"/>
+  <line x1="380" y1="76" x2="380" y2="88" stroke="#262626" stroke-width="1"/>
+  <line x1="630" y1="76" x2="630" y2="88" stroke="#262626" stroke-width="1"/>
+
+  <!-- system.slice -->
+  <rect x="46" y="88" width="168" height="36" rx="3" fill="#141414" stroke="#262626"/>
+  <text x="130" y="103" text-anchor="middle" fill="#656363" font-family="monospace" font-size="9" font-weight="bold">system.slice</text>
+  <text x="130" y="117" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">host system services</text>
+
+  <!-- user.slice -->
+  <rect x="296" y="88" width="168" height="36" rx="3" fill="#141414" stroke="#262626"/>
+  <text x="380" y="103" text-anchor="middle" fill="#656363" font-family="monospace" font-size="9" font-weight="bold">user.slice</text>
+  <text x="380" y="117" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">user sessions</text>
+
+  <!-- docker -->
+  <rect x="546" y="88" width="168" height="36" rx="3" fill="#0d1a0d" stroke="#4ade80" stroke-width="1.5"/>
+  <text x="630" y="103" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="9" font-weight="bold">docker/</text>
+  <text x="630" y="117" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">all containers live here</text>
+
+  <!-- docker children -->
+  <line x1="630" y1="124" x2="630" y2="136" stroke="#4ade80" stroke-width="1"/>
+  <line x1="516" y1="136" x2="744" y2="136" stroke="#4ade80" stroke-width="1"/>
+  <line x1="516" y1="136" x2="516" y2="148" stroke="#4ade80" stroke-width="1"/>
+  <line x1="630" y1="136" x2="630" y2="148" stroke="#4ade80" stroke-width="1"/>
+  <line x1="744" y1="136" x2="744" y2="148" stroke="#4ade80" stroke-width="1"/>
+
+  <!-- container-1 -->
+  <rect x="432" y="148" width="168" height="52" rx="3" fill="#141414" stroke="#4ade80" stroke-width="1"/>
+  <text x="516" y="165" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="9" font-weight="bold">container-1</text>
+  <text x="516" y="179" text-anchor="middle" fill="#fbbf24" font-family="monospace" font-size="8">memory.max = 512M</text>
+  <text x="516" y="193" text-anchor="middle" fill="#fbbf24" font-family="monospace" font-size="8">cpu.max = 50000 100000</text>
+
+  <!-- container-2 -->
+  <rect x="546" y="148" width="168" height="52" rx="3" fill="#141414" stroke="#4ade80" stroke-width="1"/>
+  <text x="630" y="165" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="9" font-weight="bold">container-2</text>
+  <text x="630" y="179" text-anchor="middle" fill="#fbbf24" font-family="monospace" font-size="8">memory.max = 128M</text>
+  <text x="630" y="193" text-anchor="middle" fill="#fbbf24" font-family="monospace" font-size="8">cpu.max = 25000 100000</text>
+
+  <!-- container-3 -->
+  <rect x="660" y="148" width="84" height="52" rx="3" fill="#141414" stroke="#4ade80" stroke-width="1"/>
+  <text x="702" y="165" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="9" font-weight="bold">container-3</text>
+  <text x="702" y="179" text-anchor="middle" fill="#fbbf24" font-family="monospace" font-size="8">memory.max</text>
+  <text x="702" y="193" text-anchor="middle" fill="#fbbf24" font-family="monospace" font-size="8">= unlimited</text>
+
+  <!-- OOM note -->
+  <rect x="16" y="224" width="728" height="70" rx="3" fill="#1a0d0d" stroke="#f87171" stroke-width="1"/>
+  <text x="380" y="242" text-anchor="middle" fill="#f87171" font-family="monospace" font-size="9" font-weight="bold">what happens when a container exceeds its memory.max</text>
+  <text x="380" y="258" text-anchor="middle" fill="#656363" font-family="monospace" font-size="9">the kernel OOM killer selects a process inside the cgroup and kills it</text>
+  <text x="380" y="274" text-anchor="middle" fill="#656363" font-family="monospace" font-size="9">if the cgroup is empty afterward, the container exits — its ceiling was absolute</text>
+  <text x="380" y="290" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">no other container is affected — the limit is per-cgroup, not system-wide</text>
+</svg>

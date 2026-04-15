@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="290" viewBox="0 0 760 290">
+  <rect width="760" height="290" fill="#0d0d0d"/>
+
+  <text x="380" y="18" text-anchor="middle" fill="#656363" font-family="monospace" font-size="10">// same kernel, two completely different views of the process table</text>
+
+  <!-- LEFT: Host view -->
+  <text x="178" y="36" text-anchor="middle" fill="#b7b1b1" font-family="monospace" font-size="10" font-weight="bold">Host Process Table</text>
+
+  <!-- PID 1 systemd -->
+  <rect x="116" y="46" width="124" height="24" rx="2" fill="#1a1a1a" stroke="#262626"/>
+  <text x="178" y="62" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">PID 1 — systemd</text>
+
+  <line x1="178" y1="70" x2="178" y2="82" stroke="#262626" stroke-width="1"/>
+  <line x1="80" y1="82" x2="276" y2="82" stroke="#262626" stroke-width="1"/>
+  <line x1="80" y1="82" x2="80" y2="94" stroke="#262626" stroke-width="1"/>
+  <line x1="178" y1="82" x2="178" y2="94" stroke="#262626" stroke-width="1"/>
+  <line x1="276" y1="82" x2="276" y2="94" stroke="#262626" stroke-width="1"/>
+
+  <rect x="32" y="94" width="96" height="24" rx="2" fill="#1a1a1a" stroke="#262626"/>
+  <text x="80" y="110" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">PID 312 — sshd</text>
+
+  <rect x="130" y="94" width="96" height="24" rx="2" fill="#1a1a1a" stroke="#262626"/>
+  <text x="178" y="110" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">PID 843 — dockerd</text>
+
+  <rect x="228" y="94" width="96" height="24" rx="2" fill="#1a1a1a" stroke="#262626"/>
+  <text x="276" y="110" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">PID 921 — nginx</text>
+
+  <!-- dockerd spawns container -->
+  <line x1="178" y1="118" x2="178" y2="130" stroke="#262626" stroke-width="1"/>
+  <rect x="130" y="130" width="96" height="24" rx="2" fill="#0d1a0d" stroke="#4ade80" stroke-width="1.5"/>
+  <text x="178" y="146" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="8">PID 3421 — bash</text>
+
+  <line x1="178" y1="154" x2="178" y2="166" stroke="#4ade80" stroke-width="1"/>
+  <rect x="130" y="166" width="96" height="24" rx="2" fill="#0d1a0d" stroke="#4ade80" stroke-width="1"/>
+  <text x="178" y="182" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="8">PID 3438 — python</text>
+
+  <text x="178" y="220" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">host sees all PIDs</text>
+  <text x="178" y="236" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">container processes are just</text>
+  <text x="178" y="252" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">high-numbered host PIDs</text>
+
+  <!-- Divider -->
+  <line x1="380" y1="28" x2="380" y2="270" stroke="#262626" stroke-width="1" stroke-dasharray="4,3"/>
+  <text x="380" y="284" text-anchor="middle" fill="#262626" font-family="monospace" font-size="8">same machine</text>
+
+  <!-- RIGHT: Container view -->
+  <text x="570" y="36" text-anchor="middle" fill="#b7b1b1" font-family="monospace" font-size="10" font-weight="bold">Container's View</text>
+
+  <!-- PID 1 bash -->
+  <rect x="508" y="46" width="124" height="24" rx="2" fill="#0d1a0d" stroke="#4ade80" stroke-width="1.5"/>
+  <text x="570" y="57" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="8" font-weight="bold">PID 1 — bash</text>
+  <text x="570" y="67" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">(host PID 3421)</text>
+
+  <line x1="570" y1="70" x2="570" y2="82" stroke="#4ade80" stroke-width="1"/>
+  <rect x="508" y="82" width="124" height="24" rx="2" fill="#0d1a0d" stroke="#4ade80" stroke-width="1"/>
+  <text x="570" y="93" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="8">PID 2 — python</text>
+  <text x="570" y="103" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">(host PID 3438)</text>
+
+  <!-- can't see -->
+  <rect x="412" y="140" width="316" height="90" rx="3" fill="#1a1a1a" stroke="#262626"/>
+  <text x="570" y="158" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8" font-weight="bold">cannot see:</text>
+  <text x="570" y="174" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">— PID 1 (systemd) doesn't exist here</text>
+  <text x="570" y="190" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">— PID 312 (sshd) doesn't exist here</text>
+  <text x="570" y="206" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">— PID 843 (dockerd) doesn't exist here</text>
+  <text x="570" y="222" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">— any host PID at all</text>
+
+  <text x="570" y="252" text-anchor="middle" fill="#fbbf24" font-family="monospace" font-size="8">bash thinks it's init. it is not.</text>
+  <text x="570" y="268" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">the kernel maps 3421 → 1 transparently</text>
+</svg>
