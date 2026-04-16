@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 
 export const metadata: Metadata = {
@@ -49,13 +48,13 @@ export default function AboutPage() {
           </div>
           {/* Right: photo */}
           <div className="shrink-0">
-            <Image
-              src="/pratheek.png"
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/pratheek.png`}
               alt="Pratheek Unni"
               width={160}
               height={160}
               className="rounded-full object-cover"
-              priority
             />
           </div>
         </div>
