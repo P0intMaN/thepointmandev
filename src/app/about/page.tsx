@@ -21,9 +21,9 @@ const recommendedReading = [
   },
   {
     category: "Java & Spring Boot",
-    description: "In-depth production-ready Java engineering articles.",
-    href: "/blog?category=Java",
-    label: "Read articles →",
+    description: "Spring Boot from first principles — dependency injection, auto-configuration, and the full production stack.",
+    href: "/courses/spring-boot",
+    label: "Take the course →",
   },
 ];
 
@@ -70,9 +70,9 @@ export default function AboutPage() {
         </h2>
         <div className="space-y-4">
           {[
-            ["Blog", "Long-form technical articles. Deep dives, tutorials, and architectural discussions.", "/blog"],
             ["Courses", "Structured, multi-part learning paths you can follow end-to-end.", "/courses"],
             ["DSA", "Data structures and algorithms, explained with working code and complexity analysis.", "/dsa"],
+            ["Roadmap", "A curated learning path from fundamentals to senior-level interviews.", "/roadmap"],
           ].map(([title, desc, href]) => (
             <Link
               key={href}
@@ -122,12 +122,12 @@ export default function AboutPage() {
         <div className="space-y-4 text-[var(--color-text-muted)]">
           <p>
             Good engineering writing is rare. Most content either stops at &ldquo;hello world&rdquo; or
-            drowns you in abstraction without showing the code. This blog tries to live in between:
+            drowns you in abstraction without showing the code. This site tries to live in between:
             complete, working examples with real explanations of why they work.
           </p>
           <p>
-            Every article shows the full implementation, discusses complexity, and explains the
-            tradeoffs. When I say &ldquo;O(n log n)&rdquo;, I mean it — and I&apos;ll show you why.
+            Every course and write-up shows the full implementation, discusses complexity, and explains
+            the tradeoffs. When I say &ldquo;O(n log n)&rdquo;, I mean it — and I&apos;ll show you why.
           </p>
         </div>
       </section>
