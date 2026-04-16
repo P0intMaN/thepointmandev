@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 
 export const metadata: Metadata = {
@@ -32,16 +33,32 @@ export default function AboutPage() {
     <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
       {/* Header */}
       <header className="mb-12 border-b border-[var(--color-bg-border)] pb-10">
-        <p className="mb-2 font-mono text-xs text-[var(--color-text-faint)]">$ whoami</p>
-        <h1 className="mb-1 font-mono text-4xl font-black">
-          <span className="text-[var(--color-text-primary)]">thepointman</span>
-          <span className="text-[var(--color-accent)]">.dev_</span>
-        </h1>
-        <p className="mb-5 font-mono text-sm text-[var(--color-text-faint)]">Pratheek Unni</p>
-        <p className="mb-5 text-lg leading-relaxed text-[var(--color-text-muted)]">
-          Senior software engineer. I write the kind of technical content I wish existed when I was
-          learning — no hand-waving, no incomplete examples, no marketing fluff.
-        </p>
+        <div className="flex items-start justify-between gap-8">
+          {/* Left: text */}
+          <div className="min-w-0 flex-1">
+            <p className="mb-2 font-mono text-xs text-[var(--color-text-faint)]">$ whoami</p>
+            <h1 className="mb-1 font-mono text-4xl font-black">
+              <span className="text-[var(--color-text-primary)]">thepointman</span>
+              <span className="text-[var(--color-accent)]">.dev_</span>
+            </h1>
+            <p className="mb-5 font-mono text-sm text-[var(--color-text-faint)]">Pratheek Unni</p>
+            <p className="mb-5 text-lg leading-relaxed text-[var(--color-text-muted)]">
+              Senior software engineer. I write the kind of technical content I wish existed when I was
+              learning — no hand-waving, no incomplete examples, no marketing fluff.
+            </p>
+          </div>
+          {/* Right: photo */}
+          <div className="shrink-0">
+            <Image
+              src="/pratheek.png"
+              alt="Pratheek Unni"
+              width={160}
+              height={160}
+              className="rounded-full object-cover"
+              priority
+            />
+          </div>
+        </div>
         {/* Social links */}
         <div className="flex flex-wrap gap-3">
           <a
