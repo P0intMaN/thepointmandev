@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="360" viewBox="0 0 760 360">
+  <rect width="760" height="360" fill="#0d0d0d"/>
+
+  <text x="380" y="18" text-anchor="middle" fill="#656363" font-family="monospace" font-size="10">// one tag resolves to an Image Index — the registry returns the right platform manifest automatically</text>
+
+  <!-- Image Index (top center) -->
+  <rect x="270" y="30" width="220" height="46" rx="3" fill="#141414" stroke="#fbbf24" stroke-width="1.5"/>
+  <text x="380" y="50" text-anchor="middle" fill="#fbbf24" font-family="monospace" font-size="9" font-weight="bold">ubuntu:24.04</text>
+  <text x="380" y="66" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">Image Index  (OCI) · one tag, many platforms</text>
+
+  <!-- arrows down to 4 platform manifests -->
+  <line x1="310" y1="76" x2="110" y2="116" stroke="#262626" stroke-width="1.5"/>
+  <line x1="345" y1="76" x2="270" y2="116" stroke="#262626" stroke-width="1.5"/>
+  <line x1="415" y1="76" x2="490" y2="116" stroke="#262626" stroke-width="1.5"/>
+  <line x1="450" y1="76" x2="650" y2="116" stroke="#262626" stroke-width="1.5"/>
+
+  <!-- amd64 manifest -->
+  <rect x="30" y="116" width="156" height="60" rx="2" fill="#141414" stroke="#4ade80" stroke-width="1.5"/>
+  <text x="108" y="134" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="8" font-weight="bold">linux/amd64</text>
+  <text x="108" y="148" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">manifest → config</text>
+  <text x="108" y="160" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">manifest → layers[ ]</text>
+  <text x="108" y="172" text-anchor="middle" fill="#656363" font-family="monospace" font-size="6">x86-64 ELF binaries</text>
+
+  <!-- arm64 manifest -->
+  <rect x="200" y="116" width="156" height="60" rx="2" fill="#141414" stroke="#4ade80" stroke-width="1.5"/>
+  <text x="278" y="134" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="8" font-weight="bold">linux/arm64</text>
+  <text x="278" y="148" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">manifest → config</text>
+  <text x="278" y="160" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">manifest → layers[ ]</text>
+  <text x="278" y="172" text-anchor="middle" fill="#656363" font-family="monospace" font-size="6">AArch64 ELF binaries</text>
+
+  <!-- arm/v7 manifest -->
+  <rect x="404" y="116" width="156" height="60" rx="2" fill="#141414" stroke="#67e8f9" stroke-width="1.5"/>
+  <text x="482" y="134" text-anchor="middle" fill="#67e8f9" font-family="monospace" font-size="8" font-weight="bold">linux/arm/v7</text>
+  <text x="482" y="148" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">manifest → config</text>
+  <text x="482" y="160" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">manifest → layers[ ]</text>
+  <text x="482" y="172" text-anchor="middle" fill="#656363" font-family="monospace" font-size="6">32-bit ARM binaries</text>
+
+  <!-- s390x manifest -->
+  <rect x="574" y="116" width="156" height="60" rx="2" fill="#141414" stroke="#656363" stroke-width="1"/>
+  <text x="652" y="134" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8" font-weight="bold">linux/s390x</text>
+  <text x="652" y="148" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">manifest → config</text>
+  <text x="652" y="160" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">manifest → layers[ ]</text>
+  <text x="652" y="172" text-anchor="middle" fill="#656363" font-family="monospace" font-size="6">IBM Z mainframe</text>
+
+  <!-- Divider -->
+  <line x1="30" y1="208" x2="730" y2="208" stroke="#262626" stroke-width="1" stroke-dasharray="4,4"/>
+  <text x="380" y="223" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">docker pull ubuntu:24.04  — registry inspects Accept header, returns matching manifest</text>
+
+  <!-- Two machines pulling -->
+  <!-- Intel machine -->
+  <rect x="30" y="234" width="310" height="108" rx="3" fill="#141414" stroke="#4ade80" stroke-width="1.5"/>
+  <text x="185" y="254" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="8" font-weight="bold">Intel / AMD machine  (linux/amd64)</text>
+  <text x="185" y="270" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">daemon sends Accept: linux/amd64</text>
+  <line x1="185" y1="278" x2="185" y2="292" stroke="#4ade80" stroke-width="1.5"/>
+  <rect x="90" y="292" width="190" height="22" rx="2" fill="#0d1a0d" stroke="#4ade80" stroke-width="1"/>
+  <text x="185" y="307" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="8">linux/amd64 layers downloaded</text>
+  <text x="185" y="328" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">x86-64 binaries, runs natively</text>
+
+  <!-- Apple Silicon machine -->
+  <rect x="420" y="234" width="310" height="108" rx="3" fill="#141414" stroke="#4ade80" stroke-width="1.5"/>
+  <text x="575" y="254" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="8" font-weight="bold">Apple Silicon  (linux/arm64)</text>
+  <text x="575" y="270" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">daemon sends Accept: linux/arm64</text>
+  <line x1="575" y1="278" x2="575" y2="292" stroke="#4ade80" stroke-width="1.5"/>
+  <rect x="480" y="292" width="190" height="22" rx="2" fill="#0d1a0d" stroke="#4ade80" stroke-width="1"/>
+  <text x="575" y="307" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="8">linux/arm64 layers downloaded</text>
+  <text x="575" y="328" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">AArch64 binaries, runs natively</text>
+</svg>

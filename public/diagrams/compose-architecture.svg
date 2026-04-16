@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="360" viewBox="0 0 760 360">
+  <rect width="760" height="360" fill="#0d0d0d"/>
+
+  <text x="380" y="18" text-anchor="middle" fill="#656363" font-family="monospace" font-size="10">// compose creates a private network — services reach each other by name, host reaches them via published ports</text>
+
+  <!-- Host box -->
+  <rect x="16" y="30" width="728" height="316" rx="4" fill="#141414" stroke="#262626" stroke-width="1.5"/>
+  <text x="40" y="48" fill="#656363" font-family="monospace" font-size="8">Host machine</text>
+
+  <!-- Host ports (left side) -->
+  <rect x="30" y="58" width="90" height="24" rx="2" fill="#1a1200" stroke="#fbbf24" stroke-width="1"/>
+  <text x="75" y="74" text-anchor="middle" fill="#fbbf24" font-family="monospace" font-size="8">:80 on host</text>
+
+  <rect x="30" y="90" width="90" height="24" rx="2" fill="#1a1a1a" stroke="#262626" stroke-width="1"/>
+  <text x="75" y="106" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">:5432 — no pub</text>
+
+  <rect x="30" y="122" width="90" height="24" rx="2" fill="#1a1a1a" stroke="#262626" stroke-width="1"/>
+  <text x="75" y="138" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">:6379 — no pub</text>
+
+  <!-- Compose network box -->
+  <rect x="140" y="54" width="568" height="272" rx="3" fill="#0d0d0d" stroke="#4ade80" stroke-width="1.5" stroke-dasharray="6,3"/>
+  <text x="424" y="72" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="8">myapp_default  (user-defined bridge network — created automatically by Compose)</text>
+
+  <!-- port publish arrow -->
+  <line x1="120" y1="70" x2="140" y2="70" stroke="#fbbf24" stroke-width="1.5"/>
+  <polygon points="138,66 146,70 138,74" fill="#fbbf24"/>
+
+  <!-- web service -->
+  <rect x="158" y="82" width="140" height="72" rx="3" fill="#141414" stroke="#4ade80" stroke-width="1.5"/>
+  <text x="228" y="100" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="9" font-weight="bold">web</text>
+  <text x="228" y="114" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">nginx:alpine</text>
+  <text x="228" y="126" text-anchor="middle" fill="#fbbf24" font-family="monospace" font-size="7">ports: 80:80</text>
+  <text x="228" y="140" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">proxies → api:3000</text>
+
+  <!-- api service -->
+  <rect x="330" y="82" width="140" height="72" rx="3" fill="#141414" stroke="#4ade80" stroke-width="1.5"/>
+  <text x="400" y="100" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="9" font-weight="bold">api</text>
+  <text x="400" y="114" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">myapp:latest</text>
+  <text x="400" y="126" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">build: ./api</text>
+  <text x="400" y="140" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">env: DB_HOST=db</text>
+
+  <!-- db service -->
+  <rect x="330" y="196" width="140" height="80" rx="3" fill="#141414" stroke="#67e8f9" stroke-width="1.5"/>
+  <text x="400" y="214" text-anchor="middle" fill="#67e8f9" font-family="monospace" font-size="9" font-weight="bold">db</text>
+  <text x="400" y="228" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">postgres:16</text>
+  <text x="400" y="242" text-anchor="middle" fill="#fbbf24" font-family="monospace" font-size="7">volume: pg_data:/var/lib/</text>
+  <text x="400" y="256" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">postgresql/data</text>
+  <text x="400" y="270" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">healthcheck: pg_isready</text>
+
+  <!-- redis service -->
+  <rect x="510" y="196" width="140" height="80" rx="3" fill="#141414" stroke="#f87171" stroke-width="1.5"/>
+  <text x="580" y="214" text-anchor="middle" fill="#f87171" font-family="monospace" font-size="9" font-weight="bold">cache</text>
+  <text x="580" y="228" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">redis:7-alpine</text>
+  <text x="580" y="242" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">no published port</text>
+  <text x="580" y="256" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">reachable as</text>
+  <text x="580" y="270" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">"cache" from api</text>
+
+  <!-- connections between services -->
+  <line x1="298" y1="118" x2="330" y2="118" stroke="#4ade80" stroke-width="1.5" stroke-dasharray="4,2"/>
+  <polygon points="328,114 336,118 328,122" fill="#4ade80"/>
+  <text x="314" y="112" text-anchor="middle" fill="#656363" font-family="monospace" font-size="6">HTTP</text>
+
+  <line x1="400" y1="154" x2="400" y2="196" stroke="#67e8f9" stroke-width="1.5" stroke-dasharray="4,2"/>
+  <polygon points="396,194 400,202 404,194" fill="#67e8f9"/>
+  <text x="420" y="178" fill="#656363" font-family="monospace" font-size="6">5432</text>
+
+  <line x1="470" y1="120" x2="510" y2="220" stroke="#f87171" stroke-width="1.5" stroke-dasharray="4,2"/>
+  <polygon points="506,216 512,224 517,217" fill="#f87171"/>
+  <text x="510" y="165" fill="#656363" font-family="monospace" font-size="6">6379</text>
+
+  <!-- volume box at bottom -->
+  <rect x="290" y="302" width="220" height="14" rx="2" fill="#1a1200" stroke="#fbbf24" stroke-width="1"/>
+  <text x="400" y="313" text-anchor="middle" fill="#fbbf24" font-family="monospace" font-size="7">named volume: pg_data  (managed by Docker, survives compose down)</text>
+</svg>

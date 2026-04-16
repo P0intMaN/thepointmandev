@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="340" viewBox="0 0 760 340">
+  <rect width="760" height="340" fill="#0d0d0d"/>
+
+  <text x="380" y="18" text-anchor="middle" fill="#656363" font-family="monospace" font-size="10">// stateless containers are replaceable — state lives outside, in dedicated stores</text>
+
+  <!-- LEFT: Pets (anti-pattern) -->
+  <text x="175" y="36" text-anchor="middle" fill="#f87171" font-family="monospace" font-size="9" font-weight="bold">pets  ✗</text>
+
+  <rect x="16" y="44" width="318" height="282" rx="3" fill="#141414" stroke="#f87171" stroke-width="1.5"/>
+
+  <!-- Single special container -->
+  <rect x="100" y="60" width="150" height="46" rx="2" fill="#1a0d0d" stroke="#f87171" stroke-width="1"/>
+  <text x="175" y="78" text-anchor="middle" fill="#f87171" font-family="monospace" font-size="8" font-weight="bold">app-server-prod</text>
+  <text x="175" y="92" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">uptime: 247 days · ssh access</text>
+
+  <text x="175" y="120" text-anchor="middle" fill="#f87171" font-family="monospace" font-size="7">↓  state inside the container</text>
+
+  <rect x="50" y="128" width="98" height="28" rx="2" fill="#1a0d0d" stroke="#f87171" stroke-width="1"/>
+  <text x="99" y="140" text-anchor="middle" fill="#f87171" font-family="monospace" font-size="7">uploads/ on disk</text>
+  <text x="99" y="151" text-anchor="middle" fill="#656363" font-family="monospace" font-size="6">inside container</text>
+
+  <rect x="202" y="128" width="98" height="28" rx="2" fill="#1a0d0d" stroke="#f87171" stroke-width="1"/>
+  <text x="251" y="140" text-anchor="middle" fill="#f87171" font-family="monospace" font-size="7">sqlite db on disk</text>
+  <text x="251" y="151" text-anchor="middle" fill="#656363" font-family="monospace" font-size="6">inside container</text>
+
+  <rect x="28" y="174" width="290" height="130" rx="2" fill="#1a1a1a" stroke="#262626"/>
+  <text x="173" y="192" text-anchor="middle" fill="#f87171" font-family="monospace" font-size="8" font-weight="bold">consequences</text>
+  <text x="173" y="208" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">can never be replaced — state is trapped inside</text>
+  <text x="173" y="222" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">can never be scaled — where does state go?</text>
+  <text x="173" y="236" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">crashes are catastrophic — no hot replacement</text>
+  <text x="173" y="250" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">updates require downtime — no rolling deploy</text>
+  <text x="173" y="264" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">drift accumulates — ssh patches, manual fixes</text>
+  <text x="173" y="284" text-anchor="middle" fill="#f87171" font-family="monospace" font-size="7">one container. irreplaceable. fragile.</text>
+
+  <!-- RIGHT: Cattle (correct) -->
+  <text x="585" y="36" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="9" font-weight="bold">cattle  ✓</text>
+
+  <rect x="426" y="44" width="318" height="282" rx="3" fill="#141414" stroke="#4ade80" stroke-width="1.5"/>
+
+  <!-- Multiple interchangeable containers -->
+  <rect x="438" y="56" width="80" height="38" rx="2" fill="#0d1a0d" stroke="#4ade80" stroke-width="1"/>
+  <text x="478" y="71" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="7" font-weight="bold">app-1</text>
+  <text x="478" y="83" text-anchor="middle" fill="#656363" font-family="monospace" font-size="6">stateless</text>
+
+  <rect x="552" y="56" width="80" height="38" rx="2" fill="#0d1a0d" stroke="#4ade80" stroke-width="1"/>
+  <text x="592" y="71" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="7" font-weight="bold">app-2</text>
+  <text x="592" y="83" text-anchor="middle" fill="#656363" font-family="monospace" font-size="6">stateless</text>
+
+  <rect x="666" y="56" width="66" height="38" rx="2" fill="#0d1a0d" stroke="#4ade80" stroke-width="1"/>
+  <text x="699" y="71" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="7" font-weight="bold">app-N</text>
+  <text x="699" y="83" text-anchor="middle" fill="#656363" font-family="monospace" font-size="6">stateless</text>
+
+  <!-- arrows down to state stores -->
+  <line x1="478" y1="94" x2="478" y2="112" stroke="#4ade80" stroke-width="1"/>
+  <line x1="592" y1="94" x2="592" y2="112" stroke="#4ade80" stroke-width="1"/>
+  <line x1="699" y1="94" x2="699" y2="112" stroke="#4ade80" stroke-width="1"/>
+  <line x1="478" y1="112" x2="699" y2="112" stroke="#4ade80" stroke-width="1"/>
+  <line x1="585" y1="112" x2="585" y2="128" stroke="#4ade80" stroke-width="1.5"/>
+  <text x="585" y="125" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="7">state lives outside</text>
+
+  <!-- External state stores -->
+  <rect x="438" y="134" width="86" height="36" rx="2" fill="#141414" stroke="#fbbf24" stroke-width="1"/>
+  <text x="481" y="149" text-anchor="middle" fill="#fbbf24" font-family="monospace" font-size="7" font-weight="bold">PostgreSQL</text>
+  <text x="481" y="162" text-anchor="middle" fill="#656363" font-family="monospace" font-size="6">named volume</text>
+
+  <rect x="540" y="134" width="86" height="36" rx="2" fill="#141414" stroke="#fbbf24" stroke-width="1"/>
+  <text x="583" y="149" text-anchor="middle" fill="#fbbf24" font-family="monospace" font-size="7" font-weight="bold">Redis</text>
+  <text x="583" y="162" text-anchor="middle" fill="#656363" font-family="monospace" font-size="6">session / cache</text>
+
+  <rect x="642" y="134" width="90" height="36" rx="2" fill="#141414" stroke="#fbbf24" stroke-width="1"/>
+  <text x="687" y="149" text-anchor="middle" fill="#fbbf24" font-family="monospace" font-size="7" font-weight="bold">S3 / Blob</text>
+  <text x="687" y="162" text-anchor="middle" fill="#656363" font-family="monospace" font-size="6">file uploads</text>
+
+  <rect x="438" y="186" width="294" height="118" rx="2" fill="#1a1a1a" stroke="#262626"/>
+  <text x="585" y="204" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="8" font-weight="bold">consequences</text>
+  <text x="585" y="220" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">crash → orchestrator replaces instantly</text>
+  <text x="585" y="234" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">scale → add more identical containers</text>
+  <text x="585" y="248" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">deploy → rolling update, zero downtime</text>
+  <text x="585" y="262" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">no drift — image rebuilt from scratch every time</text>
+  <text x="585" y="283" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="7">N containers. interchangeable. resilient.</text>
+</svg>

@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="320" viewBox="0 0 760 320">
+  <rect width="760" height="320" fill="#0d0d0d"/>
+
+  <text x="380" y="18" text-anchor="middle" fill="#656363" font-family="monospace" font-size="10">// OverlayFS merges read-only layers + one writable layer into a single filesystem view</text>
+
+  <!-- LEFT: layer stack -->
+
+  <!-- merged view at top (what the container sees) -->
+  <rect x="32" y="28" width="320" height="44" rx="3" fill="#0d1a0d" stroke="#4ade80" stroke-width="2"/>
+  <text x="192" y="46" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="9" font-weight="bold">Merged View  (what the container sees)</text>
+  <text x="192" y="62" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">/bin  /lib  /usr  /app  /app/config.py  ...</text>
+
+  <text x="192" y="88" text-anchor="middle" fill="#262626" font-family="monospace" font-size="9">▲  unified from all layers below</text>
+
+  <!-- upper layer -->
+  <rect x="32" y="96" width="320" height="44" rx="3" fill="#141414" stroke="#fbbf24" stroke-width="1.5"/>
+  <text x="192" y="113" text-anchor="middle" fill="#fbbf24" font-family="monospace" font-size="9" font-weight="bold">Upper Layer  (writable — this container only)</text>
+  <text x="192" y="129" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">modified files land here  ·  deleted files = whiteout</text>
+
+  <!-- lower3 -->
+  <rect x="32" y="152" width="320" height="36" rx="3" fill="#141414" stroke="#262626"/>
+  <text x="192" y="168" text-anchor="middle" fill="#b7b1b1" font-family="monospace" font-size="9" font-weight="bold">Lower Layer 3  (read-only)</text>
+  <text x="192" y="182" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">/app/main.py  /app/requirements.txt</text>
+
+  <!-- lower2 -->
+  <rect x="32" y="198" width="320" height="36" rx="3" fill="#141414" stroke="#262626"/>
+  <text x="192" y="214" text-anchor="middle" fill="#b7b1b1" font-family="monospace" font-size="9" font-weight="bold">Lower Layer 2  (read-only)</text>
+  <text x="192" y="228" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">/usr/local/bin/python3  /usr/lib/python3.11/</text>
+
+  <!-- lower1 -->
+  <rect x="32" y="244" width="320" height="36" rx="3" fill="#141414" stroke="#262626"/>
+  <text x="192" y="260" text-anchor="middle" fill="#b7b1b1" font-family="monospace" font-size="9" font-weight="bold">Lower Layer 1  (read-only)</text>
+  <text x="192" y="274" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">/bin/bash  /lib/  /etc/  (Ubuntu base)</text>
+
+  <!-- arrows -->
+  <text x="192" y="295" text-anchor="middle" fill="#262626" font-family="monospace" font-size="9">▲  lower layers are shared across containers</text>
+
+  <!-- divider -->
+  <line x1="378" y1="20" x2="378" y2="310" stroke="#262626" stroke-width="1" stroke-dasharray="3,3"/>
+
+  <!-- RIGHT: CoW explanation -->
+  <text x="569" y="36" text-anchor="middle" fill="#b7b1b1" font-family="monospace" font-size="10" font-weight="bold">Copy-on-Write</text>
+
+  <!-- READ scenario -->
+  <rect x="396" y="48" width="346" height="60" rx="3" fill="#1a1a1a" stroke="#262626"/>
+  <text x="569" y="65" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="9" font-weight="bold">reading a file</text>
+  <text x="569" y="80" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">OverlayFS checks upper → lower3 → lower2 → lower1</text>
+  <text x="569" y="95" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">returns first match — no copy, no cost</text>
+
+  <!-- WRITE scenario -->
+  <rect x="396" y="120" width="346" height="76" rx="3" fill="#1a1a1a" stroke="#fbbf24" stroke-width="1"/>
+  <text x="569" y="137" text-anchor="middle" fill="#fbbf24" font-family="monospace" font-size="9" font-weight="bold">writing to an existing file</text>
+  <text x="569" y="152" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">1. copy full file from lowerdir → upperdir</text>
+  <text x="569" y="166" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">2. modify the copy in upperdir</text>
+  <text x="569" y="180" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">lowerdir original: untouched forever</text>
+
+  <!-- DELETE scenario -->
+  <rect x="396" y="208" width="346" height="60" rx="3" fill="#1a1a1a" stroke="#f87171" stroke-width="1"/>
+  <text x="569" y="225" text-anchor="middle" fill="#f87171" font-family="monospace" font-size="9" font-weight="bold">deleting a file from a lower layer</text>
+  <text x="569" y="240" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">a "whiteout" file is created in upperdir</text>
+  <text x="569" y="255" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">OverlayFS hides the lower file — it still exists on disk</text>
+
+  <!-- ephemeral note -->
+  <rect x="396" y="280" width="346" height="28" rx="3" fill="#1a0d0d" stroke="#f87171" stroke-width="1"/>
+  <text x="569" y="299" text-anchor="middle" fill="#f87171" font-family="monospace" font-size="8">upper layer dies when the container is removed — all writes lost</text>
+</svg>

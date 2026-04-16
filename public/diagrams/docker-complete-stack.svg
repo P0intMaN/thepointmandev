@@ -1,0 +1,95 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="480" viewBox="0 0 760 480">
+  <rect width="760" height="480" fill="#0d0d0d"/>
+
+  <text x="380" y="18" text-anchor="middle" fill="#656363" font-family="monospace" font-size="10">// the complete picture — every layer you learned, from kernel primitives to the global registry network</text>
+
+  <!-- LAYER 0: Linux Kernel -->
+  <rect x="16" y="28" width="728" height="52" rx="3" fill="#0d0d0d" stroke="#262626" stroke-width="1.5"/>
+  <text x="380" y="48" text-anchor="middle" fill="#656363" font-family="monospace" font-size="9" font-weight="bold">Linux Kernel</text>
+  <text x="130" y="66" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">namespaces</text>
+  <text x="248" y="66" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">cgroups v2</text>
+  <text x="366" y="66" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">overlay2 (UnionFS)</text>
+  <text x="500" y="66" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">seccomp / capabilities</text>
+  <text x="642" y="66" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">binfmt_misc + QEMU</text>
+
+  <!-- arrow up -->
+  <line x1="380" y1="80" x2="380" y2="92" stroke="#262626" stroke-width="1.5"/>
+
+  <!-- LAYER 1: OCI Specs + runc -->
+  <rect x="16" y="92" width="728" height="46" rx="3" fill="#141414" stroke="#fbbf24" stroke-width="1.5"/>
+  <text x="116" y="110" text-anchor="middle" fill="#fbbf24" font-family="monospace" font-size="8" font-weight="bold">OCI Runtime Spec</text>
+  <text x="116" y="124" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">config.json + rootfs bundle → runc</text>
+  <line x1="232" y1="100" x2="232" y2="130" stroke="#262626" stroke-width="1" stroke-dasharray="3,3"/>
+  <text x="380" y="110" text-anchor="middle" fill="#fbbf24" font-family="monospace" font-size="8" font-weight="bold">OCI Image Spec</text>
+  <text x="380" y="124" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">Image Index → Manifest → Config + Layers (sha256)</text>
+  <line x1="528" y1="100" x2="528" y2="130" stroke="#262626" stroke-width="1" stroke-dasharray="3,3"/>
+  <text x="634" y="110" text-anchor="middle" fill="#fbbf24" font-family="monospace" font-size="8" font-weight="bold">OCI Distribution Spec</text>
+  <text x="634" y="124" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">Registry HTTP API — push / pull / blob store</text>
+
+  <line x1="380" y1="138" x2="380" y2="150" stroke="#262626" stroke-width="1.5"/>
+
+  <!-- LAYER 2: containerd -->
+  <rect x="16" y="150" width="728" height="46" rx="3" fill="#141414" stroke="#67e8f9" stroke-width="1.5"/>
+  <text x="380" y="168" text-anchor="middle" fill="#67e8f9" font-family="monospace" font-size="9" font-weight="bold">containerd</text>
+  <text x="152" y="184" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">image pull + layer cache</text>
+  <text x="310" y="184" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">snapshot management</text>
+  <text x="460" y="184" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">shim-per-container (restartable)</text>
+  <text x="634" y="184" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">CRI for Kubernetes</text>
+
+  <line x1="380" y1="196" x2="380" y2="208" stroke="#262626" stroke-width="1.5"/>
+
+  <!-- LAYER 3: dockerd -->
+  <rect x="16" y="208" width="480" height="46" rx="3" fill="#141414" stroke="#4ade80" stroke-width="1.5"/>
+  <text x="246" y="226" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="9" font-weight="bold">dockerd</text>
+  <text x="120" y="242" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">networking (bridge/host/macvlan)</text>
+  <text x="294" y="242" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">volumes + bind mounts</text>
+  <text x="440" y="242" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">Swarm orchestration</text>
+
+  <!-- Kubernetes parallel path -->
+  <rect x="510" y="208" width="234" height="46" rx="3" fill="#141414" stroke="#f87171" stroke-width="1.5" stroke-dasharray="5,3"/>
+  <text x="627" y="226" text-anchor="middle" fill="#f87171" font-family="monospace" font-size="8" font-weight="bold">Kubernetes (kubelet)</text>
+  <text x="627" y="242" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">CRI → containerd directly (no dockerd)</text>
+
+  <line x1="246" y1="254" x2="246" y2="266" stroke="#262626" stroke-width="1.5"/>
+
+  <!-- LAYER 4: BuildKit -->
+  <rect x="16" y="266" width="480" height="46" rx="3" fill="#141414" stroke="#4ade80" stroke-width="1.5"/>
+  <text x="246" y="284" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="9" font-weight="bold">BuildKit</text>
+  <text x="100" y="300" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">DAG parallel builds</text>
+  <text x="246" y="300" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">cache mounts + secrets</text>
+  <text x="400" y="300" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">multi-platform  (QEMU + manifest list)</text>
+
+  <line x1="246" y1="312" x2="246" y2="324" stroke="#262626" stroke-width="1.5"/>
+
+  <!-- LAYER 5: Docker CLI + Compose -->
+  <rect x="16" y="324" width="228" height="46" rx="3" fill="#141414" stroke="#4ade80" stroke-width="1.5"/>
+  <text x="130" y="342" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="9" font-weight="bold">docker CLI</text>
+  <text x="130" y="358" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">run · build · push · pull · exec</text>
+
+  <rect x="256" y="324" width="240" height="46" rx="3" fill="#141414" stroke="#4ade80" stroke-width="1.5"/>
+  <text x="376" y="342" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="9" font-weight="bold">Docker Compose</text>
+  <text x="376" y="358" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">multi-container · networks · volumes · profiles</text>
+
+  <!-- Registry on the right, spanning several layers -->
+  <rect x="510" y="266" width="234" height="104" rx="3" fill="#141414" stroke="#fbbf24" stroke-width="1.5"/>
+  <text x="627" y="284" text-anchor="middle" fill="#fbbf24" font-family="monospace" font-size="9" font-weight="bold">Registry</text>
+  <text x="627" y="300" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">Docker Hub · ECR · GCR · GHCR</text>
+  <text x="627" y="316" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">content-addressed blob store</text>
+  <text x="627" y="332" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">Image Index (multi-platform tags)</text>
+  <text x="627" y="348" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">layer dedup across all images</text>
+  <text x="627" y="362" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">OCI Distribution Spec compliant</text>
+
+  <!-- Security overlay -->
+  <rect x="16" y="386" width="728" height="46" rx="3" fill="#0d0d0d" stroke="#f87171" stroke-width="1.5"/>
+  <text x="380" y="404" text-anchor="middle" fill="#f87171" font-family="monospace" font-size="8" font-weight="bold">Security  (cuts across every layer)</text>
+  <text x="108" y="420" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">non-root USER</text>
+  <text x="222" y="420" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">--cap-drop ALL</text>
+  <text x="336" y="420" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">no-new-privileges</text>
+  <text x="458" y="420" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">--read-only + tmpfs</text>
+  <text x="588" y="420" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">seccomp + rootless daemon</text>
+  <text x="700" y="420" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">minimal image</text>
+
+  <!-- docker run command at very bottom -->
+  <rect x="200" y="442" width="360" height="28" rx="3" fill="#0d1a0d" stroke="#4ade80" stroke-width="2"/>
+  <text x="380" y="460" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="10" font-weight="bold">docker run nginx</text>
+</svg>

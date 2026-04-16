@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="260" viewBox="0 0 760 260">
+  <rect width="760" height="260" fill="#0d0d0d"/>
+
+  <text x="380" y="18" text-anchor="middle" fill="#656363" font-family="monospace" font-size="10">// 100 containers sharing the same base — one copy on disk, not 100</text>
+
+  <!-- Container A -->
+  <text x="130" y="38" text-anchor="middle" fill="#b7b1b1" font-family="monospace" font-size="9" font-weight="bold">container-a</text>
+  <rect x="46" y="46" width="168" height="26" rx="2" fill="#141414" stroke="#fbbf24" stroke-width="1.5"/>
+  <text x="130" y="63" text-anchor="middle" fill="#fbbf24" font-family="monospace" font-size="8">upper: /app/config.py (modified)</text>
+
+  <!-- Container B -->
+  <text x="380" y="38" text-anchor="middle" fill="#b7b1b1" font-family="monospace" font-size="9" font-weight="bold">container-b</text>
+  <rect x="296" y="46" width="168" height="26" rx="2" fill="#141414" stroke="#fbbf24" stroke-width="1.5"/>
+  <text x="380" y="63" text-anchor="middle" fill="#fbbf24" font-family="monospace" font-size="8">upper: /tmp/session-data</text>
+
+  <!-- Container C -->
+  <text x="630" y="38" text-anchor="middle" fill="#b7b1b1" font-family="monospace" font-size="9" font-weight="bold">container-c</text>
+  <rect x="546" y="46" width="168" height="26" rx="2" fill="#141414" stroke="#fbbf24" stroke-width="1.5"/>
+  <text x="630" y="63" text-anchor="middle" fill="#fbbf24" font-family="monospace" font-size="8">upper: (empty — read-only workload)</text>
+
+  <!-- Arrows down to shared layers -->
+  <line x1="130" y1="72" x2="130" y2="88" stroke="#262626" stroke-width="1"/>
+  <line x1="380" y1="72" x2="380" y2="88" stroke="#262626" stroke-width="1"/>
+  <line x1="630" y1="72" x2="630" y2="88" stroke="#262626" stroke-width="1"/>
+  <line x1="130" y1="88" x2="630" y2="88" stroke="#262626" stroke-width="1"/>
+  <line x1="380" y1="88" x2="380" y2="104" stroke="#262626" stroke-width="1"/>
+
+  <!-- App layer -->
+  <rect x="200" y="104" width="360" height="30" rx="2" fill="#141414" stroke="#262626"/>
+  <text x="380" y="123" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">Lower Layer 3 — /app/  (app image layer — shared)</text>
+
+  <!-- Runtime layer -->
+  <rect x="200" y="144" width="360" height="30" rx="2" fill="#141414" stroke="#262626"/>
+  <text x="380" y="163" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">Lower Layer 2 — Python 3.11  (runtime layer — shared)</text>
+
+  <!-- Ubuntu base layer — highlighted -->
+  <rect x="120" y="184" width="520" height="40" rx="3" fill="#0d1a0d" stroke="#4ade80" stroke-width="1.5"/>
+  <text x="380" y="200" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="9" font-weight="bold">Lower Layer 1 — Ubuntu 22.04 base  (shared by ALL containers)</text>
+  <text x="380" y="216" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">stored once on disk — ~30 MB — no matter how many containers use it</text>
+
+  <!-- Size callout -->
+  <rect x="120" y="236" width="520" height="18" rx="2" fill="#141414" stroke="#262626"/>
+  <text x="380" y="249" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">100 containers sharing this base =  100 × ~30 MB saved  vs.  VM model (100 × 2 GB guest OS)</text>
+</svg>

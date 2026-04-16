@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="380" viewBox="0 0 760 380">
+  <rect width="760" height="380" fill="#0d0d0d"/>
+
+  <text x="380" y="18" text-anchor="middle" fill="#656363" font-family="monospace" font-size="10">// the full call chain: from your terminal command to kernel namespaces</text>
+
+  <!-- docker CLI -->
+  <rect x="290" y="28" width="180" height="34" rx="3" fill="#141414" stroke="#4ade80" stroke-width="1.5"/>
+  <text x="380" y="44" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="9" font-weight="bold">docker CLI</text>
+  <text x="380" y="56" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">docker run nginx</text>
+
+  <!-- arrow + label -->
+  <line x1="380" y1="62" x2="380" y2="80" stroke="#262626" stroke-width="1.5"/>
+  <polygon points="376,78 380,86 384,78" fill="#262626"/>
+  <text x="430" y="75" fill="#656363" font-family="monospace" font-size="7">REST  /var/run/docker.sock</text>
+
+  <!-- dockerd -->
+  <rect x="266" y="86" width="228" height="40" rx="3" fill="#141414" stroke="#4ade80" stroke-width="1.5"/>
+  <text x="380" y="102" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="9" font-weight="bold">dockerd</text>
+  <text x="380" y="116" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">Docker API · image builds · volumes · networking · Swarm</text>
+
+  <!-- arrow + label -->
+  <line x1="380" y1="126" x2="380" y2="144" stroke="#262626" stroke-width="1.5"/>
+  <polygon points="376,142 380,150 384,142" fill="#262626"/>
+  <text x="430" y="139" fill="#656363" font-family="monospace" font-size="7">gRPC  /run/containerd/containerd.sock</text>
+
+  <!-- containerd -->
+  <rect x="210" y="150" width="340" height="58" rx="3" fill="#141414" stroke="#fbbf24" stroke-width="1.5"/>
+  <text x="380" y="168" text-anchor="middle" fill="#fbbf24" font-family="monospace" font-size="9" font-weight="bold">containerd</text>
+  <text x="380" y="182" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">image pull · snapshot management · container lifecycle · storage</text>
+  <text x="380" y="196" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">exposes CRI for Kubernetes · survives restarts without killing containers</text>
+
+  <!-- arrows from containerd to two shims -->
+  <line x1="300" y1="208" x2="220" y2="238" stroke="#262626" stroke-width="1.5"/>
+  <polygon points="217,234 218,242 225,237" fill="#262626"/>
+  <line x1="460" y1="208" x2="540" y2="238" stroke="#262626" stroke-width="1.5"/>
+  <polygon points="535,237 542,242 543,234" fill="#262626"/>
+
+  <text x="220" y="232" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">fork+exec</text>
+  <text x="540" y="232" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">fork+exec</text>
+
+  <!-- shim A -->
+  <rect x="100" y="242" width="220" height="38" rx="3" fill="#141414" stroke="#67e8f9" stroke-width="1.5"/>
+  <text x="210" y="258" text-anchor="middle" fill="#67e8f9" font-family="monospace" font-size="8" font-weight="bold">containerd-shim-runc-v2</text>
+  <text x="210" y="272" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">one per container · stays alive · owns stdio + exit status</text>
+
+  <!-- shim B -->
+  <rect x="440" y="242" width="220" height="38" rx="3" fill="#141414" stroke="#67e8f9" stroke-width="1.5"/>
+  <text x="550" y="258" text-anchor="middle" fill="#67e8f9" font-family="monospace" font-size="8" font-weight="bold">containerd-shim-runc-v2</text>
+  <text x="550" y="272" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">one per container · stays alive · owns stdio + exit status</text>
+
+  <!-- arrows shim to runc -->
+  <line x1="210" y1="280" x2="210" y2="298" stroke="#262626" stroke-width="1.5"/>
+  <polygon points="206,296 210,304 214,296" fill="#262626"/>
+  <line x1="550" y1="280" x2="550" y2="298" stroke="#262626" stroke-width="1.5"/>
+  <polygon points="546,296 550,304 554,296" fill="#262626"/>
+
+  <!-- runc A -->
+  <rect x="130" y="304" width="160" height="28" rx="2" fill="#141414" stroke="#656363" stroke-width="1"/>
+  <text x="210" y="319" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8" font-weight="bold">runc</text>
+  <text x="210" y="330" text-anchor="middle" fill="#656363" font-family="monospace" font-size="6">sets up namespaces + cgroups · exits</text>
+
+  <!-- runc B -->
+  <rect x="470" y="304" width="160" height="28" rx="2" fill="#141414" stroke="#656363" stroke-width="1"/>
+  <text x="550" y="319" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8" font-weight="bold">runc</text>
+  <text x="550" y="330" text-anchor="middle" fill="#656363" font-family="monospace" font-size="6">sets up namespaces + cgroups · exits</text>
+
+  <!-- arrows to container processes -->
+  <line x1="210" y1="332" x2="210" y2="350" stroke="#4ade80" stroke-width="1.5"/>
+  <polygon points="206,348 210,356 214,348" fill="#4ade80"/>
+  <line x1="550" y1="332" x2="550" y2="350" stroke="#4ade80" stroke-width="1.5"/>
+  <polygon points="546,348 550,356 554,348" fill="#4ade80"/>
+
+  <!-- container process A -->
+  <rect x="120" y="356" width="180" height="18" rx="2" fill="#0d1a0d" stroke="#4ade80" stroke-width="1"/>
+  <text x="210" y="369" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="8">nginx  (PID 1 in container)</text>
+
+  <!-- container process B -->
+  <rect x="460" y="356" width="180" height="18" rx="2" fill="#0d1a0d" stroke="#4ade80" stroke-width="1"/>
+  <text x="550" y="369" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="8">postgres  (PID 1 in container)</text>
+
+  <!-- Kubernetes bypass arrow on the right -->
+  <line x1="700" y1="168" x2="700" y2="242" stroke="#f87171" stroke-width="1.5" stroke-dasharray="5,3"/>
+  <polygon points="696,240 700,248 704,240" fill="#f87171"/>
+  <text x="736" y="190" fill="#f87171" font-family="monospace" font-size="7" text-anchor="middle">Kubernetes</text>
+  <text x="736" y="202" fill="#f87171" font-family="monospace" font-size="7" text-anchor="middle">CRI bypasses</text>
+  <text x="736" y="214" fill="#f87171" font-family="monospace" font-size="7" text-anchor="middle">dockerd</text>
+  <text x="736" y="226" fill="#f87171" font-family="monospace" font-size="7" text-anchor="middle">entirely</text>
+  <rect x="680" y="152" width="64" height="100" rx="2" fill="none" stroke="#f87171" stroke-width="1" stroke-dasharray="3,3"/>
+</svg>

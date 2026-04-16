@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="360" viewBox="0 0 760 360">
+  <rect width="760" height="360" fill="#0d0d0d"/>
+
+  <text x="380" y="18" text-anchor="middle" fill="#656363" font-family="monospace" font-size="10">// how packets actually travel from the internet into a container and between containers</text>
+
+  <!-- Host physical NIC -->
+  <rect x="290" y="28" width="180" height="30" rx="3" fill="#141414" stroke="#262626"/>
+  <text x="380" y="43" text-anchor="middle" fill="#b7b1b1" font-family="monospace" font-size="9" font-weight="bold">Host NIC  eth0</text>
+  <text x="380" y="55" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">192.168.1.10  (internet-facing)</text>
+
+  <!-- iptables DNAT -->
+  <line x1="380" y1="58" x2="380" y2="76" stroke="#fbbf24" stroke-width="1.5"/>
+  <rect x="262" y="76" width="236" height="28" rx="2" fill="#1a1200" stroke="#fbbf24" stroke-width="1.5"/>
+  <text x="380" y="88" text-anchor="middle" fill="#fbbf24" font-family="monospace" font-size="8" font-weight="bold">iptables NAT  (DNAT rule for -p 8080:80)</text>
+  <text x="380" y="100" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">dst :8080 → DNAT → 172.17.0.2:80</text>
+
+  <!-- docker0 bridge -->
+  <line x1="380" y1="104" x2="380" y2="118" stroke="#262626" stroke-width="1.5"/>
+  <rect x="180" y="118" width="400" height="32" rx="3" fill="#141414" stroke="#67e8f9" stroke-width="2"/>
+  <text x="380" y="132" text-anchor="middle" fill="#67e8f9" font-family="monospace" font-size="9" font-weight="bold">docker0  bridge  172.17.0.1/16</text>
+  <text x="380" y="144" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">Linux kernel software Ethernet switch — all containers on this network plug in here</text>
+
+  <!-- veth pairs lines -->
+  <line x1="280" y1="150" x2="200" y2="188" stroke="#4ade80" stroke-width="1.5"/>
+  <line x1="480" y1="150" x2="560" y2="188" stroke="#4ade80" stroke-width="1.5"/>
+
+  <!-- veth host ends -->
+  <rect x="130" y="188" width="140" height="26" rx="2" fill="#141414" stroke="#4ade80" stroke-width="1"/>
+  <text x="200" y="200" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="8">veth3a2b  (host end)</text>
+  <text x="200" y="210" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">attached to docker0</text>
+
+  <rect x="490" y="188" width="140" height="26" rx="2" fill="#141414" stroke="#4ade80" stroke-width="1"/>
+  <text x="560" y="200" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="8">veth9f1c  (host end)</text>
+  <text x="560" y="210" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">attached to docker0</text>
+
+  <!-- veth pipe indicators -->
+  <line x1="200" y1="214" x2="200" y2="228" stroke="#4ade80" stroke-width="1.5" stroke-dasharray="3,2"/>
+  <line x1="560" y1="214" x2="560" y2="228" stroke="#4ade80" stroke-width="1.5" stroke-dasharray="3,2"/>
+  <text x="200" y="225" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="7">↕ veth pair</text>
+  <text x="560" y="225" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="7">↕ veth pair</text>
+
+  <!-- Container A -->
+  <rect x="60" y="234" width="280" height="94" rx="3" fill="#141414" stroke="#4ade80" stroke-width="1.5"/>
+  <text x="200" y="252" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="9" font-weight="bold">container-a  NET namespace</text>
+  <rect x="76" y="260" width="248" height="22" rx="2" fill="#0d1a0d" stroke="#4ade80" stroke-width="1"/>
+  <text x="200" y="274" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="8">eth0  172.17.0.2/16</text>
+  <text x="200" y="294" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">default route: via 172.17.0.1 (docker0)</text>
+  <text x="200" y="308" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">nginx listening on :80</text>
+  <text x="200" y="320" text-anchor="middle" fill="#fbbf24" font-family="monospace" font-size="7">name: "web" — NOT resolvable on default bridge</text>
+
+  <!-- Container B -->
+  <rect x="420" y="234" width="280" height="94" rx="3" fill="#141414" stroke="#4ade80" stroke-width="1.5"/>
+  <text x="560" y="252" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="9" font-weight="bold">container-b  NET namespace</text>
+  <rect x="436" y="260" width="248" height="22" rx="2" fill="#0d1a0d" stroke="#4ade80" stroke-width="1"/>
+  <text x="560" y="274" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="8">eth0  172.17.0.3/16</text>
+  <text x="560" y="294" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">default route: via 172.17.0.1 (docker0)</text>
+  <text x="560" y="308" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">curl client</text>
+  <text x="560" y="320" text-anchor="middle" fill="#fbbf24" font-family="monospace" font-size="7">curl web:80 — FAILS  ·  curl 172.17.0.2:80 — WORKS</text>
+
+  <!-- Container-to-container arrow -->
+  <line x1="340" y1="280" x2="420" y2="280" stroke="#67e8f9" stroke-width="1.5" stroke-dasharray="5,3"/>
+  <polygon points="418,276 426,280 418,284" fill="#67e8f9"/>
+  <text x="380" y="275" text-anchor="middle" fill="#67e8f9" font-family="monospace" font-size="7">L2 frame via docker0</text>
+
+  <!-- Bottom note -->
+  <rect x="60" y="342" width="640" height="14" rx="2" fill="#141414" stroke="#262626"/>
+  <text x="380" y="353" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">user-defined network: Docker adds DNS at 127.0.0.11 → container names resolve → curl web:80 works</text>
+</svg>

@@ -1,0 +1,110 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="340" viewBox="0 0 760 340">
+  <rect width="760" height="340" fill="#0d0d0d"/>
+
+  <text x="380" y="18" text-anchor="middle" fill="#656363" font-family="monospace" font-size="10">// the political and technical battle that produced the open standards the industry runs on today</text>
+
+  <!-- Timeline spine -->
+  <line x1="60" y1="168" x2="700" y2="168" stroke="#262626" stroke-width="2"/>
+
+  <!-- Year markers -->
+  <text x="60"  y="188" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">2013</text>
+  <text x="187" y="188" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">2014</text>
+  <text x="314" y="188" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">2015</text>
+  <text x="441" y="188" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">2016</text>
+  <text x="568" y="188" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">2017</text>
+  <text x="700" y="188" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">2019+</text>
+
+  <!-- Year tick marks -->
+  <line x1="60"  y1="162" x2="60"  y2="174" stroke="#262626" stroke-width="1.5"/>
+  <line x1="187" y1="162" x2="187" y2="174" stroke="#262626" stroke-width="1.5"/>
+  <line x1="314" y1="162" x2="314" y2="174" stroke="#262626" stroke-width="1.5"/>
+  <line x1="441" y1="162" x2="441" y2="174" stroke="#262626" stroke-width="1.5"/>
+  <line x1="568" y1="162" x2="568" y2="174" stroke="#262626" stroke-width="1.5"/>
+  <line x1="700" y1="162" x2="700" y2="174" stroke="#262626" stroke-width="1.5"/>
+
+  <!-- ABOVE THE LINE: Docker / positive events -->
+
+  <!-- Docker open-sourced PyCon 2013 -->
+  <line x1="80" y1="168" x2="80" y2="120" stroke="#4ade80" stroke-width="1.5"/>
+  <circle cx="80" cy="168" r="4" fill="#4ade80"/>
+  <rect x="18" y="68" width="124" height="50" rx="2" fill="#0d1a0d" stroke="#4ade80" stroke-width="1"/>
+  <text x="80" y="84" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="7" font-weight="bold">Mar 2013</text>
+  <text x="80" y="98" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">Docker open-sourced</text>
+  <text x="80" y="110" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">PyCon lightning talk</text>
+
+  <!-- Docker 1.0 -->
+  <line x1="220" y1="168" x2="220" y2="110" stroke="#4ade80" stroke-width="1.5"/>
+  <circle cx="220" cy="168" r="4" fill="#4ade80"/>
+  <rect x="162" y="68" width="116" height="40" rx="2" fill="#0d1a0d" stroke="#4ade80" stroke-width="1"/>
+  <text x="220" y="84" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="7" font-weight="bold">Jun 2014</text>
+  <text x="220" y="98" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">Docker 1.0 ships</text>
+
+  <!-- OCI formed -->
+  <line x1="330" y1="168" x2="330" y2="90" stroke="#fbbf24" stroke-width="1.5"/>
+  <circle cx="330" cy="168" r="4" fill="#fbbf24"/>
+  <rect x="270" y="50" width="120" height="38" rx="2" fill="#1a1200" stroke="#fbbf24" stroke-width="1"/>
+  <text x="330" y="66" text-anchor="middle" fill="#fbbf24" font-family="monospace" font-size="7" font-weight="bold">Jun 2015</text>
+  <text x="330" y="78" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">OCI formed at DockerCon</text>
+
+  <!-- CNCF + Kubernetes -->
+  <line x1="400" y1="168" x2="400" y2="68" stroke="#fbbf24" stroke-width="1.5"/>
+  <circle cx="400" cy="168" r="4" fill="#fbbf24"/>
+  <rect x="332" y="28" width="136" height="38" rx="2" fill="#1a1200" stroke="#fbbf24" stroke-width="1"/>
+  <text x="400" y="44" text-anchor="middle" fill="#fbbf24" font-family="monospace" font-size="7" font-weight="bold">Jul 2015</text>
+  <text x="400" y="56" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">CNCF formed</text>
+  <text x="400" y="68" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">Kubernetes donated</text>
+
+  <!-- containerd donated to CNCF -->
+  <line x1="480" y1="168" x2="480" y2="100" stroke="#4ade80" stroke-width="1.5"/>
+  <circle cx="480" cy="168" r="4" fill="#4ade80"/>
+  <rect x="418" y="58" width="124" height="40" rx="2" fill="#0d1a0d" stroke="#4ade80" stroke-width="1"/>
+  <text x="480" y="74" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="7" font-weight="bold">Mar 2017</text>
+  <text x="480" y="86" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">containerd donated</text>
+  <text x="480" y="98" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">to CNCF</text>
+
+  <!-- Kubernetes clearly won -->
+  <line x1="590" y1="168" x2="590" y2="108" stroke="#67e8f9" stroke-width="1.5"/>
+  <circle cx="590" cy="168" r="4" fill="#67e8f9"/>
+  <rect x="524" y="68" width="132" height="38" rx="2" fill="#0d1a1a" stroke="#67e8f9" stroke-width="1"/>
+  <text x="590" y="84" text-anchor="middle" fill="#67e8f9" font-family="monospace" font-size="7" font-weight="bold">2017–18</text>
+  <text x="590" y="96" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">Kubernetes wins orchestration</text>
+
+  <!-- rkt archived, Docker sells enterprise -->
+  <line x1="700" y1="168" x2="700" y2="108" stroke="#656363" stroke-width="1.5"/>
+  <circle cx="700" cy="168" r="4" fill="#656363"/>
+  <rect x="636" y="68" width="118" height="38" rx="2" fill="#1a1a1a" stroke="#656363" stroke-width="1"/>
+  <text x="695" y="84" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7" font-weight="bold">2019</text>
+  <text x="695" y="96" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">rkt archived · Docker sells</text>
+  <text x="695" y="108" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">enterprise to Mirantis</text>
+
+  <!-- BELOW THE LINE: CoreOS / conflict events -->
+
+  <!-- CoreOS blog post / rkt -->
+  <line x1="155" y1="168" x2="155" y2="218" stroke="#f87171" stroke-width="1.5"/>
+  <circle cx="155" cy="168" r="4" fill="#f87171"/>
+  <rect x="88" y="218" width="134" height="50" rx="2" fill="#1a0d0d" stroke="#f87171" stroke-width="1"/>
+  <text x="155" y="234" text-anchor="middle" fill="#f87171" font-family="monospace" font-size="7" font-weight="bold">Dec 2014</text>
+  <text x="155" y="248" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">CoreOS launches rkt</text>
+  <text x="155" y="260" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">"Docker is not the answer"</text>
+
+  <!-- Docker Swarm vs k8s war -->
+  <line x1="460" y1="168" x2="460" y2="232" stroke="#f87171" stroke-width="1.5"/>
+  <circle cx="460" cy="168" r="4" fill="#f87171"/>
+  <rect x="386" y="232" width="148" height="50" rx="2" fill="#1a0d0d" stroke="#f87171" stroke-width="1"/>
+  <text x="460" y="248" text-anchor="middle" fill="#f87171" font-family="monospace" font-size="7" font-weight="bold">2016</text>
+  <text x="460" y="262" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">Docker Swarm vs Kubernetes</text>
+  <text x="460" y="276" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">orchestration war peaks</text>
+
+  <!-- bottom legend -->
+  <rect x="60" y="308" width="640" height="22" rx="2" fill="#141414" stroke="#262626"/>
+  <circle cx="90" cy="319" r="4" fill="#4ade80"/>
+  <text x="100" y="323" fill="#656363" font-family="monospace" font-size="7">Docker</text>
+  <circle cx="165" cy="319" r="4" fill="#f87171"/>
+  <text x="175" y="323" fill="#656363" font-family="monospace" font-size="7">Conflict / CoreOS</text>
+  <circle cx="278" cy="319" r="4" fill="#fbbf24"/>
+  <text x="288" y="323" fill="#656363" font-family="monospace" font-size="7">Standards bodies (OCI / CNCF)</text>
+  <circle cx="450" cy="319" r="4" fill="#67e8f9"/>
+  <text x="460" y="323" fill="#656363" font-family="monospace" font-size="7">Ecosystem resolution</text>
+  <circle cx="570" cy="319" r="4" fill="#656363"/>
+  <text x="580" y="323" fill="#656363" font-family="monospace" font-size="7">Projects archived / sold</text>
+</svg>

@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="310" viewBox="0 0 760 310">
+  <rect width="760" height="310" fill="#0d0d0d"/>
+
+  <text x="380" y="18" text-anchor="middle" fill="#656363" font-family="monospace" font-size="10">// layers are immutable snapshots — what's in them stays in them, forever</text>
+
+  <!-- LEFT: bloated image -->
+  <text x="178" y="36" text-anchor="middle" fill="#f87171" font-family="monospace" font-size="10" font-weight="bold">Bloated  (separate RUN commands)</text>
+
+  <rect x="16" y="46" width="324" height="34" rx="2" fill="#141414" stroke="#262626"/>
+  <text x="178" y="63" text-anchor="middle" fill="#b7b1b1" font-family="monospace" font-size="8" font-weight="bold">FROM ubuntu:22.04</text>
+  <text x="178" y="75" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">base — 77 MB</text>
+
+  <rect x="16" y="90" width="324" height="34" rx="2" fill="#141414" stroke="#f87171" stroke-width="1.5"/>
+  <text x="178" y="107" text-anchor="middle" fill="#f87171" font-family="monospace" font-size="8" font-weight="bold">RUN apt-get update &amp;&amp; apt-get install -y build-essential</text>
+  <text x="178" y="119" text-anchor="middle" fill="#f87171" font-family="monospace" font-size="7">layer adds: packages + apt cache — +340 MB</text>
+
+  <rect x="16" y="134" width="324" height="34" rx="2" fill="#141414" stroke="#f87171" stroke-width="1.5"/>
+  <text x="178" y="151" text-anchor="middle" fill="#f87171" font-family="monospace" font-size="8" font-weight="bold">RUN rm -rf /var/lib/apt/lists/*</text>
+  <text x="178" y="163" text-anchor="middle" fill="#fbbf24" font-family="monospace" font-size="7">whiteout files added — apt cache STILL in layer above — +0 MB</text>
+
+  <rect x="16" y="178" width="324" height="34" rx="2" fill="#141414" stroke="#262626"/>
+  <text x="178" y="195" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">COPY . /app</text>
+  <text x="178" y="207" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">+2 MB</text>
+
+  <rect x="16" y="250" width="324" height="32" rx="2" fill="#1a0d0d" stroke="#f87171" stroke-width="1.5"/>
+  <text x="178" y="263" text-anchor="middle" fill="#f87171" font-family="monospace" font-size="9" font-weight="bold">Final image: ~419 MB</text>
+  <text x="178" y="275" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">340 MB of apt cache hidden but not gone</text>
+
+  <!-- Divider -->
+  <line x1="380" y1="30" x2="380" y2="295" stroke="#262626" stroke-width="1" stroke-dasharray="4,3"/>
+
+  <!-- RIGHT: lean image -->
+  <text x="570" y="36" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="10" font-weight="bold">Lean  (chain in one RUN)</text>
+
+  <rect x="396" y="46" width="348" height="34" rx="2" fill="#141414" stroke="#262626"/>
+  <text x="570" y="63" text-anchor="middle" fill="#b7b1b1" font-family="monospace" font-size="8" font-weight="bold">FROM ubuntu:22.04</text>
+  <text x="570" y="75" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">base — 77 MB</text>
+
+  <rect x="396" y="90" width="348" height="52" rx="2" fill="#141414" stroke="#4ade80" stroke-width="1.5"/>
+  <text x="570" y="107" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="8" font-weight="bold">RUN apt-get update \</text>
+  <text x="570" y="119" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="8">    &amp;&amp; apt-get install -y build-essential \</text>
+  <text x="570" y="131" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="8">    &amp;&amp; rm -rf /var/lib/apt/lists/*</text>
+
+  <text x="570" y="152" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="7">snapshot taken AFTER cleanup — apt cache never in the layer — +180 MB</text>
+
+  <rect x="396" y="162" width="348" height="34" rx="2" fill="#141414" stroke="#262626"/>
+  <text x="570" y="179" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">COPY . /app</text>
+  <text x="570" y="191" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">+2 MB</text>
+
+  <rect x="396" y="250" width="348" height="32" rx="2" fill="#0d1a0d" stroke="#4ade80" stroke-width="1.5"/>
+  <text x="570" y="263" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="9" font-weight="bold">Final image: ~259 MB</text>
+  <text x="570" y="275" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">160 MB saved — same packages, clean layer</text>
+</svg>

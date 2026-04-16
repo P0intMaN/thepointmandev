@@ -3,8 +3,143 @@ title: "The Container Wars"
 courseSlug: "docker"
 lessonNumber: 21
 description: "How CoreOS and Docker almost tore the community apart — the political and technical battle that reshaped the entire container ecosystem."
-date: "2026-04-14"
+date: "2026-04-16"
 draft: false
 ---
 
-*Lesson content coming soon.*
+## After the Lightning Talk
+
+By mid-2014, Docker had gone from a PyCon lightning talk to the most-starred project on GitHub in under eighteen months. Every major cloud provider was adding Docker support. Every infrastructure conference had Docker talks. Developers who had spent years wrestling with dependency conflicts and deployment scripts were adopting it as fast as they could install it.
+
+Docker 1.0 shipped in June 2014 with an implicit message: the container era had officially started, and Docker was in charge of it.
+
+That's when the trouble started.
+
+<Figure
+  src="/diagrams/container-wars-timeline.svg"
+  alt="Timeline of the container wars from 2013 to 2019: Docker open-sourced, CoreOS launches rkt, OCI and CNCF formed, Kubernetes wins orchestration"
+  caption="The conflict that looked like it would fragment the ecosystem actually produced the open standards — OCI, containerd, runc — that the entire industry runs on today."
+  label="container-wars-timeline.svg"
+/>
+
+---
+
+## The CoreOS Problem
+
+CoreOS was a startup building a minimal Linux distribution designed specifically to run containers at scale. Their product, Container Linux, stripped out everything except what was needed to run Docker containers — no package manager, atomic OS updates, designed to be deployed in large clusters.
+
+They were, in other words, one of Docker's biggest advocates. And they were about to become Docker's most public critic.
+
+The concern wasn't Docker the tool. It was Docker the direction.
+
+By late 2014, Docker wasn't just a container runtime. It was becoming a build system (`docker build`), an image format (`.tar` layers), a registry protocol (Docker Hub), an orchestration system (the early Docker Compose and Docker Swarm were in development), and a networking layer. Docker Inc. was moving fast — each release added surface area.
+
+The CoreOS team saw this as a structural problem. Their argument, laid out publicly in December 2014, was architectural: Docker was violating the Unix philosophy. Instead of doing one thing well, Docker was becoming a monolithic system where every piece was tightly coupled to every other piece. The Docker daemon was a single privileged process running as root that mediated all container operations. If it crashed or had a security vulnerability, everything went with it.
+
+More practically: if Docker controlled the image format, the runtime, the registry, and the orchestration, then "the container ecosystem" and "Docker Inc.'s product decisions" would be the same thing. That wasn't a healthy place for infrastructure that the industry was betting on.
+
+---
+
+## The rkt Launch
+
+On December 1, 2014, CoreOS published a blog post titled *"App Container and Docker"* and simultaneously released **rkt** (pronounced "rocket"), their own container runtime.
+
+The post was direct. It outlined four complaints about Docker's architecture:
+
+**1. The daemon model is a security problem.** Docker required a privileged daemon running as root. Every Docker operation — pulling an image, starting a container, inspecting a container — was an RPC to this root process. If an attacker could reach the Docker socket, they had root on the host. rkt ran containers as child processes of the caller, with no persistent daemon.
+
+**2. The format is proprietary.** Docker images were a Docker-specific format. CoreOS proposed an open specification called the App Container (appc) spec, describing what an image should look like independently of who built the runtime.
+
+**3. The scope is too large.** Docker the tool was doing too many things. Build, run, push, pull, orchestrate — one binary, one daemon, one team's design decisions. CoreOS wanted composable, swappable pieces.
+
+**4. There is no vendor-neutral home for standards.** Key infrastructure should be owned by a neutral body with open governance, not a single company's roadmap.
+
+These were not personal attacks. The technical critiques were legitimate. Docker's response to the daemon security issue, in particular, was essentially: *yes, this is a known tradeoff, we're working on it*. The lack of a vendor-neutral standard was harder to dismiss.
+
+Docker's public response was measured but tense. Solomon Hykes, Docker's founder, acknowledged the concern about the daemon and the scope but pushed back on the characterization that Docker was trying to lock down the ecosystem. The argument that this was a power grab hit a nerve.
+
+The developer community took sides publicly. Twitter threads, blog posts, conference talks — the container world had its first real political fight. People who had never cared about runtime architecture suddenly had strong opinions about daemon models.
+
+---
+
+## The OCI: Turning a Fight Into a Standard
+
+The conflict could have fractured the community. It didn't — because both sides were ultimately arguing from the same premise: containers were too important to be owned by any one company.
+
+In June 2015, at DockerCon in San Francisco, Docker and CoreOS announced the formation of the **Open Container Initiative (OCI)** under the Linux Foundation.
+
+Docker donated the specification for their image format and their container runtime code (`runc`) as the founding technical contribution. CoreOS contributed the appc spec work. The OCI's charter was to produce two open specifications:
+
+- **OCI Image Spec**: What a container image is — the layer format, the manifest structure, the config schema. Any tool that produces an OCI image can run on any runtime that consumes OCI images.
+- **OCI Runtime Spec**: What a container runtime must do — the interface between an image and a running process. `runc` is the reference implementation.
+
+This was the resolution. Docker's format became the industry standard — not because Docker owned it, but because Docker gave it away. Any runtime could implement the OCI specs. Any build tool could produce OCI images. The format was no longer Docker's to control.
+
+---
+
+## The CNCF: A Neutral Home for the Ecosystem
+
+One month after OCI was formed, in July 2015, the **Cloud Native Computing Foundation (CNCF)** was announced — also under the Linux Foundation.
+
+The initial donation: Kubernetes, contributed by Google.
+
+Google had been watching the Docker ecosystem with concern from a different angle. They had been running containers internally since 2004 (their internal system, Borg, predated Docker by nearly a decade), and they had open-sourced Kubernetes in 2014 as their answer to container orchestration. But if Docker controlled the runtime, the image format, and the orchestration layer, Kubernetes would be permanently dependent on Docker Inc.'s roadmap.
+
+CNCF gave the ecosystem a neutral home for projects that were too important to be owned by any single company. The founding members included Google, CoreOS, Mesosphere, Red Hat, Twitter, Huawei, Intel, IBM, and Docker itself. The message was clear: no single company should control cloud-native infrastructure.
+
+Kubernetes was the first CNCF project. containerd — Docker's internal container runtime, factored out of the Docker daemon — would be donated to CNCF in March 2017. Today CNCF hosts over 150 projects including Prometheus, Envoy, Helm, and gRPC.
+
+---
+
+## The Orchestration War
+
+With the runtime and image format issues heading toward resolution through standards bodies, the real battle shifted to orchestration: *how do you manage hundreds of containers across dozens of hosts?*
+
+Docker's answer was **Docker Swarm**, built directly into the Docker daemon. The sales pitch was simplicity: if you already use Docker, you already have Swarm. Turn a cluster of machines into a swarm with a single command, deploy services, done.
+
+Kubernetes was more complex. It had more concepts to learn (Pods, Deployments, Services, Namespaces, ConfigMaps, Secrets, Ingress — the API surface was large), it required more setup, and it was opinionated about how you described your application. But it was also more powerful, more flexible, and backed by Google's decade of experience running Borg.
+
+Mesosphere had a third contender, Marathon/DC/OS, popular in enterprise environments. Apache Mesos was the underlying technology, which had been running production workloads at Twitter and Airbnb since before Kubernetes existed.
+
+For most of 2016, the outcome was genuinely uncertain. Docker Swarm had the advantage of zero additional tooling — if you ran Docker, you had Swarm. Kubernetes had the advantage of Google's credibility and a rapidly growing community.
+
+The tipping point came from enterprise adoption. Red Hat made a major bet on Kubernetes, shipping it as the foundation of OpenShift. Cloud providers started offering managed Kubernetes services — Google's GKE was already running it, AWS announced EKS, Azure announced AKS. The enterprise demand for "managed Kubernetes as a service" created a feedback loop: more cloud providers → more tooling → more adoption → more cloud providers.
+
+By late 2017, the orchestration war was effectively over. Kubernetes had won. Docker announced that Docker Enterprise Edition would ship with Kubernetes support alongside Swarm. The industry had spoken.
+
+---
+
+## What Docker Won and What It Lost
+
+The narrative that "Docker lost the container wars" is too simple.
+
+Docker Inc. the company lost the orchestration war to Kubernetes. They also failed to become the neutral standards body they may have envisioned — OCI and CNCF filled that role. In 2019, Docker sold its enterprise business to Mirantis. The Docker Inc. you interact with today is primarily Docker Desktop, Docker Hub, and the Docker CLI — developer tools, not infrastructure control.
+
+rkt, the spark that started the war, was archived in 2019. CoreOS was acquired by Red Hat in 2018, which was acquired by IBM the same year. The technical critiques rkt raised were valid and influential — but rkt itself was superseded by the standards it helped create.
+
+The format and concepts Docker pioneered, however, won decisively:
+- The OCI Image Spec is Docker's image format, standardized
+- `runc`, the OCI runtime reference implementation, is Docker's runtime code, open-sourced
+- `containerd`, the runtime layer inside Docker daemon, is now the most widely deployed container runtime on Earth — used by Kubernetes in production at Google, Amazon, Microsoft, and essentially every company running containers at scale
+
+The container ecosystem today runs almost entirely on technology that Docker built and then donated to open-source governance. The company gave up control; the technology took over the industry.
+
+---
+
+## Why This History Matters
+
+This isn't just historical trivia. Understanding the container wars explains the architecture you work with every day.
+
+**Why does `docker run` go through containerd?** Because Docker split their monolith after the rkt criticism — the daemon now delegates to containerd, which delegates to runc. Each layer is independently replaceable and open-source.
+
+**Why does Kubernetes not use Docker directly?** Because Kubernetes adopted the CRI (Container Runtime Interface), which lets it talk to any OCI-compliant runtime. Kubernetes removed the `dockershim` compatibility layer in 2022 — not because Docker images stopped working, but because Docker the daemon was never necessary in the chain.
+
+**Why do OCI images built by Docker run on containerd, podman, or any other runtime?** Because the image format is an open standard now, not Docker's proprietary format.
+
+**Why is there a CNCF?** Because every major player recognized that infrastructure this important needed vendor-neutral governance. The model has proven itself — CNCF projects underpin every major cloud provider's container infrastructure.
+
+The lesson 22 and 23 will go deeper into the OCI standards and the runtime architecture. But the political context matters: the standards exist because the conflict forced them into existence. The community's health today is a direct consequence of the container wars being fought and resolved.
+
+---
+
+> **Key Takeaway:** The container wars (2014–2017) were a conflict between Docker's ambition to own the container ecosystem and the rest of the industry's need for open, vendor-neutral standards. CoreOS's launch of rkt in December 2014 crystallized the technical critiques — the Docker daemon model, the proprietary image format, the expanding scope. The resolution came through standards bodies: OCI (image format + runtime spec, June 2015) and CNCF (Kubernetes and containerd's neutral home, July 2015). Docker won the format war — the OCI spec is Docker's image format, standardized and donated. Kubernetes won the orchestration war. The technology Docker built and then open-sourced — runc and containerd — now runs under virtually every production container deployment on Earth.

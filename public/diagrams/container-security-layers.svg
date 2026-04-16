@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="360" viewBox="0 0 760 360">
+  <rect width="760" height="360" fill="#0d0d0d"/>
+
+  <text x="380" y="18" text-anchor="middle" fill="#656363" font-family="monospace" font-size="10">// container isolation is not a single wall — it is several independent layers, each catchng what slips through the last</text>
+
+  <!-- LEFT: No hardening (anti-pattern) -->
+  <text x="175" y="36" text-anchor="middle" fill="#f87171" font-family="monospace" font-size="9" font-weight="bold">default · no hardening  ✗</text>
+
+  <rect x="16" y="44" width="318" height="306" rx="3" fill="#141414" stroke="#f87171" stroke-width="1.5"/>
+
+  <rect x="30" y="58" width="290" height="28" rx="2" fill="#1a0d0d" stroke="#f87171" stroke-width="1"/>
+  <text x="175" y="72" text-anchor="middle" fill="#f87171" font-family="monospace" font-size="8" font-weight="bold">process runs as root (UID 0)</text>
+  <text x="175" y="84" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">root in container = root on host if isolation breaks</text>
+
+  <rect x="30" y="96" width="290" height="28" rx="2" fill="#1a0d0d" stroke="#f87171" stroke-width="1"/>
+  <text x="175" y="110" text-anchor="middle" fill="#f87171" font-family="monospace" font-size="8" font-weight="bold">15 default Linux capabilities</text>
+  <text x="175" y="122" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">NET_RAW, SYS_CHROOT, SETUID, MKNOD ...</text>
+
+  <rect x="30" y="134" width="290" height="28" rx="2" fill="#1a0d0d" stroke="#f87171" stroke-width="1"/>
+  <text x="175" y="148" text-anchor="middle" fill="#f87171" font-family="monospace" font-size="8" font-weight="bold">can gain new privileges</text>
+  <text x="175" y="160" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">setuid binaries inside the container work</text>
+
+  <rect x="30" y="172" width="290" height="28" rx="2" fill="#1a0d0d" stroke="#f87171" stroke-width="1"/>
+  <text x="175" y="186" text-anchor="middle" fill="#f87171" font-family="monospace" font-size="8" font-weight="bold">read-write root filesystem</text>
+  <text x="175" y="198" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">attacker can modify any file in the container</text>
+
+  <rect x="30" y="210" width="290" height="28" rx="2" fill="#1a0d0d" stroke="#f87171" stroke-width="1"/>
+  <text x="175" y="224" text-anchor="middle" fill="#f87171" font-family="monospace" font-size="8" font-weight="bold">default seccomp profile only</text>
+  <text x="175" y="236" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">~300 syscalls available, many dangerous</text>
+
+  <rect x="30" y="248" width="290" height="28" rx="2" fill="#1a0d0d" stroke="#f87171" stroke-width="1"/>
+  <text x="175" y="262" text-anchor="middle" fill="#f87171" font-family="monospace" font-size="8" font-weight="bold">--privileged or dangerous mounts</text>
+  <text x="175" y="274" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">/var/run/docker.sock = host root access</text>
+
+  <rect x="30" y="296" width="290" height="42" rx="2" fill="#1a1a1a" stroke="#262626"/>
+  <text x="175" y="314" text-anchor="middle" fill="#f87171" font-family="monospace" font-size="7">attacker escaping the container has</text>
+  <text x="175" y="328" text-anchor="middle" fill="#f87171" font-family="monospace" font-size="7">full root access to the host machine</text>
+
+  <!-- RIGHT: Hardened -->
+  <text x="585" y="36" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="9" font-weight="bold">hardened  ✓</text>
+
+  <rect x="426" y="44" width="318" height="306" rx="3" fill="#141414" stroke="#4ade80" stroke-width="1.5"/>
+
+  <rect x="440" y="58" width="290" height="28" rx="2" fill="#0d1a0d" stroke="#4ade80" stroke-width="1"/>
+  <text x="585" y="72" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="8" font-weight="bold">USER 10001  (non-root, non-special UID)</text>
+  <text x="585" y="84" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">escaping container lands as unprivileged user</text>
+
+  <rect x="440" y="96" width="290" height="28" rx="2" fill="#0d1a0d" stroke="#4ade80" stroke-width="1"/>
+  <text x="585" y="110" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="8" font-weight="bold">--cap-drop ALL --cap-add NET_BIND_SERVICE</text>
+  <text x="585" y="122" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">only the exact capability the app needs</text>
+
+  <rect x="440" y="134" width="290" height="28" rx="2" fill="#0d1a0d" stroke="#4ade80" stroke-width="1"/>
+  <text x="585" y="148" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="8" font-weight="bold">--security-opt no-new-privileges</text>
+  <text x="585" y="160" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">setuid binaries cannot elevate privileges</text>
+
+  <rect x="440" y="172" width="290" height="28" rx="2" fill="#0d1a0d" stroke="#4ade80" stroke-width="1"/>
+  <text x="585" y="186" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="8" font-weight="bold">--read-only + --tmpfs /tmp</text>
+  <text x="585" y="198" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">filesystem is immutable except known write paths</text>
+
+  <rect x="440" y="210" width="290" height="28" rx="2" fill="#0d1a0d" stroke="#4ade80" stroke-width="1"/>
+  <text x="585" y="224" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="8" font-weight="bold">custom seccomp profile</text>
+  <text x="585" y="236" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">only syscalls the application actually uses</text>
+
+  <rect x="440" y="248" width="290" height="28" rx="2" fill="#0d1a0d" stroke="#4ade80" stroke-width="1"/>
+  <text x="585" y="262" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="8" font-weight="bold">no docker.sock · no privileged · minimal image</text>
+  <text x="585" y="274" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">distroless or scratch — no shell to drop into</text>
+
+  <rect x="440" y="296" width="290" height="42" rx="2" fill="#1a1a1a" stroke="#262626"/>
+  <text x="585" y="314" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="7">attacker escaping the container lands as</text>
+  <text x="585" y="328" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="7">UID 10001 with no capabilities — nearly useless</text>
+</svg>

@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="300" viewBox="0 0 760 300">
+  <rect width="760" height="300" fill="#0d0d0d"/>
+
+  <text x="380" y="18" text-anchor="middle" fill="#656363" font-family="monospace" font-size="10">// one image — three containers — three independent upper layers</text>
+
+  <!-- IMAGE (left) -->
+  <text x="110" y="36" text-anchor="middle" fill="#b7b1b1" font-family="monospace" font-size="10" font-weight="bold">Image</text>
+  <text x="110" y="50" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">read-only  ·  lives on disk  ·  shared</text>
+
+  <rect x="20" y="58" width="180" height="28" rx="2" fill="#141414" stroke="#262626"/>
+  <text x="110" y="76" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">layer 3 — app code</text>
+
+  <rect x="20" y="94" width="180" height="28" rx="2" fill="#141414" stroke="#262626"/>
+  <text x="110" y="112" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">layer 2 — nginx binary</text>
+
+  <rect x="20" y="130" width="180" height="28" rx="2" fill="#141414" stroke="#4ade80" stroke-width="1.5"/>
+  <text x="110" y="148" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="8">layer 1 — Ubuntu base</text>
+
+  <text x="110" y="180" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">sha256:a3b4c5d6...</text>
+  <text x="110" y="194" text-anchor="middle" fill="#fbbf24" font-family="monospace" font-size="8">nginx:1.25</text>
+
+  <!-- Arrows -->
+  <line x1="200" y1="114" x2="232" y2="96" stroke="#262626" stroke-width="1"/>
+  <line x1="200" y1="114" x2="232" y2="168" stroke="#262626" stroke-width="1"/>
+  <line x1="200" y1="114" x2="232" y2="240" stroke="#262626" stroke-width="1"/>
+  <polygon points="230,92 238,96 232,102" fill="#262626"/>
+  <polygon points="230,164 238,168 232,174" fill="#262626"/>
+  <polygon points="230,236 238,240 232,246" fill="#262626"/>
+
+  <!-- CONTAINERS (right) -->
+  <text x="520" y="36" text-anchor="middle" fill="#b7b1b1" font-family="monospace" font-size="10" font-weight="bold">Containers</text>
+  <text x="520" y="50" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">running process  ·  own writable layer  ·  independent</text>
+
+  <!-- Container A -->
+  <rect x="238" y="58" width="200" height="74" rx="3" fill="#141414" stroke="#67e8f9" stroke-width="1.5"/>
+  <text x="338" y="76" text-anchor="middle" fill="#67e8f9" font-family="monospace" font-size="9" font-weight="bold">container-a  (running)</text>
+  <rect x="254" y="84" width="168" height="20" rx="2" fill="#0d1a1a" stroke="#67e8f9" stroke-width="1"/>
+  <text x="338" y="97" text-anchor="middle" fill="#67e8f9" font-family="monospace" font-size="8">upper: /etc/nginx/nginx.conf (modified)</text>
+  <text x="338" y="118" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">PID 3421 · NET ns: 4026532236 · MNT ns: 4026532232</text>
+
+  <!-- Container B -->
+  <rect x="238" y="148" width="200" height="74" rx="3" fill="#141414" stroke="#67e8f9" stroke-width="1.5"/>
+  <text x="338" y="166" text-anchor="middle" fill="#67e8f9" font-family="monospace" font-size="9" font-weight="bold">container-b  (running)</text>
+  <rect x="254" y="174" width="168" height="20" rx="2" fill="#141414" stroke="#262626"/>
+  <text x="338" y="187" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">upper: (empty — no writes yet)</text>
+  <text x="338" y="208" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">PID 3498 · NET ns: 4026532244 · MNT ns: 4026532248</text>
+
+  <!-- Container C -->
+  <rect x="238" y="238" width="200" height="50" rx="3" fill="#141414" stroke="#262626" stroke-dasharray="4,3"/>
+  <text x="338" y="256" text-anchor="middle" fill="#656363" font-family="monospace" font-size="9" font-weight="bold">container-c  (stopped)</text>
+  <text x="338" y="274" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">process exited — layers still on disk until rm</text>
+
+  <!-- Shared lower layers annotation -->
+  <rect x="456" y="74" width="284" height="176" rx="3" fill="#0d1a0d" stroke="#4ade80" stroke-width="1"/>
+  <text x="598" y="94" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="9" font-weight="bold">shared lower layers (read-only)</text>
+  <text x="598" y="110" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">all three containers read from the same</text>
+  <text x="598" y="124" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">image layers on disk — stored once</text>
+  <text x="598" y="148" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">container-a modified nginx.conf?</text>
+  <text x="598" y="162" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="8">→ copy in its upper layer only</text>
+  <text x="598" y="178" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">container-b still sees the original</text>
+  <text x="598" y="202" text-anchor="middle" fill="#fbbf24" font-family="monospace" font-size="8">rm container-a → its upper layer gone</text>
+  <text x="598" y="216" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">image layers untouched — still usable</text>
+  <text x="598" y="236" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">rm the image → layers deleted from disk</text>
+</svg>

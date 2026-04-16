@@ -1,0 +1,124 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="360" viewBox="0 0 760 360">
+  <rect width="760" height="360" fill="#0d0d0d"/>
+
+  <text x="380" y="18" text-anchor="middle" fill="#656363" font-family="monospace" font-size="10">// two OCI specs: one defines what an image is, one defines what a runtime must do with it</text>
+
+  <!-- LEFT: OCI IMAGE SPEC -->
+  <text x="185" y="36" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="9" font-weight="bold">OCI Image Spec</text>
+  <text x="185" y="48" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">what is stored in a registry</text>
+
+  <rect x="16" y="56" width="338" height="288" rx="3" fill="#141414" stroke="#4ade80" stroke-width="1.5"/>
+
+  <!-- Image Index (optional) -->
+  <rect x="100" y="68" width="168" height="36" rx="2" fill="#0d1a0d" stroke="#4ade80" stroke-width="1"/>
+  <text x="184" y="83" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="8" font-weight="bold">Image Index</text>
+  <text x="184" y="97" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">multi-platform manifest list</text>
+
+  <!-- arrows down to manifests -->
+  <line x1="140" y1="104" x2="100" y2="122" stroke="#4ade80" stroke-width="1" stroke-dasharray="3,2"/>
+  <line x1="228" y1="104" x2="268" y2="122" stroke="#4ade80" stroke-width="1" stroke-dasharray="3,2"/>
+  <text x="184" y="118" text-anchor="middle" fill="#656363" font-family="monospace" font-size="6">per-platform</text>
+
+  <!-- Manifest -->
+  <rect x="28" y="122" width="148" height="56" rx="2" fill="#0d1a0d" stroke="#4ade80" stroke-width="1"/>
+  <text x="102" y="138" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="8" font-weight="bold">Manifest</text>
+  <text x="102" y="152" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">→ config digest</text>
+  <text x="102" y="164" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">→ layer digests[ ]</text>
+
+  <rect x="192" y="122" width="148" height="56" rx="2" fill="#141414" stroke="#262626" stroke-dasharray="4,3"/>
+  <text x="266" y="138" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8" font-weight="bold">Manifest</text>
+  <text x="266" y="152" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">→ config digest</text>
+  <text x="266" y="164" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">→ layer digests[ ]</text>
+
+  <text x="102" y="192" text-anchor="middle" fill="#656363" font-family="monospace" font-size="6">linux/amd64</text>
+  <text x="266" y="192" text-anchor="middle" fill="#656363" font-family="monospace" font-size="6">linux/arm64</text>
+
+  <!-- arrows from manifest down -->
+  <line x1="72" y1="178" x2="56" y2="206" stroke="#4ade80" stroke-width="1"/>
+  <line x1="132" y1="178" x2="148" y2="206" stroke="#4ade80" stroke-width="1"/>
+
+  <!-- Config blob -->
+  <rect x="28" y="206" width="100" height="46" rx="2" fill="#0d1a1a" stroke="#67e8f9" stroke-width="1"/>
+  <text x="78" y="222" text-anchor="middle" fill="#67e8f9" font-family="monospace" font-size="7" font-weight="bold">Config blob</text>
+  <text x="78" y="236" text-anchor="middle" fill="#656363" font-family="monospace" font-size="6">ENV, CMD, EXPOSE</text>
+  <text x="78" y="248" text-anchor="middle" fill="#656363" font-family="monospace" font-size="6">ENTRYPOINT, USER</text>
+
+  <!-- Layer blobs -->
+  <rect x="140" y="206" width="80" height="36" rx="2" fill="#1a1200" stroke="#fbbf24" stroke-width="1"/>
+  <text x="180" y="221" text-anchor="middle" fill="#fbbf24" font-family="monospace" font-size="7" font-weight="bold">Layer 1</text>
+  <text x="180" y="235" text-anchor="middle" fill="#656363" font-family="monospace" font-size="6">tar.gz blob</text>
+
+  <rect x="232" y="206" width="80" height="36" rx="2" fill="#1a1200" stroke="#fbbf24" stroke-width="1"/>
+  <text x="272" y="221" text-anchor="middle" fill="#fbbf24" font-family="monospace" font-size="7" font-weight="bold">Layer 2</text>
+  <text x="272" y="235" text-anchor="middle" fill="#656363" font-family="monospace" font-size="6">tar.gz blob</text>
+
+  <!-- Everything is content-addressed -->
+  <rect x="28" y="268" width="312" height="62" rx="2" fill="#1a1a1a" stroke="#262626"/>
+  <text x="184" y="284" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="8" font-weight="bold">all blobs content-addressed by sha256</text>
+  <text x="184" y="298" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">sha256:a3ed9... → always the same bytes</text>
+  <text x="184" y="312" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">any runtime that reads OCI images</text>
+  <text x="184" y="326" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">can verify integrity without trust in the source</text>
+
+  <!-- ARROW between specs -->
+  <line x1="354" y1="200" x2="406" y2="200" stroke="#656363" stroke-width="1.5"/>
+  <polygon points="404,196 412,200 404,204" fill="#656363"/>
+  <text x="380" y="193" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">unpack to</text>
+  <text x="380" y="214" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">bundle</text>
+
+  <!-- RIGHT: OCI RUNTIME SPEC -->
+  <text x="585" y="36" text-anchor="middle" fill="#fbbf24" font-family="monospace" font-size="9" font-weight="bold">OCI Runtime Spec</text>
+  <text x="585" y="48" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">what a runtime receives and must do</text>
+
+  <rect x="406" y="56" width="338" height="288" rx="3" fill="#141414" stroke="#fbbf24" stroke-width="1.5"/>
+
+  <!-- Filesystem bundle -->
+  <rect x="430" y="68" width="290" height="26" rx="2" fill="#1a1200" stroke="#fbbf24" stroke-width="1"/>
+  <text x="575" y="86" text-anchor="middle" fill="#fbbf24" font-family="monospace" font-size="8" font-weight="bold">Filesystem Bundle  (directory on disk)</text>
+
+  <line x1="490" y1="94" x2="490" y2="110" stroke="#fbbf24" stroke-width="1"/>
+  <line x1="660" y1="94" x2="660" y2="110" stroke="#fbbf24" stroke-width="1"/>
+
+  <!-- rootfs -->
+  <rect x="430" y="110" width="120" height="54" rx="2" fill="#141414" stroke="#fbbf24" stroke-width="1"/>
+  <text x="490" y="126" text-anchor="middle" fill="#fbbf24" font-family="monospace" font-size="8" font-weight="bold">rootfs/</text>
+  <text x="490" y="140" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">merged layers</text>
+  <text x="490" y="154" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">/bin, /lib, /usr...</text>
+
+  <!-- config.json -->
+  <rect x="566" y="110" width="150" height="130" rx="2" fill="#141414" stroke="#fbbf24" stroke-width="1"/>
+  <text x="641" y="126" text-anchor="middle" fill="#fbbf24" font-family="monospace" font-size="8" font-weight="bold">config.json</text>
+  <text x="641" y="142" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">namespaces to create</text>
+  <text x="641" y="156" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">cgroups limits</text>
+  <text x="641" y="170" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">seccomp profile</text>
+  <text x="641" y="184" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">capabilities to drop</text>
+  <text x="641" y="198" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">mounts (proc, sys...)</text>
+  <text x="641" y="212" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">process to exec + env</text>
+  <text x="641" y="226" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">hooks (prestart, poststop)</text>
+
+  <!-- Container lifecycle -->
+  <rect x="430" y="252" width="290" height="80" rx="2" fill="#1a1a1a" stroke="#262626"/>
+  <text x="575" y="268" text-anchor="middle" fill="#fbbf24" font-family="monospace" font-size="8" font-weight="bold">Container Lifecycle (runc)</text>
+
+  <rect x="440" y="276" width="60" height="20" rx="2" fill="#141414" stroke="#262626"/>
+  <text x="470" y="290" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">creating</text>
+
+  <line x1="500" y1="286" x2="514" y2="286" stroke="#fbbf24" stroke-width="1"/>
+  <polygon points="512,282 520,286 512,290" fill="#fbbf24"/>
+
+  <rect x="520" y="276" width="54" height="20" rx="2" fill="#141414" stroke="#fbbf24" stroke-width="1"/>
+  <text x="547" y="290" text-anchor="middle" fill="#fbbf24" font-family="monospace" font-size="7">created</text>
+
+  <line x1="574" y1="286" x2="588" y2="286" stroke="#fbbf24" stroke-width="1"/>
+  <polygon points="586,282 594,286 586,290" fill="#fbbf24"/>
+
+  <rect x="594" y="276" width="56" height="20" rx="2" fill="#0d1a0d" stroke="#4ade80" stroke-width="1"/>
+  <text x="622" y="290" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="7">running</text>
+
+  <line x1="650" y1="286" x2="664" y2="286" stroke="#f87171" stroke-width="1"/>
+  <polygon points="662,282 670,286 662,290" fill="#f87171"/>
+
+  <rect x="670" y="276" width="44" height="20" rx="2" fill="#141414" stroke="#f87171" stroke-width="1"/>
+  <text x="692" y="290" text-anchor="middle" fill="#f87171" font-family="monospace" font-size="7">stopped</text>
+
+  <text x="575" y="326" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">runc is the reference implementation of this spec</text>
+</svg>

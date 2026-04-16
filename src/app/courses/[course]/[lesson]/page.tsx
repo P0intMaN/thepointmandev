@@ -50,7 +50,7 @@ export default async function LessonPage({ params }: Props) {
         <div className="lg:grid lg:grid-cols-[220px_1fr_220px] lg:gap-12">
           {/* Course sidebar */}
           <aside className="hidden lg:block">
-            <div className="sticky top-20">
+            <div className="sticky top-20 max-h-[calc(100vh-5rem)] overflow-y-auto overscroll-contain pr-1">
               <CourseSidebar
                 lessons={lessons}
                 courseSlug={courseSlug}
@@ -96,7 +96,7 @@ export default async function LessonPage({ params }: Props) {
           {/* TOC sidebar */}
           {toc.length > 0 && (
             <aside className="hidden lg:block">
-              <div className="sticky top-20">
+              <div className="sticky top-20 max-h-[calc(100vh-5rem)] overflow-y-auto overscroll-contain pl-1">
                 <TableOfContents items={toc} />
               </div>
             </aside>

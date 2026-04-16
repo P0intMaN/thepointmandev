@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="310" viewBox="0 0 760 310">
+  <rect width="760" height="310" fill="#0d0d0d"/>
+
+  <text x="380" y="18" text-anchor="middle" fill="#656363" font-family="monospace" font-size="10">// build tools never ship to production — only the artifact crosses the stage boundary</text>
+
+  <!-- Stage 1: Builder -->
+  <text x="190" y="36" text-anchor="middle" fill="#fbbf24" font-family="monospace" font-size="10" font-weight="bold">Stage 1 — builder</text>
+  <text x="190" y="50" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">exists only during docker build — discarded after</text>
+
+  <rect x="16" y="58" width="348" height="188" rx="3" fill="#141414" stroke="#fbbf24" stroke-width="1.5"/>
+
+  <rect x="32" y="70" width="316" height="24" rx="2" fill="#1a1a1a" stroke="#262626"/>
+  <text x="190" y="85" text-anchor="middle" fill="#fbbf24" font-family="monospace" font-size="8">FROM golang:1.22  (~850 MB)</text>
+
+  <rect x="32" y="102" width="316" height="24" rx="2" fill="#1a1a1a" stroke="#262626"/>
+  <text x="190" y="117" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">Go toolchain, compiler, stdlib, linker</text>
+
+  <rect x="32" y="134" width="316" height="24" rx="2" fill="#1a1a1a" stroke="#262626"/>
+  <text x="190" y="149" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">COPY . .  — source code</text>
+
+  <rect x="32" y="166" width="316" height="24" rx="2" fill="#1a1a1a" stroke="#262626"/>
+  <text x="190" y="181" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">RUN go build -o server .  — compile</text>
+
+  <rect x="32" y="198" width="316" height="36" rx="2" fill="#0d1a0d" stroke="#4ade80" stroke-width="1.5"/>
+  <text x="190" y="213" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="9" font-weight="bold">/app/server  ← the only thing that matters</text>
+  <text x="190" y="227" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">a single statically-linked binary</text>
+
+  <!-- Arrow -->
+  <line x1="364" y1="216" x2="398" y2="216" stroke="#4ade80" stroke-width="2"/>
+  <polygon points="396,212 404,216 396,220" fill="#4ade80"/>
+  <text x="381" y="210" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="7">COPY</text>
+  <text x="381" y="222" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="7">--from</text>
+  <text x="381" y="234" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="7">=builder</text>
+
+  <!-- Stage 2: Final -->
+  <text x="582" y="36" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="10" font-weight="bold">Stage 2 — final image  (what ships)</text>
+  <text x="582" y="50" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">this is what docker push sends to the registry</text>
+
+  <rect x="404" y="58" width="340" height="188" rx="3" fill="#141414" stroke="#4ade80" stroke-width="2"/>
+
+  <rect x="420" y="70" width="308" height="24" rx="2" fill="#0d1a0d" stroke="#4ade80" stroke-width="1"/>
+  <text x="574" y="85" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="8">FROM scratch  (0 bytes — empty image)</text>
+
+  <rect x="420" y="102" width="308" height="24" rx="2" fill="#0d1a0d" stroke="#4ade80" stroke-width="1"/>
+  <text x="574" y="117" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="8">COPY --from=builder /app/server /server</text>
+
+  <rect x="420" y="134" width="308" height="24" rx="2" fill="#1a1a1a" stroke="#262626"/>
+  <text x="574" y="149" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">EXPOSE 8080</text>
+
+  <rect x="420" y="166" width="308" height="24" rx="2" fill="#1a1a1a" stroke="#262626"/>
+  <text x="574" y="181" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">CMD ["/server"]</text>
+
+  <rect x="420" y="198" width="308" height="36" rx="2" fill="#0d1a0d" stroke="#4ade80" stroke-width="1.5"/>
+  <text x="574" y="213" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="10" font-weight="bold">~8 MB total image size</text>
+  <text x="574" y="227" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">no compiler, no stdlib, no source code</text>
+
+  <!-- Bottom comparison -->
+  <rect x="16" y="258" width="728" height="40" rx="3" fill="#141414" stroke="#262626"/>
+  <text x="200" y="274" text-anchor="middle" fill="#fbbf24" font-family="monospace" font-size="9">Single-stage: ~850 MB</text>
+  <text x="380" y="274" text-anchor="middle" fill="#656363" font-family="monospace" font-size="9">→</text>
+  <text x="570" y="274" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="9">Multi-stage: ~8 MB</text>
+  <text x="380" y="290" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">100× smaller  ·  faster push/pull  ·  dramatically reduced attack surface</text>
+</svg>

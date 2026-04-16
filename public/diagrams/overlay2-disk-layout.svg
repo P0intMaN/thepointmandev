@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="320" viewBox="0 0 760 320">
+  <rect width="760" height="320" fill="#0d0d0d"/>
+
+  <text x="380" y="18" text-anchor="middle" fill="#656363" font-family="monospace" font-size="10">// /var/lib/docker/overlay2/ — what's actually on disk for a 3-layer image</text>
+
+  <!-- Left: directory tree -->
+  <text x="190" y="36" text-anchor="middle" fill="#b7b1b1" font-family="monospace" font-size="10" font-weight="bold">Directory Structure</text>
+
+  <rect x="16" y="46" width="348" height="248" rx="3" fill="#141414" stroke="#262626"/>
+
+  <text x="32" y="66" fill="#4ade80" font-family="monospace" font-size="8">/var/lib/docker/overlay2/</text>
+  <text x="48" y="82" fill="#b7b1b1" font-family="monospace" font-size="8">├── l/                          ← short symlinks</text>
+  <text x="48" y="96" fill="#656363" font-family="monospace" font-size="8">│   ├── AB3K → ../a1b2c3.../diff</text>
+  <text x="48" y="110" fill="#656363" font-family="monospace" font-size="8">│   ├── CD5M → ../b2c3d4.../diff</text>
+  <text x="48" y="124" fill="#656363" font-family="monospace" font-size="8">│   └── EF7P → ../c3d4e5.../diff</text>
+  <text x="48" y="144" fill="#b7b1b1" font-family="monospace" font-size="8">├── a1b2c3d4e5f6.../             ← layer 1 (base)</text>
+  <text x="64" y="158" fill="#4ade80" font-family="monospace" font-size="8">│   ├── diff/   ← actual filesystem contents</text>
+  <text x="64" y="172" fill="#656363" font-family="monospace" font-size="8">│   ├── link    ← contains "AB3K" (short name)</text>
+  <text x="64" y="186" fill="#656363" font-family="monospace" font-size="8">│   └── committed</text>
+  <text x="48" y="206" fill="#b7b1b1" font-family="monospace" font-size="8">├── b2c3d4e5f6a7.../             ← layer 2</text>
+  <text x="64" y="220" fill="#4ade80" font-family="monospace" font-size="8">│   ├── diff/</text>
+  <text x="64" y="234" fill="#656363" font-family="monospace" font-size="8">│   ├── link    ← contains "CD5M"</text>
+  <text x="64" y="248" fill="#656363" font-family="monospace" font-size="8">│   └── lower   ← "l/AB3K" (parent ref)</text>
+  <text x="48" y="268" fill="#fbbf24" font-family="monospace" font-size="8">└── c3d4e5f6a7b8-init/           ← container init layer</text>
+  <text x="64" y="282" fill="#656363" font-family="monospace" font-size="8">    └── (hostname, resolv.conf, /etc/hosts)</text>
+
+  <!-- Right: runtime mount -->
+  <text x="570" y="36" text-anchor="middle" fill="#b7b1b1" font-family="monospace" font-size="10" font-weight="bold">Running Container Mount</text>
+
+  <rect x="382" y="46" width="362" height="248" rx="3" fill="#141414" stroke="#262626"/>
+
+  <text x="398" y="66" fill="#67e8f9" font-family="monospace" font-size="8">When container starts, Docker adds:</text>
+  <text x="398" y="82" fill="#fbbf24" font-family="monospace" font-size="8">c3d4e5f6a7b8/      ← container-specific layer</text>
+  <text x="414" y="96" fill="#4ade80" font-family="monospace" font-size="8">├── diff/          ← upperdir (writable)</text>
+  <text x="414" y="110" fill="#656363" font-family="monospace" font-size="8">├── work/          ← OverlayFS workdir</text>
+  <text x="414" y="124" fill="#656363" font-family="monospace" font-size="8">├── merged/        ← the container's view of /</text>
+  <text x="414" y="138" fill="#656363" font-family="monospace" font-size="8">└── lower   ← "l/EF7P:l/CD5M:l/AB3K"</text>
+
+  <text x="398" y="162" fill="#656363" font-family="monospace" font-size="8">mount command the kernel receives:</text>
+  <rect x="398" y="170" width="330" height="52" rx="2" fill="#0d0d0d" stroke="#262626"/>
+  <text x="406" y="185" fill="#4ade80" font-family="monospace" font-size="7">mount -t overlay overlay \</text>
+  <text x="406" y="197" fill="#4ade80" font-family="monospace" font-size="7">  -o lowerdir=l/EF7P:l/CD5M:l/AB3K,\</text>
+  <text x="406" y="209" fill="#4ade80" font-family="monospace" font-size="7">     upperdir=diff/,workdir=work/ \</text>
+  <text x="406" y="221" fill="#4ade80" font-family="monospace" font-size="7">  merged/</text>
+
+  <text x="398" y="242" fill="#656363" font-family="monospace" font-size="8">l/ symlinks exist to shorten the lowerdir path —</text>
+  <text x="398" y="256" fill="#656363" font-family="monospace" font-size="8">kernel has a page_size limit (~4096 bytes) for mount</text>
+  <text x="398" y="270" fill="#656363" font-family="monospace" font-size="8">options. deep image paths would overflow without them.</text>
+  <text x="398" y="286" fill="#fbbf24" font-family="monospace" font-size="8">that's the entire reason l/ exists.</text>
+</svg>

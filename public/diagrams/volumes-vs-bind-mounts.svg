@@ -1,0 +1,86 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="340" viewBox="0 0 760 340">
+  <rect width="760" height="340" fill="#0d0d0d"/>
+
+  <text x="380" y="18" text-anchor="middle" fill="#656363" font-family="monospace" font-size="10">// three ways to persist data — each lives in a different place, owned by a different actor</text>
+
+  <!-- VOLUMES -->
+  <text x="120" y="36" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="9" font-weight="bold">docker volume</text>
+
+  <rect x="16" y="44" width="208" height="274" rx="3" fill="#141414" stroke="#4ade80" stroke-width="1.5"/>
+
+  <rect x="28" y="56" width="184" height="30" rx="2" fill="#0d1a0d" stroke="#4ade80" stroke-width="1"/>
+  <text x="120" y="70" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="8">Docker-managed storage</text>
+  <text x="120" y="82" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">/var/lib/docker/volumes/mydata/_data</text>
+
+  <line x1="120" y1="86" x2="120" y2="100" stroke="#4ade80" stroke-width="1.5"/>
+
+  <rect x="28" y="100" width="184" height="40" rx="2" fill="#0d1a0d" stroke="#4ade80" stroke-width="1"/>
+  <text x="120" y="116" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="8" font-weight="bold">Container</text>
+  <text x="120" y="130" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">mounts volume at /data</text>
+
+  <rect x="28" y="158" width="184" height="84" rx="2" fill="#1a1a1a" stroke="#262626"/>
+  <text x="120" y="173" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="8">survives container death</text>
+  <text x="120" y="187" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="8">shareable across containers</text>
+  <text x="120" y="201" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="8">managed by Docker daemon</text>
+  <text x="120" y="215" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">opaque path, not meant for direct</text>
+  <text x="120" y="227" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">host editing</text>
+
+  <rect x="28" y="258" width="184" height="46" rx="2" fill="#0d1a0d" stroke="#4ade80" stroke-width="1"/>
+  <text x="120" y="272" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="7">use for: databases, prod data,</text>
+  <text x="120" y="284" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="7">anything that must survive restarts</text>
+  <text x="120" y="296" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">-v mydata:/data</text>
+
+  <!-- BIND MOUNTS -->
+  <text x="380" y="36" text-anchor="middle" fill="#fbbf24" font-family="monospace" font-size="9" font-weight="bold">bind mount</text>
+
+  <rect x="276" y="44" width="208" height="274" rx="3" fill="#141414" stroke="#fbbf24" stroke-width="1.5"/>
+
+  <rect x="288" y="56" width="184" height="30" rx="2" fill="#141414" stroke="#262626"/>
+  <text x="380" y="70" text-anchor="middle" fill="#fbbf24" font-family="monospace" font-size="8">Host filesystem path</text>
+  <text x="380" y="82" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">/home/user/myapp  (you own this)</text>
+
+  <line x1="380" y1="86" x2="380" y2="100" stroke="#fbbf24" stroke-width="1.5"/>
+
+  <rect x="288" y="100" width="184" height="40" rx="2" fill="#141414" stroke="#fbbf24" stroke-width="1"/>
+  <text x="380" y="116" text-anchor="middle" fill="#fbbf24" font-family="monospace" font-size="8" font-weight="bold">Container</text>
+  <text x="380" y="130" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">sees host path at /app</text>
+
+  <rect x="288" y="158" width="184" height="84" rx="2" fill="#1a1a1a" stroke="#262626"/>
+  <text x="380" y="173" text-anchor="middle" fill="#fbbf24" font-family="monospace" font-size="8">live code sync for dev</text>
+  <text x="380" y="187" text-anchor="middle" fill="#fbbf24" font-family="monospace" font-size="8">full host filesystem access</text>
+  <text x="380" y="201" text-anchor="middle" fill="#fbbf24" font-family="monospace" font-size="8">edits visible immediately</text>
+  <text x="380" y="215" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">path must exist on host</text>
+  <text x="380" y="227" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">not portable across machines</text>
+
+  <rect x="288" y="258" width="184" height="46" rx="2" fill="#1a1200" stroke="#fbbf24" stroke-width="1"/>
+  <text x="380" y="272" text-anchor="middle" fill="#fbbf24" font-family="monospace" font-size="7">use for: dev hot-reload, config</text>
+  <text x="380" y="284" text-anchor="middle" fill="#fbbf24" font-family="monospace" font-size="7">injection, build caches</text>
+  <text x="380" y="296" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">-v /host/path:/container/path</text>
+
+  <!-- TMPFS -->
+  <text x="640" y="36" text-anchor="middle" fill="#67e8f9" font-family="monospace" font-size="9" font-weight="bold">tmpfs</text>
+
+  <rect x="536" y="44" width="208" height="274" rx="3" fill="#141414" stroke="#67e8f9" stroke-width="1.5"/>
+
+  <rect x="548" y="56" width="184" height="30" rx="2" fill="#141414" stroke="#262626"/>
+  <text x="640" y="70" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">Host RAM (never touches disk)</text>
+  <text x="640" y="82" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">volatile — gone when container stops</text>
+
+  <line x1="640" y1="86" x2="640" y2="100" stroke="#67e8f9" stroke-width="1.5"/>
+
+  <rect x="548" y="100" width="184" height="40" rx="2" fill="#141414" stroke="#67e8f9" stroke-width="1"/>
+  <text x="640" y="116" text-anchor="middle" fill="#67e8f9" font-family="monospace" font-size="8" font-weight="bold">Container</text>
+  <text x="640" y="130" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">in-memory path at /tmp</text>
+
+  <rect x="548" y="158" width="184" height="84" rx="2" fill="#1a1a1a" stroke="#262626"/>
+  <text x="640" y="173" text-anchor="middle" fill="#67e8f9" font-family="monospace" font-size="8">fastest possible I/O</text>
+  <text x="640" y="187" text-anchor="middle" fill="#67e8f9" font-family="monospace" font-size="8">nothing written to disk ever</text>
+  <text x="640" y="201" text-anchor="middle" fill="#67e8f9" font-family="monospace" font-size="8">no persistence after stop</text>
+  <text x="640" y="215" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">not shareable between containers</text>
+  <text x="640" y="227" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">Linux hosts only</text>
+
+  <rect x="548" y="258" width="184" height="46" rx="2" fill="#0d1a1a" stroke="#67e8f9" stroke-width="1"/>
+  <text x="640" y="272" text-anchor="middle" fill="#67e8f9" font-family="monospace" font-size="7">use for: secrets, tokens, scratch</text>
+  <text x="640" y="284" text-anchor="middle" fill="#67e8f9" font-family="monospace" font-size="7">space — anything sensitive</text>
+  <text x="640" y="296" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">--tmpfs /tmp</text>
+</svg>

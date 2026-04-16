@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="320" viewBox="0 0 760 320">
+  <rect width="760" height="320" fill="#0d0d0d"/>
+
+  <text x="380" y="18" text-anchor="middle" fill="#656363" font-family="monospace" font-size="10">// "docker run" touches four distinct components before a process starts</text>
+
+  <!-- Clients (left column) -->
+  <text x="100" y="38" text-anchor="middle" fill="#656363" font-family="monospace" font-size="9">clients</text>
+
+  <rect x="20" y="46" width="160" height="26" rx="3" fill="#141414" stroke="#4ade80" stroke-width="1.5"/>
+  <text x="100" y="63" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="9" font-weight="bold">docker CLI</text>
+
+  <rect x="20" y="82" width="160" height="26" rx="3" fill="#141414" stroke="#262626"/>
+  <text x="100" y="99" text-anchor="middle" fill="#656363" font-family="monospace" font-size="9">Docker Desktop UI</text>
+
+  <rect x="20" y="118" width="160" height="26" rx="3" fill="#141414" stroke="#262626"/>
+  <text x="100" y="135" text-anchor="middle" fill="#656363" font-family="monospace" font-size="9">curl / SDK / CI tool</text>
+
+  <!-- Arrow from clients to socket -->
+  <line x1="180" y1="86" x2="218" y2="86" stroke="#4ade80" stroke-width="1.5"/>
+  <polygon points="216,82 224,86 216,90" fill="#4ade80"/>
+  <text x="200" y="80" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">HTTP REST</text>
+
+  <!-- Socket -->
+  <rect x="224" y="62" width="148" height="48" rx="3" fill="#141414" stroke="#262626" stroke-width="1"/>
+  <text x="298" y="82" text-anchor="middle" fill="#b7b1b1" font-family="monospace" font-size="9" font-weight="bold">/var/run/docker.sock</text>
+  <text x="298" y="97" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">Unix domain socket</text>
+
+  <!-- Arrow to dockerd -->
+  <line x1="372" y1="86" x2="408" y2="86" stroke="#262626" stroke-width="1.5"/>
+  <polygon points="406,82 414,86 406,90" fill="#262626"/>
+
+  <!-- dockerd -->
+  <rect x="414" y="46" width="148" height="136" rx="3" fill="#141414" stroke="#fbbf24" stroke-width="1.5"/>
+  <text x="488" y="66" text-anchor="middle" fill="#fbbf24" font-family="monospace" font-size="9" font-weight="bold">dockerd</text>
+  <text x="488" y="82" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">image management</text>
+  <text x="488" y="96" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">network management</text>
+  <text x="488" y="110" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">volume management</text>
+  <text x="488" y="124" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">registry auth</text>
+  <text x="488" y="140" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">API server</text>
+  <text x="488" y="158" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">delegates container lifecycle ↓</text>
+
+  <!-- Arrow to containerd -->
+  <line x1="562" y1="114" x2="594" y2="114" stroke="#262626" stroke-width="1.5"/>
+  <polygon points="592,110 600,114 592,118" fill="#262626"/>
+
+  <!-- containerd -->
+  <rect x="600" y="80" width="144" height="68" rx="3" fill="#141414" stroke="#67e8f9" stroke-width="1.5"/>
+  <text x="672" y="100" text-anchor="middle" fill="#67e8f9" font-family="monospace" font-size="9" font-weight="bold">containerd</text>
+  <text x="672" y="116" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">container lifecycle</text>
+  <text x="672" y="130" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">image pull/push</text>
+  <text x="672" y="144" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">snapshotter (OverlayFS)</text>
+
+  <!-- Arrow to runc -->
+  <line x1="672" y1="148" x2="672" y2="164" stroke="#262626" stroke-width="1.5"/>
+  <polygon points="668,162 672,170 676,162" fill="#262626"/>
+
+  <!-- runc -->
+  <rect x="600" y="170" width="144" height="44" rx="3" fill="#141414" stroke="#f87171" stroke-width="1.5"/>
+  <text x="672" y="189" text-anchor="middle" fill="#f87171" font-family="monospace" font-size="9" font-weight="bold">runc</text>
+  <text x="672" y="205" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">OCI runtime — calls clone()</text>
+
+  <!-- Arrow to kernel -->
+  <line x1="672" y1="214" x2="672" y2="228" stroke="#f87171" stroke-width="1.5"/>
+  <polygon points="668,226 672,234 676,226" fill="#f87171"/>
+
+  <!-- Kernel -->
+  <rect x="414" y="228" width="330" height="52" rx="3" fill="#0d1a0d" stroke="#4ade80" stroke-width="1.5"/>
+  <text x="579" y="247" text-anchor="middle" fill="#4ade80" font-family="monospace" font-size="9" font-weight="bold">Linux Kernel</text>
+  <text x="579" y="263" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">namespaces  ·  cgroups  ·  OverlayFS</text>
+  <text x="579" y="275" text-anchor="middle" fill="#656363" font-family="monospace" font-size="7">(lessons 5 – 8)</text>
+
+  <!-- TCP note at bottom left -->
+  <rect x="20" y="196" width="370" height="44" rx="3" fill="#1a1a1a" stroke="#262626"/>
+  <text x="205" y="214" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8" font-weight="bold">remote daemon — same API, different socket</text>
+  <text x="205" y="228" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">DOCKER_HOST=tcp://server:2376  docker ps</text>
+  <text x="205" y="240" text-anchor="middle" fill="#656363" font-family="monospace" font-size="8">the CLI works identically — it just sends HTTP to a different address</text>
+
+  <!-- Remote arrow -->
+  <line x1="20" y1="270" x2="380" y2="270" stroke="#262626" stroke-width="1" stroke-dasharray="4,3"/>
+  <text x="200" y="284" text-anchor="middle" fill="#262626" font-family="monospace" font-size="8">docker context — manage multiple daemons from one CLI</text>
+</svg>
