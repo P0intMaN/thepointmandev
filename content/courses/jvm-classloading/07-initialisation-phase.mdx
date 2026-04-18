@@ -1,0 +1,150 @@
+---
+title: "The Initialisation Phase"
+courseSlug: "jvm-classloading"
+lessonNumber: 7
+description: "When the JVM runs your static blocks, the thread-safety guarantee it provides, and the deadlock trap hiding in circular class dependencies."
+date: "2026-04-19"
+draft: false
+---
+
+Loading found the bytes. Linking verified, prepared, and resolved them. Now comes the step that actually runs code: **initialisation**.
+
+Initialisation is when the JVM executes a class's `<clinit>` method — the class initialiser — which runs all static variable assignments and static blocks in textual order. This is the moment a class becomes live.
+
+## What Triggers Initialisation
+
+Initialisation happens on the **first active use** of a class. The JVM spec defines exactly six triggers:
+
+1. Creating an instance with `new`
+2. Calling a static method
+3. Reading or writing a static field (that is not a compile-time constant)
+4. Reflection via `Class.forName(name)` (unless `initialize=false` is passed)
+5. Initialising a subclass (triggers initialisation of its superclass first)
+6. Designating a class as the startup class (the one containing `main`)
+
+Anything else — loading a class, holding a `Class<?>` reference, accessing a compile-time constant — does **not** trigger initialisation.
+
+This is subtle but important:
+
+```java
+class Holder {
+    static final int CONSTANT = 42;              // compile-time constant
+    static final List<String> LIST = new ArrayList<>(); // NOT a constant
+
+    static {
+        System.out.println("Holder initialised");
+    }
+}
+
+// Accessing CONSTANT does NOT trigger initialisation — inlined by compiler
+int x = Holder.CONSTANT; // "Holder initialised" is NOT printed
+
+// Accessing LIST does trigger initialisation
+List<String> l = Holder.LIST; // "Holder initialised" IS printed
+```
+
+## The `<clinit>` Method
+
+The compiler merges all static field assignments and static blocks into a single synthetic method called `<clinit>`. They run top-to-bottom in textual order.
+
+```java
+public class Database {
+    static final String URL;
+    static final Connection conn;
+
+    static {
+        URL = System.getenv("DB_URL");
+        System.out.println("Connecting to " + URL);
+    }
+
+    static {
+        try {
+            conn = DriverManager.getConnection(URL);
+        } catch (SQLException e) {
+            throw new ExceptionInInitializerError(e);
+        }
+    }
+}
+```
+
+If anything inside `<clinit>` throws an exception, it's wrapped in `ExceptionInInitializerError`. Worse: the class is permanently marked as failed. Every subsequent attempt to use the class throws `NoClassDefFoundError` — even if the underlying cause was transient (a timeout, a missing env var). The class never gets a second chance.
+
+This is one reason to keep static initialisers simple. Anything that can fail — network calls, file reads, external resources — should not live in a static block.
+
+## The Thread-Safety Guarantee
+
+Here is one of the JVM's most underappreciated guarantees: **`<clinit>` is executed at most once, and the JVM ensures this with a per-class lock**.
+
+If two threads simultaneously trigger the first active use of a class, only one thread executes `<clinit>`. The other thread blocks until initialisation completes, then sees the fully-initialised class. This is guaranteed by the JVM spec — no `synchronized` keyword required.
+
+This guarantee is the foundation of the **Initialization-on-Demand Holder idiom**, one of the cleanest lazy singleton patterns in Java:
+
+```java
+public class Singleton {
+    private Singleton() {}
+
+    private static class Holder {
+        static final Singleton INSTANCE = new Singleton();
+    }
+
+    public static Singleton getInstance() {
+        return Holder.INSTANCE; // triggers Holder initialisation on first call
+    }
+}
+```
+
+Why is this better than double-checked locking?
+
+- **No `volatile`** needed — the JVM's `<clinit>` guarantee provides the happens-before relationship
+- **Lazy** — `Holder` isn't initialised until `getInstance()` is first called
+- **Zero synchronisation overhead** after the first call — `Holder` is permanently initialised, so no locking on subsequent calls
+- **Dead simple** — the JVM does all the work
+
+## The Deadlock Trap
+
+The per-class lock is a powerful guarantee, but it creates a specific deadlock scenario: **circular class initialisation**.
+
+```java
+class A {
+    static final B b = new B(); // triggers B's initialisation
+    static { System.out.println("A initialised"); }
+}
+
+class B {
+    static final A a = new A(); // triggers A's initialisation
+    static { System.out.println("B initialised"); }
+}
+
+// Thread 1: A.b (triggers A init, which triggers B init, which tries to trigger A init...)
+// Thread 2: B.a (triggers B init, which triggers A init, which tries to trigger B init...)
+```
+
+If Thread 1 holds A's class lock and waits for B to initialise, while Thread 2 holds B's class lock and waits for A to initialise — you have a deadlock. The JVM spec acknowledges this and says: don't do it. The fix is to break the circular dependency, not to try to work around the locking.
+
+This is rare in practice because the JVM will actually complete initialisation (with partially-constructed values) if the cycle is detected on the same thread. But cross-thread circular init is a genuine deadlock — one that's extremely hard to debug because the stack trace points at class loading, not at your code.
+
+## Checking Initialisation Order
+
+When debugging static initialisation issues, add explicit print statements to each static block:
+
+```java
+static {
+    System.out.println(MyClass.class.getSimpleName() + " init start");
+    // ... your code ...
+    System.out.println(MyClass.class.getSimpleName() + " init done");
+}
+```
+
+Or use the JVM flag:
+
+```bash
+java -Xlog:class+init=debug MyApp 2>&1 | grep "clinit"
+```
+
+This shows you exactly which classes are being initialised and in what order, without modifying source code.
+
+---
+
+**Key Takeaway**
+
+Initialisation runs `<clinit>` on first active use of a class, executing static blocks and field assignments top-to-bottom. The JVM guarantees this happens exactly once per class via a per-class lock — which is why the Holder idiom works as a lazy, thread-safe singleton without any explicit synchronisation. If `<clinit>` throws, the class is permanently broken. Circular static dependencies across threads can deadlock; the fix is always to break the cycle.

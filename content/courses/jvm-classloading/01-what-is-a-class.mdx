@@ -1,0 +1,173 @@
+---
+title: "What Is a Class?"
+courseSlug: "jvm-classloading"
+lessonNumber: 1
+description: "What the JVM actually loads, the structure of a .class file, and the magic bytes that started it all."
+date: "2026-04-19"
+draft: false
+---
+
+Before we can understand how the JVM loads a class, we need to answer a more fundamental question that most Java developers never stop to ask: **what exactly is a class?**
+
+Not the Java source file. Not the concept. The thing that actually runs.
+
+## The Source File Is Not the Program
+
+You write `Hello.java`. You compile it. What you get back — `Hello.class` — is not Java anymore. It is a completely different language: **Java bytecode**, encoded in a binary format called the **class file format**.
+
+The JVM doesn't know what Java is. It only knows how to execute bytecode. `javac` is just a translator — it converts the human-readable `.java` syntax into the machine-readable `.class` binary. From the JVM's perspective, you could have written that bytecode by hand, generated it with ASM, or produced it from Kotlin, Scala, or Groovy. It doesn't matter.
+
+This is important: **the JVM is a bytecode engine, not a Java engine.**
+
+## The Magic Bytes
+
+Every valid `.class` file starts with the same four bytes:
+
+```
+CA FE BA BE
+```
+
+This is `0xCAFEBABE` — a hex signature chosen by James Gosling in the early days of Java (it was a playful nod to the Grateful Dead's Café Mojo, which the team frequented). The JVM checks these bytes first. If they're wrong, the file is rejected immediately — not even a parse attempt.
+
+Let's look at a real class file. Compile this:
+
+```java
+public class Hello {
+    public static void main(String[] args) {
+        System.out.println("Hello, JVM");
+    }
+}
+```
+
+```bash
+javac Hello.java
+```
+
+Now look at the raw bytes:
+
+```bash
+xxd Hello.class | head -4
+```
+
+```
+00000000: cafe babe 0000 0041 0022 0a00 0200 0309  .......A."......
+00000010: 0004 0005 0800 060a 0007 0008 0700 090700  ................
+```
+
+There they are — `cafe babe` — right at offset 0.
+
+## The Class File Structure
+
+After the magic bytes, the class file has a well-defined layout. Think of it as a structured binary document with sections:
+
+```
+ClassFile {
+    u4             magic;                 // 0xCAFEBABE
+    u2             minor_version;
+    u2             major_version;
+    u2             constant_pool_count;
+    cp_info        constant_pool[];       // the "string table" of the class
+    u2             access_flags;          // public? abstract? interface?
+    u2             this_class;            // index into constant pool
+    u2             super_class;           // index into constant pool
+    u2             interfaces_count;
+    u2             interfaces[];
+    u2             fields_count;
+    field_info     fields[];
+    u2             methods_count;
+    method_info    methods[];
+    u2             attributes_count;
+    attribute_info attributes[];
+}
+```
+
+Don't memorise this. Understand what it tells you:
+
+**The constant pool** is the most important part. It's a flat array of symbolic references — every string literal, class name, method name, field name, and type descriptor in the class is stored here as an index. Bytecode instructions don't embed names inline; they carry pool indices. This keeps the bytecode compact and allows the JVM to resolve references lazily.
+
+**The version numbers** tell the JVM which Java version compiled this class. Java 8 = major version 52, Java 11 = 55, Java 17 = 61, Java 21 = 65. If you try to run a class compiled for Java 21 on a Java 17 JVM, you get:
+
+```
+UnsupportedClassVersionError: Hello has been compiled by a more recent 
+version of the Java Runtime (class file version 65.0), this version of 
+the Java Runtime only recognizes class file versions up to 61.0
+```
+
+That error is the JVM reading the `major_version` field and refusing to continue.
+
+## Reading It Yourself
+
+You don't need a hex editor. `javap` is the JVM's built-in disassembler and it can show you the class file in human-readable form:
+
+```bash
+javap -verbose Hello.class
+```
+
+```
+Classfile /path/to/Hello.class
+  Last modified Apr 19, 2026; size 425 bytes
+  SHA-256 checksum 3f4a...
+  Compiled from "Hello.java"
+public class Hello
+  minor version: 0
+  major version: 65
+  flags: (0x0021) ACC_PUBLIC, ACC_SUPER
+Constant pool:
+   #1 = Methodref          #2.#3
+   #2 = Class              #4
+   #3 = NameAndType        #5:#6
+   #4 = Utf8               java/lang/Object
+   #5 = Utf8               <init>
+   #6 = Utf8               ()V
+   #7 = Fieldref           #8.#9
+   #8 = Class              #10
+   #9 = NameAndType        #11:#12
+  #10 = Utf8               java/lang/System
+  #11 = Utf8               out
+  #12 = Utf8               Ljava/io/PrintStream;
+  #13 = String             #14
+  #14 = Utf8               Hello, JVM
+  ...
+{
+  public Hello();
+    descriptor: ()V
+    Code:
+      stack=1, locals=1, length=5
+         0: aload_0
+         1: invokespecial #1    // Method java/lang/Object."<init>":()V
+         4: return
+
+  public static void main(java.lang.String[]);
+    descriptor: ([Ljava/lang/String;)V
+    Code:
+      stack=2, locals=1, length=9
+         0: getstatic     #7    // Field java/lang/System.out:Ljava/io/PrintStream;
+         3: ldc           #13   // String Hello, JVM
+         5: invokevirtual #16   // Method java/io/PrintStream.println:(Ljava/lang/String;)V
+         8: return
+}
+```
+
+Read this carefully. Notice that `System.out` is not embedded in the bytecode as a literal — it's referenced as `#7`, which resolves through the constant pool to `#8.#9`, which is the `Class` `java/lang/System` and the `NameAndType` `out:Ljava/io/PrintStream;`. 
+
+The bytecode says "go get the field at pool index 7." The JVM resolves what that actually means at runtime. This is what makes symbolic references powerful — and it's the hook that ClassLoaders use to control which class gets loaded when that reference is resolved.
+
+## Class Identity Is Not Just the Name
+
+Here is something that will matter a great deal in the coming lessons: **a class is not uniquely identified by its name alone**.
+
+In the JVM, a class is identified by the tuple:
+
+```
+(fully qualified name, ClassLoader instance)
+```
+
+Two class objects with identical names but loaded by different ClassLoaders are **different types** as far as the JVM is concerned. Assigning one to a variable typed as the other will throw a `ClassCastException` at runtime, even though they came from the exact same `.class` file.
+
+This sounds bizarre right now. By the end of this course, it will be obvious — and you'll understand why every serious plugin system, application server, and hot-reload tool in the Java ecosystem is built around this fact.
+
+---
+
+**Key Takeaway**
+
+A `.class` file is a binary document in a precisely specified format — not Java source, but a language-independent bytecode encoding. The JVM is a bytecode engine that reads this format, resolves symbolic references through the constant pool, and identifies every class by the pair of its name and the ClassLoader that loaded it. Understanding this is the foundation everything else in this course is built on.

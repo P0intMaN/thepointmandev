@@ -1,0 +1,213 @@
+---
+title: "Custom ClassLoaders"
+courseSlug: "jvm-classloading"
+lessonNumber: 9
+description: "Build a working ClassLoader from scratch, load a plugin JAR at runtime, and implement a basic hot-reload mechanism."
+date: "2026-04-19"
+draft: false
+---
+
+Everything so far has been theory grounded in the JVM's built-in ClassLoaders. Now we build our own. By the end of this lesson you'll have a working plugin loader that can load a JAR at runtime, and a hot-reload mechanism that replaces a running class without restarting the JVM.
+
+## The Minimal Custom ClassLoader
+
+Two rules from Lesson 3:
+- Override `findClass`, not `loadClass`
+- Call `defineClass` with your bytes and you're done
+
+```java
+import java.io.*;
+import java.nio.file.*;
+
+public class FileSystemClassLoader extends ClassLoader {
+
+    private final Path classDir;
+
+    public FileSystemClassLoader(Path classDir, ClassLoader parent) {
+        super(parent);
+        this.classDir = classDir;
+    }
+
+    @Override
+    protected Class<?> findClass(String name) throws ClassNotFoundException {
+        // Convert class name to file path: com.example.Foo -> com/example/Foo.class
+        String relativePath = name.replace('.', '/') + ".class";
+        Path classFile = classDir.resolve(relativePath);
+
+        if (!Files.exists(classFile)) {
+            throw new ClassNotFoundException(name);
+        }
+
+        try {
+            byte[] bytes = Files.readAllBytes(classFile);
+            return defineClass(name, bytes, 0, bytes.length);
+        } catch (IOException e) {
+            throw new ClassNotFoundException(name, e);
+        }
+    }
+}
+```
+
+That's the whole thing. `findClass` is called only when the parent delegation chain has failed — so by the time we reach this code, we know no ancestor loader has the class.
+
+Let's use it:
+
+```java
+Path outputDir = Path.of("out/production/myapp");
+FileSystemClassLoader loader = new FileSystemClassLoader(
+    outputDir,
+    Thread.currentThread().getContextClassLoader()
+);
+
+Class<?> clazz = loader.loadClass("com.example.Greeter");
+Object instance = clazz.getDeclaredConstructor().newInstance();
+Method greet = clazz.getMethod("greet", String.class);
+String result = (String) greet.invoke(instance, "World");
+System.out.println(result); // Hello, World!
+```
+
+We're using reflection to call the method because our code doesn't have a compile-time type that `Greeter` implements. In a real plugin system, `Greeter` would implement a shared interface loaded by a common parent ClassLoader, and we'd cast to that interface instead.
+
+## A Real Plugin Loader
+
+Let's build something more realistic: a plugin system where plugins live in separate JARs and implement a shared interface.
+
+**Step 1: Define the contract in a shared module**
+
+```java
+// In shared-api.jar
+public interface Plugin {
+    String name();
+    void execute(Map<String, Object> context);
+}
+```
+
+**Step 2: The plugin implementation (in plugin.jar)**
+
+```java
+// In plugin.jar (depends on shared-api.jar)
+public class LoggingPlugin implements Plugin {
+    @Override
+    public String name() { return "logging"; }
+
+    @Override
+    public void execute(Map<String, Object> context) {
+        System.out.println("[LOG] context keys: " + context.keySet());
+    }
+}
+```
+
+**Step 3: The loader**
+
+```java
+public class PluginLoader {
+    private final ClassLoader parentLoader;
+
+    public PluginLoader() {
+        // Parent must have loaded the Plugin interface
+        this.parentLoader = PluginLoader.class.getClassLoader();
+    }
+
+    public List<Plugin> loadFromJar(Path jarPath) throws Exception {
+        URL jarUrl = jarPath.toUri().toURL();
+
+        // Each JAR gets its own ClassLoader — isolation by design
+        URLClassLoader jarLoader = new URLClassLoader(
+            new URL[]{jarUrl},
+            parentLoader  // can see Plugin interface
+        );
+
+        List<Plugin> plugins = new ArrayList<>();
+
+        // Read the plugin manifest — a text file listing implementation class names
+        try (InputStream is = jarLoader.getResourceAsStream("META-INF/plugins.txt");
+             BufferedReader reader = new BufferedReader(new InputStreamReader(is))) {
+
+            String className;
+            while ((className = reader.readLine()) != null) {
+                Class<?> cls = jarLoader.loadClass(className.trim());
+                Plugin plugin = (Plugin) cls.getDeclaredConstructor().newInstance();
+                plugins.add(plugin);
+            }
+        }
+
+        return plugins;
+    }
+}
+```
+
+The key insight: `parentLoader` is the application ClassLoader, which already has `shared-api.jar` on its classpath and thus has loaded the `Plugin` interface. The `URLClassLoader` for each plugin JAR delegates to this parent for `Plugin`. So when the plugin's class is cast to `Plugin`, both sides are using the same `Class` object — type identity holds, the cast succeeds.
+
+## Hot-Reload: Swapping a Class at Runtime
+
+Hot reload works by throwing away the old ClassLoader and creating a new one. The JVM's `Class` object is tied to its ClassLoader — discard the loader, and (once the old `Class` object is no longer reachable) the old class can be garbage-collected.
+
+```java
+public class HotReloader {
+    private volatile ClassLoader currentLoader;
+    private volatile Class<?> currentClass;
+    private final Path watchDir;
+    private final String className;
+
+    public HotReloader(Path watchDir, String className) throws Exception {
+        this.watchDir = watchDir;
+        this.className = className;
+        reload();
+    }
+
+    public synchronized void reload() throws Exception {
+        // Old loader becomes unreachable — old Class can be GC'd
+        currentLoader = new FileSystemClassLoader(watchDir, ClassLoader.getSystemClassLoader());
+        currentClass = currentLoader.loadClass(className);
+        System.out.println("Reloaded " + className);
+    }
+
+    public Object newInstance() throws Exception {
+        return currentClass.getDeclaredConstructor().newInstance();
+    }
+}
+```
+
+Use with a file watcher:
+
+```java
+HotReloader reloader = new HotReloader(Path.of("out/"), "com.example.Handler");
+
+WatchService watcher = FileSystems.getDefault().newWatchService();
+Path.of("out/").register(watcher, ENTRY_MODIFY);
+
+while (true) {
+    WatchKey key = watcher.take();
+    for (WatchEvent<?> event : key.pollEvents()) {
+        if (event.context().toString().endsWith(".class")) {
+            reloader.reload();
+        }
+    }
+    key.reset();
+}
+```
+
+Every time a `.class` file changes, a new `FileSystemClassLoader` is created and the class is reloaded. Old instances created from the previous loader keep working — they're still valid objects. New instances created after reload use the new class definition.
+
+This is how JRebel, Spring DevTools, and Quarkus dev mode work under the hood (with significantly more sophistication, but the core mechanism is the same: replace the ClassLoader, reload the class, redirect new instantiations to the new class).
+
+## Closing ClassLoaders
+
+`URLClassLoader` implements `Closeable`. Always close plugin loaders when a plugin is unloaded:
+
+```java
+try {
+    plugins = loader.loadFromJar(pluginJar);
+    // ... use plugins ...
+} finally {
+    jarLoader.close(); // releases file handle on the JAR
+}
+```
+
+On Windows especially, failing to close a `URLClassLoader` leaves the JAR file locked. You cannot replace or delete it while the JVM holds the handle. This is a common source of frustration during development.
+
+---
+
+**Key Takeaway**
+
+Building a custom ClassLoader means overriding `findClass` and calling `defineClass` with the bytes. The parent ClassLoader determines what the custom loader can see from the outside — shared interfaces must be loaded by a common parent to enable safe casting. Hot-reload is ClassLoader disposal: create a new loader, load the new class definition, let the old loader become unreachable so the GC can collect it. Always close `URLClassLoader` instances to release file handles.

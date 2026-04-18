@@ -1,0 +1,132 @@
+---
+title: "The Parent Delegation Model"
+courseSlug: "jvm-classloading"
+lessonNumber: 3
+description: "Why every ClassLoader asks its parent first, what breaks if it doesn't, and the legitimate cases where you need to invert the model."
+date: "2026-04-19"
+draft: false
+---
+
+You now know that ClassLoaders form a parent-child hierarchy. But knowing the structure doesn't tell you how they actually behave when asked to load a class. That's governed by one of the JVM's most important — and most misunderstood — rules: **the parent delegation model**.
+
+## The Algorithm
+
+When any ClassLoader is asked to load a class, it follows this exact sequence:
+
+1. **Check the cache.** Has this class already been loaded by this loader? If yes, return the cached `Class` object immediately.
+2. **Ask the parent.** Delegate the request up to the parent ClassLoader. The parent does the same thing — checks its cache, asks *its* parent, and so on, all the way up to the bootstrap.
+3. **Try yourself.** Only if every ancestor ClassLoader fails to find the class does the current loader attempt to find and load it itself.
+
+In code, this is `ClassLoader.loadClass()`. Here is a simplified version of what the JVM does internally:
+
+```java
+protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
+    // Step 1: check cache
+    Class<?> c = findLoadedClass(name);
+
+    if (c == null) {
+        try {
+            // Step 2: delegate to parent
+            if (parent != null) {
+                c = parent.loadClass(name, false);
+            } else {
+                // parent is null means bootstrap — ask it
+                c = findBootstrapClassOrNull(name);
+            }
+        } catch (ClassNotFoundException e) {
+            // parent couldn't find it — that's fine, we'll try ourselves
+        }
+
+        if (c == null) {
+            // Step 3: try ourselves
+            c = findClass(name);
+        }
+    }
+
+    if (resolve) resolveClass(c);
+    return c;
+}
+```
+
+This is the actual implementation in `java.lang.ClassLoader`. Read it again: the parent always gets first crack. The child only loads if the parent gives up.
+
+## Why Does This Exist?
+
+Imagine a world without parent delegation. You ship your application with a JAR that includes a file called `java/lang/String.class`. Without delegation, the application ClassLoader might load *your* `String` instead of the JVM's. Your code would run. Everything that uses `String` — which is everything — would silently use your modified version.
+
+This is a catastrophic security hole. You could intercept every string operation in the JVM. You could change how `equals` works, break `switch` statements on strings, log every password that passes through `String`.
+
+With parent delegation, this is impossible. When your ClassLoader is asked for `java.lang.String`, it delegates to the platform loader, which delegates to the bootstrap loader, which finds and returns the real `String`. Your JAR's `String.class` is never even looked at.
+
+**The bootstrap ClassLoader owns `java.lang.*` permanently. No application code can override it.**
+
+## Verifying It Yourself
+
+```java
+public class DelegationDemo {
+    public static void main(String[] args) throws Exception {
+        // Try to load String — the app classloader will delegate up,
+        // and we'll get the bootstrap-loaded String back
+        ClassLoader appLoader = ClassLoader.getSystemClassLoader();
+        Class<?> str = appLoader.loadClass("java.lang.String");
+
+        System.out.println(str.getClassLoader()); // null (bootstrap)
+        System.out.println(str == String.class);  // true
+    }
+}
+```
+
+```
+null
+true
+```
+
+The application ClassLoader asked for `java.lang.String` and got back the exact same `Class` object that the bootstrap loader produced. There's only ever one `String` class in the JVM — this is delegation working exactly as designed.
+
+## When Delegation Breaks Down
+
+Here's the problem. Parent delegation assumes the parent can load everything the child might need. But that assumption fails in one common scenario: **service provider interfaces**.
+
+Consider JDBC. `java.sql.DriverManager` is in `java.base`, loaded by the bootstrap ClassLoader. But the actual database driver — say, `com.mysql.cj.jdbc.Driver` — is in your application's classpath, loaded by the application ClassLoader.
+
+`DriverManager` needs to instantiate the driver. But with strict delegation, the bootstrap-loaded `DriverManager` can't see classes loaded by the application ClassLoader — it can only see classes loaded by itself or the platform loader.
+
+This is a genuine deadlock in the delegation model.
+
+## The Solution: Thread Context ClassLoader
+
+Java solved this with a mechanism called the **Thread Context ClassLoader (TCCL)**. Every Java thread has one, and it defaults to the application ClassLoader:
+
+```java
+Thread.currentThread().getContextClassLoader(); // AppClassLoader by default
+```
+
+Libraries that need to bypass delegation — JDBC, JNDI, XML parsers, logging frameworks — use the TCCL to load service implementations:
+
+```java
+// Inside DriverManager (conceptually):
+ClassLoader tccl = Thread.currentThread().getContextClassLoader();
+Class<?> driverClass = tccl.loadClass("com.mysql.cj.jdbc.Driver");
+```
+
+This is **intentional inversion of delegation**: a class loaded by the bootstrap ClassLoader uses a child ClassLoader to find implementations. It's an escape hatch — powerful, but also the source of many ClassLoader-related bugs in application servers where the TCCL isn't set correctly.
+
+## OSGi: Breaking It Entirely
+
+OSGi (the component model used by Eclipse, and historically many enterprise systems) takes a completely different approach. Each OSGi bundle gets its own ClassLoader with no assumed parent-child relationship. Bundles declare explicit import/export packages, and the OSGi framework routes class loading requests directly to whichever bundle exports the requested package.
+
+This enables true runtime isolation: two OSGi bundles can each have their own version of a library, and they'll never interfere. But it also means OSGi completely abandons the parent delegation model and replaces it with its own graph-based resolution. This is why Eclipse plugins have such elaborate dependency declarations.
+
+## The Rule: Override `findClass`, Not `loadClass`
+
+When you write a custom ClassLoader (coming in Lesson 9), the golden rule is: **override `findClass`, not `loadClass`**.
+
+`loadClass` *is* the delegation algorithm. If you override it, you're opting out of delegation entirely — which breaks security guarantees. `findClass` is the step-3 hook: "I'm the last resort, can I find this class?" Override that, and you participate correctly in the delegation chain.
+
+This distinction trips up almost everyone the first time they write a custom ClassLoader.
+
+---
+
+**Key Takeaway**
+
+The parent delegation model ensures that every ClassLoader asks its parent before attempting to load a class itself. This makes core platform classes un-overridable by application code, which is the JVM's primary security guarantee. When delegation is genuinely in the way — as with JDBC drivers and JNDI — Java uses the Thread Context ClassLoader as an intentional escape hatch, allowing bootstrap-loaded code to reach down into the application ClassLoader. Always override `findClass`, not `loadClass`, when writing custom ClassLoaders.

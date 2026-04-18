@@ -13,6 +13,12 @@ const SECTION_ORDER = [
   "System Design",
   "Data Structures",
   "Algorithms",
+  "JVM & Runtime",
+  "Java Language",
+  "Java Collections",
+  "Modern Java",
+  "Java Concurrency",
+  "Design Patterns",
   "Java",
   "Backend Engineering",
   "Frontend Engineering",
@@ -38,12 +44,15 @@ function SectionHeader({ name, count }: { name: string; count: number }) {
 export default function CoursesPage() {
   const allCourses = getAllCourses();
 
-  // Group by category
+  // Group by category, sorted by order within each group
   const grouped = new Map<string, Course[]>();
   for (const course of allCourses) {
     const cat = course.frontmatter.category;
     if (!grouped.has(cat)) grouped.set(cat, []);
     grouped.get(cat)!.push(course);
+  }
+  for (const courses of grouped.values()) {
+    courses.sort((a, b) => (a.frontmatter.order ?? 999) - (b.frontmatter.order ?? 999));
   }
 
   // Sort sections by SECTION_ORDER, unknown categories before "Other"

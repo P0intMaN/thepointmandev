@@ -1,0 +1,115 @@
+---
+title: "Class Identity"
+courseSlug: "jvm-classloading"
+lessonNumber: 8
+description: "Why two classes with the same name loaded by different ClassLoaders are different types, and how this enables — and breaks — plugin systems."
+date: "2026-04-19"
+draft: false
+---
+
+We introduced the idea in Lesson 1 that a class is identified by `(name, ClassLoader)` — not name alone. This lesson makes that concrete: what it means in practice, why it's designed this way, and the `ClassCastException` it causes when you forget.
+
+## The Demonstration
+
+Let's prove it. We'll load the same `.class` file twice with two different ClassLoader instances and show that the JVM treats the results as entirely different types.
+
+```java
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.io.File;
+
+public class ClassIdentityDemo {
+    public static void main(String[] args) throws Exception {
+        URL classDir = new File("out/").toURI().toURL();
+
+        // Two separate ClassLoader instances, both pointing at the same directory
+        URLClassLoader loader1 = new URLClassLoader(new URL[]{classDir}, null); // parent = bootstrap
+        URLClassLoader loader2 = new URLClassLoader(new URL[]{classDir}, null); // parent = bootstrap
+
+        Class<?> clazz1 = loader1.loadClass("com.example.Greeter");
+        Class<?> clazz2 = loader2.loadClass("com.example.Greeter");
+
+        System.out.println("Same class object? " + (clazz1 == clazz2));
+        System.out.println("clazz1 loader: " + clazz1.getClassLoader());
+        System.out.println("clazz2 loader: " + clazz2.getClassLoader());
+
+        // Create an instance from loader1, try to cast to the type from loader2
+        Object instance1 = clazz1.getDeclaredConstructor().newInstance();
+        Object castedToLoader2Type = clazz2.cast(instance1); // BOOM
+    }
+}
+```
+
+```
+Same class object? false
+clazz1 loader: java.net.URLClassLoader@7852e922
+clazz2 loader: java.net.URLClassLoader@4e25154f
+Exception in thread "main" java.lang.ClassCastException:
+  class com.example.Greeter cannot be cast to class com.example.Greeter
+  (com.example.Greeter is in unnamed module of loader java.net.URLClassLoader@7852e922;
+   com.example.Greeter is in unnamed module of loader java.net.URLClassLoader@4e25154f)
+```
+
+Read that error message carefully: `com.example.Greeter cannot be cast to class com.example.Greeter`. Same name. Same bytecode. Two different types, because two different ClassLoaders.
+
+Note: we set `parent = null` (bootstrap) for both loaders. This forces each loader to load `Greeter` itself rather than delegating up where a cached version might exist. In production, with normal parent delegation, you'd never see this with application classes — the parent would load and cache the class once.
+
+## Why the JVM Allows This
+
+This isn't a bug. It's the entire point.
+
+Consider an application server like Tomcat or JBoss. It hosts multiple web applications simultaneously. Each webapp has its own classpath — its own JAR files, potentially conflicting versions of the same library. If all web apps shared a single ClassLoader, `com.fasterxml.jackson.databind.ObjectMapper` from webapp A's Jackson 2.13 would be the same type as `ObjectMapper` from webapp B's Jackson 2.17. Any static state in `ObjectMapper` would be shared. Serialisation configuration from one app would bleed into another. Complete isolation would be impossible.
+
+Instead, each webapp gets its own ClassLoader. The types are isolated even if the names are identical. Webapp A's `ObjectMapper` and webapp B's `ObjectMapper` are different classes, different `Class` objects, with completely separate static state.
+
+## When It Bites You: The ClassCastException from Hell
+
+The classic failure mode: a framework loads a plugin JAR with a child ClassLoader. The plugin implements an interface — say, `com.example.Plugin` — that the framework knows about. The framework creates a plugin instance and tries to cast it to `Plugin`.
+
+```java
+// Framework ClassLoader loaded: com.example.Plugin (the interface)
+// Plugin ClassLoader loaded: com.example.PluginImpl (implements Plugin)
+// Plugin ClassLoader's PARENT did NOT load com.example.Plugin — 
+// the plugin JAR bundled its own copy
+
+Object pluginInstance = pluginLoader.loadClass("com.example.PluginImpl")
+    .getDeclaredConstructor().newInstance();
+
+Plugin plugin = (Plugin) pluginInstance; // ClassCastException!
+```
+
+The framework's `Plugin` interface and the plugin's `Plugin` interface are different types — because they were loaded by different ClassLoaders.
+
+The fix: the shared interface must be loaded by a ClassLoader that is a **common ancestor** of both the framework loader and the plugin loader. Typically this means putting the interface JAR on the framework's classpath and making the plugin's ClassLoader delegate to the framework's ClassLoader for that package.
+
+This is exactly the contract that OSGi export/import declarations enforce: "I export this package from my bundle's ClassLoader" means "every bundle that imports this package will see the type loaded by my loader, ensuring type identity."
+
+## `instanceof` and Class Identity
+
+The same rule applies to `instanceof`:
+
+```java
+Object instance1 = loader1.loadClass("com.example.Greeter")
+    .getDeclaredConstructor().newInstance();
+Class<?> greeter2 = loader2.loadClass("com.example.Greeter");
+
+System.out.println(greeter2.isInstance(instance1)); // false
+```
+
+`isInstance` is the reflective equivalent of `instanceof`. It returns `false` here for the same reason — different ClassLoader = different type.
+
+## Class Identity and Memory Leaks
+
+Understanding class identity also explains one of the most common JVM memory leaks in application servers: **ClassLoader leaks**.
+
+A `Class` object holds a reference to its ClassLoader. A ClassLoader holds references to all the classes it loaded. If any class loaded by a ClassLoader is reachable from a GC root — say, a static field, a thread-local, or a cached entry in a global registry — the entire ClassLoader and all its classes are kept alive.
+
+When you redeploy a webapp in Tomcat, it creates a new ClassLoader for the new version and discards the old one. If the old ClassLoader isn't garbage-collectible, you get a `PermGen OutOfMemoryError` (Java 7 and below) or a Metaspace OOM (Java 8+). The usual culprits: JDBC drivers that registered themselves with `DriverManager`, thread-local variables that weren't cleaned up, logging frameworks that hold static references.
+
+The diagnostic: use a heap dump and look for `ClassLoader` instances that shouldn't exist, then trace what's keeping them alive.
+
+---
+
+**Key Takeaway**
+
+A class is uniquely identified by `(name, ClassLoader)`. Two identical class files loaded by different ClassLoaders are different types in every JVM sense — `instanceof` returns false, casts throw `ClassCastException`, and static fields are separate. This is the mechanism that enables isolated classloading in plugin systems and application servers. It also means shared interfaces must live in a common-ancestor ClassLoader, and ClassLoaders themselves can cause memory leaks if classes loaded by them remain reachable.

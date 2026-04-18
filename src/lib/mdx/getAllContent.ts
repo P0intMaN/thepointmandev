@@ -163,6 +163,28 @@ export const getCourseLessons = cache((courseSlug: string): Lesson[] => {
   return lessons.sort((a, b) => a.frontmatter.lessonNumber - b.frontmatter.lessonNumber);
 });
 
+export const getCourseLessonsAll = cache((courseSlug: string): (Lesson & { draft: boolean })[] => {
+  const courseDir = path.join(CONTENT_ROOT, "courses", courseSlug);
+  if (!fs.existsSync(courseDir)) return [];
+
+  const lessons: (Lesson & { draft: boolean })[] = [];
+  const files = fs.readdirSync(courseDir).filter((f) => f.endsWith(".mdx") && f !== "_meta.mdx");
+
+  for (const file of files) {
+    const filePath = path.join(courseDir, file);
+    const source = readMdxFile(filePath);
+    const { data: frontmatter } = parseFrontmatter(source, LessonFrontmatterSchema, filePath);
+    lessons.push({
+      slug: file.replace(/\.mdx$/, ""),
+      courseSlug,
+      frontmatter,
+      draft: frontmatter.draft,
+    });
+  }
+
+  return lessons.sort((a, b) => a.frontmatter.lessonNumber - b.frontmatter.lessonNumber);
+});
+
 // ── Tags aggregation ───────────────────────────────────────────
 export const getAllTags = cache((): Record<string, number> => {
   const posts = getAllBlogPosts();

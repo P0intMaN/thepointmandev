@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python *)",
+      "Bash(grep -rn '\\\\\\\\\\\\<\\\\|\\\\\\\\<' C:/Dev/thepointmandev/content/courses/ --include=\"*.mdx\")"
+    ]
+  }
+}

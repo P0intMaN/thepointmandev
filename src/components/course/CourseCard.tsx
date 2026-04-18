@@ -72,6 +72,45 @@ const icons: Record<string, React.ReactNode> = {
       <rect x="2" y="3"  width="20" height="5" rx="1.5" fill="currentColor" opacity=".3"/>
     </svg>
   ),
+  chip: (
+    // CPU / processor — JVM internals courses
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <rect x="7" y="7" width="10" height="10" rx="1.5"/>
+      <path d="M9 4v3M12 4v3M15 4v3M9 17v3M12 17v3M15 17v3M4 9h3M4 12h3M4 15h3M17 9h3M17 12h3M17 15h3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" fill="none"/>
+    </svg>
+  ),
+  threads: (
+    // Interleaved threads — concurrency courses
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path d="M3 6 Q8 6 8 12 Q8 18 13 18 Q18 18 21 18" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" fill="none"/>
+      <path d="M3 18 Q8 18 8 12 Q8 6 13 6 Q18 6 21 6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" fill="none" opacity=".55"/>
+      <circle cx="3"  cy="6"  r="1.5" fill="currentColor"/>
+      <circle cx="21" cy="18" r="1.5" fill="currentColor"/>
+      <circle cx="3"  cy="18" r="1.5" fill="currentColor" opacity=".55"/>
+      <circle cx="21" cy="6"  r="1.5" fill="currentColor" opacity=".55"/>
+    </svg>
+  ),
+  database: (
+    // Cylinder — database / data access courses
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <ellipse cx="12" cy="6" rx="8" ry="3"/>
+      <path d="M4 6v12c0 1.657 3.582 3 8 3s8-1.343 8-3V6" fill="currentColor" opacity=".35"/>
+      <ellipse cx="12" cy="12" rx="8" ry="3" opacity=".6"/>
+    </svg>
+  ),
+  test: (
+    // Beaker / test tube — testing courses
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <path d="M9 3h6v8.5l3.5 6.5A2 2 0 0 1 16.76 21H7.24A2 2 0 0 1 5.5 18L9 11.5V3z" opacity=".3"/>
+      <path d="M9 3h6M5.5 18l3.5-6.5h6L18.5 18A2 2 0 0 1 16.76 21H7.24A2 2 0 0 1 5.5 18z"/>
+    </svg>
+  ),
+  wave: (
+    // Sine wave — reactive / streaming courses
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path d="M2 12 Q4 4 7 12 Q10 20 13 12 Q16 4 19 12 Q21 17 22 12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" fill="none"/>
+    </svg>
+  ),
 };
 
 const levelDefault: Record<string, string> = {
@@ -119,6 +158,23 @@ export function CourseCard({ course }: CourseCardProps) {
       >
         <CourseIcon icon={frontmatter.icon} level={frontmatter.level} />
       </div>
+
+      {/* Step badge — top-left */}
+      {frontmatter.order != null && (
+        <div className="relative flex items-center gap-2">
+          <span
+            className="font-mono text-[10px] font-semibold uppercase tracking-widest px-1.5 py-0.5 rounded"
+            style={{ color: accent, background: `${accent}18` }}
+          >
+            Step {frontmatter.order}
+          </span>
+          {(!frontmatter.prerequisites || frontmatter.prerequisites.length === 0) && (
+            <span className="font-mono text-[10px] text-[var(--color-accent)] uppercase tracking-widest opacity-70">
+              entry point
+            </span>
+          )}
+        </div>
+      )}
 
       {/* Title */}
       <Link

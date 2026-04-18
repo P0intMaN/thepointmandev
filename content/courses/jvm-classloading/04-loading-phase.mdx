@@ -1,0 +1,129 @@
+---
+title: "The Loading Phase"
+courseSlug: "jvm-classloading"
+lessonNumber: 4
+description: "How the JVM finds the bytes for a class, turns them into a Class object, and what happens when it can't."
+date: "2026-04-19"
+draft: false
+---
+
+A class goes from a `.class` file on disk to a live `Class` object in memory through three distinct phases: **loading**, **linking**, and **initialisation**. This lesson covers the first — loading — in full. Linking gets its own two lessons; initialisation gets the one after that.
+
+## What Loading Actually Means
+
+Loading is the process of:
+
+1. Finding the binary data (the bytes) for a given class name
+2. Parsing those bytes into an internal JVM representation
+3. Creating a `java.lang.Class` object to represent it in the running JVM
+
+That's it. Loading does **not** execute any code. It does not assign static fields their declared values. It does not call constructors. It purely turns bytes into a `Class` object.
+
+## Finding the Bytes
+
+The application ClassLoader searches the **classpath** — the list of directories and JARs you provide via `-cp` or `-classpath`. It converts the class name to a path:
+
+```
+com.example.MyService  →  com/example/MyService.class
+```
+
+Then it searches each classpath entry in order until it finds a match. First match wins — which is why classpath ordering matters and why putting a JAR earlier on the classpath lets you override a class from a later JAR.
+
+You can watch this happen by enabling classloading logging:
+
+```bash
+java -Xlog:class+load=info -cp out com.example.MyService 2>&1 | head -20
+```
+
+```
+[0.012s][info][class,load] java.lang.Object source: shared objects file
+[0.012s][info][class,load] java.io.Serializable source: shared objects file
+[0.013s][info][class,load] java.lang.Comparable source: shared objects file
+...
+[0.198s][info][class,load] com.example.MyService source: file:/home/user/out/
+```
+
+Every class that gets loaded is logged, with its source. `shared objects file` means it came from the JVM's Class Data Sharing archive (a performance optimisation). `file:` means it was read from disk.
+
+This log is one of the most useful diagnostic tools when debugging `ClassNotFoundException` or classpath conflicts.
+
+## The ClassLoader API
+
+The `ClassLoader` class exposes two hooks for finding bytes:
+
+**`findClass(String name)`** — the method you override in custom ClassLoaders. It's expected to return a `Class<?>` or throw `ClassNotFoundException`. The default implementation throws immediately.
+
+**`defineClass(String name, byte[] b, int off, int len)`** — the method that actually parses the bytes and creates the `Class` object. You call this from `findClass`. It's final — you cannot override it.
+
+Here is the minimum viable custom ClassLoader that loads from a byte array:
+
+```java
+public class ByteArrayClassLoader extends ClassLoader {
+    private final byte[] classBytes;
+    private final String className;
+
+    public ByteArrayClassLoader(byte[] classBytes, String className) {
+        super(ClassLoader.getSystemClassLoader()); // parent = app loader
+        this.classBytes = classBytes;
+        this.className = className;
+    }
+
+    @Override
+    protected Class<?> findClass(String name) throws ClassNotFoundException {
+        if (name.equals(className)) {
+            return defineClass(name, classBytes, 0, classBytes.length);
+        }
+        throw new ClassNotFoundException(name);
+    }
+}
+```
+
+The bytes can come from anywhere — a file, a database, a network socket, generated at runtime. The JVM doesn't care about the source. It only cares that the bytes conform to the class file format.
+
+## URLClassLoader: Loading from JARs and Directories
+
+The standard workhorse for dynamic class loading is `URLClassLoader`. It accepts an array of `URL` objects — file paths, JAR files, even HTTP URLs — and loads classes from them:
+
+```java
+URL jarUrl = new File("plugins/my-plugin.jar").toURI().toURL();
+URLClassLoader pluginLoader = new URLClassLoader(
+    new URL[]{jarUrl},
+    Thread.currentThread().getContextClassLoader() // parent
+);
+
+Class<?> pluginClass = pluginLoader.loadClass("com.example.Plugin");
+```
+
+This is how build tools, IDEs, and application servers load user code at runtime. Gradle loads your test classes this way. Tomcat loads your WAR's `WEB-INF/classes` this way.
+
+One important caveat: `URLClassLoader` is `Closeable`. When you're done with a plugin, call `pluginLoader.close()`. This releases the file handles on the JARs. If you don't, on Windows you'll find you can't delete or replace the JAR file while the JVM is running.
+
+## What Happens When a Class Isn't Found
+
+If loading fails — the bytes can't be found or can't be parsed — the JVM throws:
+
+- `ClassNotFoundException` — thrown by `ClassLoader.loadClass()` when the loader (and all its parents) can't find the bytes. This is a checked exception and is the expected failure mode.
+- `NoClassDefFoundError` — an `Error` (not `Exception`). This happens when a class was found and parsed successfully, but a class it *depends on* is missing. You'll see this often when a transitive dependency is absent from the classpath.
+
+The distinction matters:
+
+```
+ClassNotFoundException  → the class itself was never found
+NoClassDefFoundError    → the class was found, but something it needs wasn't
+```
+
+If you see `NoClassDefFoundError: com/example/Foo` when you were loading `com/example/Bar`, it's `Bar` that's broken — it depends on `Foo` and `Foo` isn't available.
+
+## Class Data Sharing
+
+Modern JVMs use **Class Data Sharing (CDS)** to speed up startup. The JVM pre-parses a set of core classes and saves the result to a shared archive file. On subsequent startups, instead of re-parsing the bytes, the JVM memory-maps the archive directly.
+
+This is why you saw `shared objects file` in the `-Xlog` output above. `java.lang.Object`, `java.util.ArrayList`, and hundreds of other core classes are loaded from the archive rather than from disk. On Java 11+, the default shared archive ships with the JDK. On Java 13+, you can create a custom archive for your application with `-Xshare:dump`.
+
+The practical effect: loading is not always reading a file. But the contract — bytes in, `Class` out — is always the same.
+
+---
+
+**Key Takeaway**
+
+Loading finds a class's bytes (from classpath, JARs, or anywhere else a custom ClassLoader can reach), parses them with `defineClass`, and produces a `Class` object. No code runs during this phase. `ClassNotFoundException` means the bytes were never found; `NoClassDefFoundError` means the class loaded but a dependency didn't. Use `-Xlog:class+load=info` whenever you're debugging classpath problems — it tells you exactly where every class came from.

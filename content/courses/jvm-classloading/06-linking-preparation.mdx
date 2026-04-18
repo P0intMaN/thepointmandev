@@ -1,0 +1,94 @@
+---
+title: "Linking — Preparation and Resolution"
+courseSlug: "jvm-classloading"
+lessonNumber: 6
+description: "How static fields get memory before your code runs, and how symbolic references become direct pointers at runtime."
+date: "2026-04-19"
+draft: false
+---
+
+Verification passed — the bytecode is structurally sound. Now linking continues with two more sub-phases: **preparation** and **resolution**. These are quieter than verification but they have surprising implications for how your code actually behaves.
+
+## Preparation: Memory Before Values
+
+Preparation allocates memory for a class's static fields and sets them to their **default values** — not the values you declared in source code, but the JVM's zero equivalents:
+
+| Type | Default value |
+|------|--------------|
+| `byte`, `short`, `int` | `0` |
+| `long` | `0L` |
+| `float` | `0.0f` |
+| `double` | `0.0d` |
+| `boolean` | `false` |
+| `char` | `'\u0000'` |
+| Reference types | `null` |
+
+This is *preparation*, not initialisation. Your `static int MAX_SIZE = 100` is not yet `100` at this point — it's `0`. The `100` assignment happens during the initialisation phase, which comes after linking.
+
+This distinction matters in one specific and nasty scenario. Consider:
+
+```java
+public class Config {
+    public static final int TIMEOUT = computeTimeout();
+    public static final int MAX_RETRIES = 3;
+
+    private static int computeTimeout() {
+        // MAX_RETRIES is still 0 here during class initialisation ordering!
+        return MAX_RETRIES * 1000;
+    }
+}
+```
+
+If `computeTimeout()` runs before `MAX_RETRIES` is assigned, you get `TIMEOUT = 0`, not `3000`. The JVM initialises fields in textual order within `<clinit>`. This ordering isn't arbitrary — it's a spec guarantee — but it bites developers who aren't thinking about which fields are in scope during static initialisation.
+
+### Compile-Time Constants Are Special
+
+One exception: `static final` fields initialised with compile-time constant expressions are assigned during preparation, not initialisation:
+
+```java
+public static final int MAX = 100;        // assigned during preparation: 100
+public static final int SIZE = 10 * 20;   // assigned during preparation: 200
+public static final String NAME = "foo";  // assigned during preparation: "foo"
+public static final int LIMIT = computeLimit(); // NOT a constant, assigned in <clinit>
+```
+
+The JVM recognises constant expressions per the JLS rules (primitives and Strings, computed purely from other constants). These get baked in during preparation and inlined by the compiler into all callsites — which is why changing a `public static final int` constant in a library requires recompiling all callers, not just the library.
+
+## Resolution: From Symbols to Pointers
+
+The class file stores references symbolically. When your bytecode says `invokevirtual #7`, that `#7` points to a `Methodref` constant pool entry that says "call the method `println` with descriptor `(Ljava/lang/String;)V` on the class `java/io/PrintStream`."
+
+The JVM doesn't know the actual memory address of `PrintStream.println` until `PrintStream` is loaded and linked. Resolution is the process of replacing these symbolic references with direct references — actual memory pointers or offsets into vtables.
+
+Resolution can happen **eagerly** (before the class is used) or **lazily** (at the point each symbolic reference is first used). The JVM spec allows both and HotSpot typically resolves lazily — which means you can have a class with a reference to `com.example.Foo` and that reference won't cause a `NoClassDefFoundError` until the bytecode instruction that uses it is actually executed.
+
+This is why you can sometimes get away with shipping a JAR that references an optional dependency — as long as the code path that references the missing class is never executed at runtime.
+
+### Resolution Errors Are Deferred
+
+```java
+public class Foo {
+    public static void main(String[] args) {
+        if (System.getenv("USE_BAR") != null) {
+            Bar.doSomething(); // Bar doesn't exist
+        }
+        System.out.println("got here");
+    }
+}
+```
+
+If you run this without the `USE_BAR` environment variable set, it prints "got here" without error. The `Bar` reference is never resolved because that bytecode instruction is never executed. Set `USE_BAR=true` and you get `NoClassDefFoundError` — at exactly the point of use.
+
+This lazy resolution is both powerful and dangerous. It makes optional dependencies possible without complex conditional loading code. But it also means classpath problems may surface only in specific runtime conditions — which is why thorough integration testing with the actual production classpath matters.
+
+### Interface and Method Resolution
+
+Resolution is more than just "find the class." For method calls, the JVM must resolve the full signature — the method name, its descriptor (parameter types and return type), and the receiver type. For interface methods, this is particularly involved because the JVM must produce a vtable or itable slot that can be looked up efficiently at dispatch time.
+
+For `invokedynamic` (used by lambdas, String concatenation in Java 9+, and dynamic languages on the JVM), resolution involves calling a **bootstrap method** that returns a `CallSite` — an object that binds the call site to a specific target method. This is how lambda bodies are linked to the synthetic method the compiler generated, and it's why lambda call sites are faster after the first invocation (the `CallSite` is cached).
+
+---
+
+**Key Takeaway**
+
+Preparation allocates static field memory and zeroes it out — your declared initial values don't exist yet. Resolution converts symbolic constant pool references to direct JVM pointers, and it happens lazily: a missing class won't cause an error until the instruction that references it is actually executed. Both of these have practical implications — static field ordering bugs and classpath problems that only surface on specific code paths.

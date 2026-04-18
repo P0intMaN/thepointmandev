@@ -1,0 +1,119 @@
+---
+title: "JPMS and ClassLoading"
+courseSlug: "jvm-classloading"
+lessonNumber: 10
+description: "How Java 9 modules changed the ClassLoader hierarchy, what named and unnamed modules mean, and why reflection started breaking."
+date: "2026-04-19"
+draft: false
+---
+
+Java 9 introduced the **Java Platform Module System (JPMS)**. On the surface it looks like a packaging feature. Underneath, it fundamentally changes how ClassLoaders find and grant access to classes — and it's why a huge amount of Java code that ran fine on Java 8 broke on Java 9 and beyond.
+
+## The Problem JPMS Was Solving
+
+Before Java 9, the JDK was one giant namespace. All of `sun.misc.*`, `com.sun.*`, and `jdk.internal.*` were available to any code on the classpath. Libraries abused this — Netty used `sun.misc.Unsafe`, Hadoop used `com.sun.xml.*`, countless ORMs used internal JDK reflection tricks.
+
+This was a maintenance nightmare for the JDK team. They couldn't change internal APIs without breaking half the Java ecosystem. The strong encapsulation that JPMS provides is the solution: internal packages are no longer accessible by default, even via reflection.
+
+## Named Modules, Unnamed Modules, Automatic Modules
+
+JPMS introduces three kinds of modules:
+
+**Named modules** — have a `module-info.class` file explicitly declaring their name, their `requires` dependencies, and their `exports`. These are the "proper" JPMS modules. `java.base`, `java.sql`, and well-maintained libraries publish named modules.
+
+**Unnamed module** — all code that's on the **classpath** (not the module path) lives here. It's a single catch-all module with no name. It can read all named modules but exports nothing to named modules. This is the backwards-compatibility bucket — your old code still works because it's in the unnamed module.
+
+**Automatic modules** — JARs placed on the **module path** that don't have a `module-info.class`. The JVM automatically names them (based on the filename or the `Automatic-Module-Name` manifest entry) and treats them as exporting all their packages. This lets you put a classpath JAR on the module path without rewriting it.
+
+## How the ClassLoader Hierarchy Changed
+
+Before Java 9:
+
+```
+Bootstrap ClassLoader  (rt.jar — everything in the JDK)
+        |
+Extension ClassLoader  (lib/ext/*.jar)
+        |
+Application ClassLoader (your classpath)
+```
+
+After Java 9:
+
+```
+Bootstrap ClassLoader  (java.base module only)
+        |
+Platform ClassLoader   (all other java.* and jdk.* modules)
+        |
+Application ClassLoader (your module path + classpath)
+```
+
+The critical change: the bootstrap ClassLoader no longer loads all JDK classes. It only loads `java.base`. The rest of the JDK — `java.logging`, `java.sql`, `java.xml`, etc. — moved to the Platform ClassLoader. This matters because `null` (bootstrap) no longer implies "JDK class" — it implies only `java.base`.
+
+## Module Layers
+
+JPMS introduces the concept of a **Module Layer** — a grouping of modules loaded by a set of ClassLoaders. The boot layer is created at JVM startup and contains all the JDK platform modules plus your application's named modules.
+
+You can create additional layers at runtime:
+
+```java
+ModuleFinder finder = ModuleFinder.of(Path.of("plugins/"));
+ModuleLayer parent = ModuleLayer.boot();
+
+Configuration config = parent.configuration()
+    .resolve(finder, ModuleFinder.of(), Set.of("com.example.plugin"));
+
+ModuleLayer pluginLayer = parent.defineModulesWithOneLoader(
+    config,
+    ClassLoader.getSystemClassLoader()
+);
+
+// Now load from the plugin layer
+ClassLoader pluginLoader = pluginLayer.findLoader("com.example.plugin");
+Class<?> pluginClass = pluginLoader.loadClass("com.example.plugin.PluginImpl");
+```
+
+Module layers are the JPMS-native replacement for the `URLClassLoader` plugin pattern. Each layer has its own ClassLoader, modules in the layer can only access what the layer's configuration allows, and strong encapsulation is enforced at the module boundary.
+
+## Why Reflection Broke
+
+Under JPMS, reflection is subject to the same access rules as compiled code. If a module doesn't `opens` a package, reflective access to its non-public members is denied — even from code that used to work in Java 8.
+
+```java
+// Java 8: fine
+Field f = String.class.getDeclaredField("value");
+f.setAccessible(true); // works
+
+// Java 9+ with JPMS strict mode: throws
+// InaccessibleObjectException: Unable to make field accessible:
+// module java.base does not "opens java.lang" to unnamed module
+```
+
+This is why you see these JVM flags everywhere in Java 9+ projects:
+
+```bash
+--add-opens java.base/java.lang=ALL-UNNAMED
+--add-opens java.base/java.util=ALL-UNNAMED
+--add-opens java.base/sun.nio.ch=ALL-UNNAMED
+```
+
+These flags punch holes in the module system for specific packages, restoring the Java 8 behaviour for legacy code. They are a transitional tool, not a permanent solution. Libraries that rely on them are incurring technical debt that becomes harder to pay off with each Java release.
+
+## The `--illegal-access` History
+
+Java 9 introduced `--illegal-access=permit` (the default) which silently allowed reflective access to non-opened internal packages with just a warning. This was the compatibility shim that let most Java 8 codebases run on Java 9–16 without changes.
+
+Java 16 changed the default to `--illegal-access=deny`. Java 17 removed the flag entirely. From Java 17 onwards, `--add-opens` is the only option for code that needs to break module encapsulation.
+
+This is the root cause of the "Java 17 broke everything" wave that hit the ecosystem around 2022 — tools like Mockito, Hibernate, Spring, and Jackson all needed updates to either stop using internal APIs or explicitly declare `--add-opens` requirements.
+
+## What This Means for Custom ClassLoaders
+
+Custom ClassLoaders still work in the JPMS world, but they interact with the module system. A class loaded by a custom ClassLoader with no associated module descriptor ends up in the unnamed module — which means it can read all named modules but cannot be read by named module code unless those modules open their packages.
+
+For serious JPMS adoption, the right approach is Module Layers rather than raw `URLClassLoader` plugins. The tradeoff: Module Layers require plugin JARs to have a `module-info.class`, which means migrating every plugin to be a proper named module. For large ecosystems this is a multi-year migration.
+
+---
+
+**Key Takeaway**
+
+JPMS moved JDK classes from a single flat namespace into named modules with enforced access control. The ClassLoader hierarchy changed (Bootstrap now owns only `java.base`; Platform ClassLoader owns the rest), and strong encapsulation means reflection on internal packages requires explicit `--add-opens` flags. Module Layers are the correct abstraction for JPMS-native plugin systems, replacing the `URLClassLoader` pattern. The `--illegal-access` removal in Java 17 is why legacy code that relied on unrestricted reflection requires explicit migration.

@@ -13,6 +13,10 @@ export const CourseFrontmatterSchema = z.object({
   accent: z.string().optional(),
   image: z.string().optional(),
   draft: z.boolean().default(false),
+  // Learning path
+  order: z.number().optional(),
+  prerequisites: z.array(z.string()).optional(),
+  next: z.string().optional(),
 });
 
 export const LessonFrontmatterSchema = z.object({

@@ -1,0 +1,127 @@
+---
+title: "The ClassLoader Hierarchy"
+courseSlug: "jvm-classloading"
+lessonNumber: 2
+description: "Bootstrap, Platform, and Application ClassLoaders — who they are, what they own, and how to observe them from code."
+date: "2026-04-19"
+draft: false
+---
+
+Every class in a running JVM was loaded by exactly one ClassLoader. But not all ClassLoaders are equal, and they don't work in isolation — they form a hierarchy. Understanding this hierarchy is the prerequisite for everything else in this course.
+
+## The Naive Mental Model (and Why It's Wrong)
+
+Most developers, if asked "who loads my classes?", would say "the JVM." That's technically true but uselessly vague. It's like saying "the operating system runs my program" — correct, but it tells you nothing about how.
+
+The reality: there are at least three distinct ClassLoader instances involved in loading your application's classes, and they have very different responsibilities, different sources, and different trust levels.
+
+## The Three Built-In ClassLoaders
+
+### Bootstrap ClassLoader
+
+This is the root. It's not a Java class — in most JVM implementations (including HotSpot), it's written in C++ and has no Java representation. It loads the **core Java platform classes**: everything in `java.lang`, `java.util`, `java.io`, and the rest of the `java.*` namespace.
+
+Before Java 9, these classes came from `rt.jar` (the runtime JAR in `$JAVA_HOME/lib`). From Java 9 onwards with the module system, they come from the compiled module `java.base` and friends inside the JDK's internal module image.
+
+When you ask a class loaded by the bootstrap loader for its ClassLoader, you get `null`:
+
+```java
+System.out.println(String.class.getClassLoader()); // null
+System.out.println(int.class.getClassLoader());    // null
+System.out.println(Object.class.getClassLoader()); // null
+```
+
+`null` means "the bootstrap ClassLoader." This is a deliberate design choice — since the bootstrap loader has no Java representation, `null` is used as its sentinel.
+
+### Platform ClassLoader (formerly Extension ClassLoader)
+
+This is the second tier. Before Java 9, it was called the **Extension ClassLoader** and it loaded JARs from `$JAVA_HOME/lib/ext/` — a directory where you could drop JARs that would be globally available to all applications. This was broadly considered a bad idea and was removed.
+
+In Java 9+, this became the **Platform ClassLoader** (`jdk.internal.loader.ClassLoaders$PlatformClassLoader`). It loads classes from platform modules that aren't part of `java.base` — things like `java.logging`, `java.xml`, `java.sql`.
+
+```java
+System.out.println(java.util.logging.Logger.class.getClassLoader());
+// jdk.internal.loader.ClassLoaders$PlatformClassLoader@...
+```
+
+### Application ClassLoader (System ClassLoader)
+
+This is the one that loads **your code**. It reads from the classpath — everything you put in `-cp`, everything in your project's output directory, every JAR in your `lib/` folder.
+
+```java
+System.out.println(MyApp.class.getClassLoader());
+// jdk.internal.loader.ClassLoaders$AppClassLoader@...
+```
+
+You can get it directly:
+
+```java
+ClassLoader appLoader = ClassLoader.getSystemClassLoader();
+```
+
+## Visualising the Hierarchy
+
+```
+Bootstrap ClassLoader  (C++, loads java.base, java.*, returns null in Java)
+        |
+        | (parent)
+        v
+Platform ClassLoader   (loads java.logging, java.sql, java.xml, ...)
+        |
+        | (parent)
+        v
+Application ClassLoader (loads your classpath: src/main, lib/*.jar)
+        |
+        | (parent)
+        v
+  [Your custom ClassLoaders, if any]
+```
+
+Each ClassLoader holds a reference to its **parent**. This parent-child relationship is not inheritance — it's a composition chain. The significance of this chain is the subject of the next lesson.
+
+## Observing the Chain from Code
+
+Run this and read every line:
+
+```java
+public class WhoLoadedMe {
+    public static void main(String[] args) {
+        ClassLoader cl = WhoLoadedMe.class.getClassLoader();
+        while (cl != null) {
+            System.out.println(cl);
+            cl = cl.getParent();
+        }
+        System.out.println(null); // bootstrap
+    }
+}
+```
+
+```
+jdk.internal.loader.ClassLoaders$AppClassLoader@251a69d7
+jdk.internal.loader.ClassLoaders$PlatformClassLoader@7a765367
+null
+```
+
+Three lines. Your class, the platform loader, then `null` (the bootstrap). That's the entire default hierarchy.
+
+## Why Three? Why Not One?
+
+This is the question worth sitting with. Why not have a single ClassLoader that loads everything?
+
+**Security and trust boundaries.** The classes in `java.lang` — `String`, `Object`, `ClassLoader` itself — must be trustworthy. If application code could replace them, the entire security model collapses. By having the bootstrap ClassLoader sit at the top with no parent and no way for application code to override it, the JVM guarantees that `java.lang.String` is always *the* `String`, not a user-supplied substitute.
+
+**Isolation.** Not all code deserves the same access level. Platform classes have different privileges from application classes. The layered hierarchy makes these trust boundaries explicit and enforceable.
+
+**Extensibility.** By making ClassLoaders pluggable and hierarchical, the JVM can support an enormous variety of deployment environments — application servers with per-deployment ClassLoaders, OSGi with per-bundle ClassLoaders, hot-reload systems that discard and recreate ClassLoaders on demand — all without changing the core JVM.
+
+## A Trap: `getSystemClassLoader()` vs `getClassLoader()`
+
+These are not always the same thing. `Class.getClassLoader()` returns the loader that loaded *that specific class*. `ClassLoader.getSystemClassLoader()` always returns the application ClassLoader, regardless of context.
+
+In a simple app, they're the same. In an application server or a test runner that installs its own ClassLoader, they can diverge — and confusing them causes subtle, hard-to-debug bugs. Always prefer `getClass().getClassLoader()` when you want "the loader that loaded this class."
+
+---
+
+**Key Takeaway**
+
+The JVM ships with three built-in ClassLoaders arranged in a parent-child chain: Bootstrap (loads the JDK core), Platform (loads JDK platform modules), and Application (loads your code from the classpath). This hierarchy isn't arbitrary — it enforces trust boundaries that make it impossible for application code to hijack core platform classes. Every class you load in Java is loaded by exactly one of these loaders, or a custom loader that delegates to them.
