@@ -1,0 +1,101 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="680" height="196" viewBox="0 0 680 196" font-family="'Geist Mono', monospace">
+  <rect width="680" height="196" fill="#0f0d09"/>
+
+  <!-- Title -->
+  <text x="340" y="17" text-anchor="middle" fill="#92400e" font-size="10" letter-spacing="2" font-weight="700">HEXADECIMAL — ONE DIGIT = FOUR BITS (ONE NIBBLE)</text>
+
+  <!-- ROW 1: digits 0–7, y=23 to y=77 -->
+  <rect x="20"  y="23" width="78" height="52" rx="3" fill="#1a1510" stroke="#3d2e0f" stroke-width="1"/>
+  <text x="59"  y="46" text-anchor="middle" fill="#fbbf24" font-size="15" font-weight="700">0</text>
+  <text x="59"  y="64" text-anchor="middle" fill="#67e8f9" font-size="10">0000</text>
+
+  <rect x="102" y="23" width="78" height="52" rx="3" fill="#1a1510" stroke="#3d2e0f" stroke-width="1"/>
+  <text x="141" y="46" text-anchor="middle" fill="#fbbf24" font-size="15" font-weight="700">1</text>
+  <text x="141" y="64" text-anchor="middle" fill="#67e8f9" font-size="10">0001</text>
+
+  <rect x="184" y="23" width="78" height="52" rx="3" fill="#1a1510" stroke="#3d2e0f" stroke-width="1"/>
+  <text x="223" y="46" text-anchor="middle" fill="#fbbf24" font-size="15" font-weight="700">2</text>
+  <text x="223" y="64" text-anchor="middle" fill="#67e8f9" font-size="10">0010</text>
+
+  <rect x="266" y="23" width="78" height="52" rx="3" fill="#1a1510" stroke="#3d2e0f" stroke-width="1"/>
+  <text x="305" y="46" text-anchor="middle" fill="#fbbf24" font-size="15" font-weight="700">3</text>
+  <text x="305" y="64" text-anchor="middle" fill="#67e8f9" font-size="10">0011</text>
+
+  <rect x="348" y="23" width="78" height="52" rx="3" fill="#1a1510" stroke="#3d2e0f" stroke-width="1"/>
+  <text x="387" y="46" text-anchor="middle" fill="#fbbf24" font-size="15" font-weight="700">4</text>
+  <text x="387" y="64" text-anchor="middle" fill="#67e8f9" font-size="10">0100</text>
+
+  <rect x="430" y="23" width="78" height="52" rx="3" fill="#1a1510" stroke="#3d2e0f" stroke-width="1"/>
+  <text x="469" y="46" text-anchor="middle" fill="#fbbf24" font-size="15" font-weight="700">5</text>
+  <text x="469" y="64" text-anchor="middle" fill="#67e8f9" font-size="10">0101</text>
+
+  <rect x="512" y="23" width="78" height="52" rx="3" fill="#1a1510" stroke="#3d2e0f" stroke-width="1"/>
+  <text x="551" y="46" text-anchor="middle" fill="#fbbf24" font-size="15" font-weight="700">6</text>
+  <text x="551" y="64" text-anchor="middle" fill="#67e8f9" font-size="10">0110</text>
+
+  <rect x="594" y="23" width="78" height="52" rx="3" fill="#1a1510" stroke="#3d2e0f" stroke-width="1"/>
+  <text x="633" y="46" text-anchor="middle" fill="#fbbf24" font-size="15" font-weight="700">7</text>
+  <text x="633" y="64" text-anchor="middle" fill="#67e8f9" font-size="10">0111</text>
+
+  <!-- ROW 2: digits 8–F, y=79 to y=131 -->
+  <rect x="20"  y="79" width="78" height="52" rx="3" fill="#1a1510" stroke="#3d2e0f" stroke-width="1"/>
+  <text x="59"  y="102" text-anchor="middle" fill="#fbbf24" font-size="15" font-weight="700">8</text>
+  <text x="59"  y="120" text-anchor="middle" fill="#67e8f9" font-size="10">1000</text>
+
+  <rect x="102" y="79" width="78" height="52" rx="3" fill="#1a1510" stroke="#3d2e0f" stroke-width="1"/>
+  <text x="141" y="102" text-anchor="middle" fill="#fbbf24" font-size="15" font-weight="700">9</text>
+  <text x="141" y="120" text-anchor="middle" fill="#67e8f9" font-size="10">1001</text>
+
+  <rect x="184" y="79" width="78" height="52" rx="3" fill="#1a1510" stroke="#3d2e0f" stroke-width="1"/>
+  <text x="223" y="102" text-anchor="middle" fill="#fbbf24" font-size="15" font-weight="700">A</text>
+  <text x="223" y="120" text-anchor="middle" fill="#67e8f9" font-size="10">1010</text>
+
+  <rect x="266" y="79" width="78" height="52" rx="3" fill="#1a1510" stroke="#3d2e0f" stroke-width="1"/>
+  <text x="305" y="102" text-anchor="middle" fill="#fbbf24" font-size="15" font-weight="700">B</text>
+  <text x="305" y="120" text-anchor="middle" fill="#67e8f9" font-size="10">1011</text>
+
+  <rect x="348" y="79" width="78" height="52" rx="3" fill="#1a1510" stroke="#3d2e0f" stroke-width="1"/>
+  <text x="387" y="102" text-anchor="middle" fill="#fbbf24" font-size="15" font-weight="700">C</text>
+  <text x="387" y="120" text-anchor="middle" fill="#67e8f9" font-size="10">1100</text>
+
+  <rect x="430" y="79" width="78" height="52" rx="3" fill="#1a1510" stroke="#3d2e0f" stroke-width="1"/>
+  <text x="469" y="102" text-anchor="middle" fill="#fbbf24" font-size="15" font-weight="700">D</text>
+  <text x="469" y="120" text-anchor="middle" fill="#67e8f9" font-size="10">1101</text>
+
+  <rect x="512" y="79" width="78" height="52" rx="3" fill="#1a1510" stroke="#3d2e0f" stroke-width="1"/>
+  <text x="551" y="102" text-anchor="middle" fill="#fbbf24" font-size="15" font-weight="700">E</text>
+  <text x="551" y="120" text-anchor="middle" fill="#67e8f9" font-size="10">1110</text>
+
+  <!-- F — highlighted, appears in 0xFF example -->
+  <rect x="594" y="79" width="78" height="52" rx="3" fill="#1f1608" stroke="#f59e0b" stroke-width="1.5"/>
+  <text x="633" y="102" text-anchor="middle" fill="#fbbf24" font-size="15" font-weight="700">F</text>
+  <text x="633" y="120" text-anchor="middle" fill="#67e8f9" font-size="10">1111</text>
+
+  <!-- Example strip -->
+  <line x1="20" y1="138" x2="660" y2="138" stroke="#3d2e0f" stroke-width="1" stroke-dasharray="3 3"/>
+
+  <!-- 0xFF decoded -->
+  <rect x="144" y="148" width="36" height="24" rx="3" fill="#1a1510" stroke="#3d2e0f" stroke-width="1"/>
+  <text x="162" y="165" text-anchor="middle" fill="#3d2e0f" font-size="11" font-weight="700">0x</text>
+
+  <rect x="184" y="148" width="36" height="24" rx="3" fill="#1f1608" stroke="#f59e0b" stroke-width="1.5"/>
+  <text x="202" y="165" text-anchor="middle" fill="#fbbf24" font-size="13" font-weight="700">F</text>
+
+  <rect x="224" y="148" width="36" height="24" rx="3" fill="#1f1608" stroke="#f59e0b" stroke-width="1.5"/>
+  <text x="242" y="165" text-anchor="middle" fill="#fbbf24" font-size="13" font-weight="700">F</text>
+
+  <text x="274" y="165" text-anchor="middle" fill="#92400e" font-size="12">=</text>
+
+  <rect x="288" y="148" width="104" height="24" rx="3" fill="#0f1a0f" stroke="#4ade80" stroke-width="1"/>
+  <text x="340" y="165" text-anchor="middle" fill="#4ade80" font-size="11" font-weight="700">1111 1111</text>
+
+  <text x="406" y="165" text-anchor="middle" fill="#92400e" font-size="12">=</text>
+
+  <rect x="418" y="148" width="58" height="24" rx="3" fill="#120e08" stroke="#3d2e0f" stroke-width="1"/>
+  <text x="447" y="165" text-anchor="middle" fill="#fef3c7" font-size="13" font-weight="700">255</text>
+
+  <text x="495" y="165" fill="#3d2e0f" font-size="9">decimal</text>
+
+  <!-- Bottom note -->
+  <text x="340" y="188" text-anchor="middle" fill="#3d2e0f" font-size="9" letter-spacing="1">0x PREFIX MARKS A HEX LITERAL  ·  A=10  B=11  C=12  D=13  E=14  F=15</text>
+</svg>

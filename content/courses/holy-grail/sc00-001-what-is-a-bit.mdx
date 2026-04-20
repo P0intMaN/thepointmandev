@@ -1,0 +1,236 @@
+---
+title: "What Is a Bit?"
+courseSlug: "holy-grail"
+lessonNumber: 1
+subCourse: 0
+description: "From transistors to logic gates to binary representation. Why computers speak in 0s and 1s."
+date: "2026-04-19"
+draft: false
+---
+
+A Redis production cluster at a mid-sized company stores the "has this user seen this notification?" flag for 500 million users. The naive implementation — a row per user in Postgres — consumes gigabytes, grinds under JOIN pressure, and costs thousands a month. The Redis implementation uses a bitmap. Every flag is one bit. 500 million bits is 62.5 MB. That fits in L3 cache on a modern server.
+
+That trick only works if you understand what a bit actually is — not as a definition you memorised, but as a physical object with constraints, a mathematical entity with a formula, and an engineering primitive with costs and benefits. That's what this lesson is about.
+
+## The Machine Under the Abstraction
+
+You've written `boolean active = true;` a thousand times. You've never had to think about what that `true` physically is. Let's fix that.
+
+At the bottom of every computer — under the operating system, under the JVM, under the bytecode, under everything you've ever written — is silicon. Billions of transistors etched onto a chip the size of your thumbnail.
+
+A transistor is a switch. It has three terminals: a **gate**, a **drain**, and a **source**. When you apply a voltage above a threshold to the gate, current flows from drain to source. When you drop the voltage below the threshold, current stops. Two stable states. Nothing else.
+
+<Figure
+  src="/diagrams/holy-grail/sc00-01-transistor-states.svg"
+  alt="Diagram showing a transistor in OFF state (0V at gate, no current, represents bit 0) and ON state (1.1V at gate, current flows, represents bit 1)"
+  caption="One transistor. Two stable states. One bit."
+  label="sc00-01-transistor-states.svg"
+/>
+
+That's it. That's a bit. Not a concept — a physical voltage. The entire digital universe — every database, every web server, every video, every encrypted message — is built from switches that are either on or off.
+
+<Quiz question="A transistor has three terminals. What determines whether current flows from drain to source?">
+The voltage applied to the **gate** terminal. Above the threshold voltage, the gate opens and current flows from drain to source. Below it, no current flows. The gate is a control signal — it doesn't carry the data current itself, it authorises it. The bit value lives in the gate voltage, not in the current.
+</Quiz>
+
+## Why Two States and Not Ten?
+
+Here's a question that seems obvious once you hear the answer, but almost nobody thinks to ask: **why binary?**
+
+You have ten fingers. Every culture in history has counted in base 10. Why did we build computers in base 2 instead of base 10?
+
+The answer is physics.
+
+Transistors don't produce clean, exact voltages. They produce voltages that fluctuate — from heat, from electromagnetic interference, from electrons in adjacent wires inducing tiny currents. In a modern 1.1V chip, a wire that should sit at 0.0V might briefly measure 0.05V. A wire that should be at 1.1V might dip to 1.04V. That variation is called **noise**.
+
+If you want to represent 10 distinct states across 1.1V of range, each state gets about 0.11V of space. The error margin — the gap between adjacent states that lets you distinguish them reliably — is roughly 0.05V. Half a tenth of a volt. Real-world noise eats that margin without effort.
+
+Binary splits 1.1V into just two zones: LOW (0.0V–0.4V) and HIGH (0.65V–1.1V). The gap between the top of LOW and the bottom of HIGH is 0.25V. Any voltage in the LOW zone is a 0. Any voltage in the HIGH zone is a 1. Even with 0.2V of noise, you still read the right value.
+
+<Figure
+  src="/diagrams/holy-grail/sc00-01-noise-margin.svg"
+  alt="Side-by-side comparison: binary has 0.45V noise margin per level, hypothetical decimal has 0.05V — 9x more vulnerable to noise"
+  caption="Same physical noise. Completely different consequences."
+  label="sc00-01-noise-margin.svg"
+/>
+
+This is called the **noise margin**. Binary gives you ~0.45V of margin per level. A hypothetical decimal system gives you ~0.05V. Binary is nine times more tolerant of the same real-world electrical noise.
+
+In the 1950s, the Soviet Union actually built a ternary computer called Setun. It used three voltage states instead of two. It worked. It was also a maintenance nightmare — the tolerances were tight, hardware was fragile, and it never scaled. Binary won not because it was an arbitrary choice, but because it is the physically most robust system you can build with transistors.
+
+<Quiz question="Why is binary more noise-tolerant than decimal, even though both use the same physical voltage range?">
+Binary splits the voltage range into only 2 zones, so each zone is wide — about 0.45V of noise margin. Decimal would need 10 zones in the same range, leaving only ~0.05V between adjacent states. The same real-world electrical noise that is harmless in binary would cross a zone boundary in decimal, flipping a digit and corrupting data. Fewer states means wider margins means more reliable hardware.
+</Quiz>
+
+## From Physics to Meaning
+
+You now know what a bit physically is: a transistor in one of two voltage states. But bits don't carry meaning by themselves. A sequence of 8 bits — `01001101` — is just a pattern of voltages. It has no intrinsic meaning.
+
+The meaning is applied by the code that reads it.
+
+<Figure
+  src="/diagrams/holy-grail/sc00-01-byte-layout.svg"
+  alt="The byte 01001101 shown as 8 bit boxes. The same pattern means 77 as an integer, the letter M as ASCII, or 8 boolean flags."
+  caption="Same 8 bits. Three completely different meanings. The code that reads them decides which."
+  label="sc00-01-byte-layout.svg"
+/>
+
+This is one of the most important ideas in computer science, and it is almost never stated directly:
+
+**A computer has no idea what its bits mean. Only your code does.**
+
+When Java reads those 8 bits and interprets them as an integer, it sees 77. When it reads the same bits and looks up the ASCII table, it sees `'M'`. When your permission system reads the same bits and checks individual positions, it sees 8 boolean flags. The hardware does not know the difference. The transistors don't know the difference. The only thing that changes is the instruction your CPU executes on those bits.
+
+This is why type systems exist. `int` and `float` are both 32 bits, but if you interpret an `int`'s bit pattern as a `float`, you get nonsense. The CPU will faithfully execute whatever instruction you give it on whatever bits it finds. The type system is the only thing standing between you and bit-level chaos.
+
+## Measuring Information: Shannon's Definition
+
+In 1948, Claude Shannon published a paper that invented information theory from scratch. One of his core results was a precise definition of what "information" means — precise enough to compute.
+
+A **bit** is the minimum unit of information needed to resolve a yes/no question with two equally likely outcomes.
+
+The information content of an event with probability `p` is:
+
+```
+I(p) = -log₂(p)    (measured in bits)
+```
+
+A fair coin flip has probability 0.5. Its information content is `-log₂(0.5) = 1 bit`. Exactly one binary question — heads or tails — resolves it.
+
+An event that always happens (`p = 1.0`) carries `0 bits` of information. You learned nothing you didn't already know. An event that almost never happens carries many bits — it is highly surprising, and surprise is information.
+
+This is not just theory. It is why:
+- A compressed ZIP file is smaller than the original — compression eliminates redundant, low-information bits
+- An encrypted file looks like random noise — it has maximum information density per bit
+- A sparse matrix storing mostly zeros wastes space — zeros carry almost no information in that context
+
+Shannon gave us the tools to measure information the same way we measure mass or distance. That measurement is what makes compression, encryption, and error correction possible.
+
+## n Bits, 2ⁿ States
+
+Here's the scaling law every engineer needs to own:
+
+**n bits can represent exactly 2ⁿ distinct states.**
+
+| Bits | States | Examples |
+|------|--------|---------|
+| 1 | 2 | off/on, false/true |
+| 8 | 256 | one byte, ASCII characters 0–127 |
+| 16 | 65,536 | Java `short`, Unicode BMP |
+| 32 | 4,294,967,296 | Java `int`, IPv4 addresses |
+| 64 | 18,446,744,073,709,551,616 | Java `long`, modern memory addresses |
+
+This isn't a table to memorise — it's a lever. When you see a 32-bit integer in a JVM object header, you know it can encode over 4 billion distinct flag combinations. When you see a 16-bit port number, you immediately know 65,535 is the ceiling. The formula `2ⁿ` gives you the state space before you look anything up.
+
+Going from 32 bits to 33 bits doesn't add one more state. It doubles the state space. Each additional bit doubles the number of things you can represent. This is why password length matters more than character set size past a certain point. It is why SHA-256 (256 bits of output) has a state space so large that brute-forcing it with every computer on earth would take longer than the age of the universe.
+
+<Quiz question="How many distinct values can a 4-bit sequence represent? What is the maximum unsigned integer storable in 4 bits?">
+4 bits → 2⁴ = 16 distinct states. The values range from 0 (`0000`) to 15 (`1111`). Maximum unsigned integer: 15. If you need to store 16 or more, you need a fifth bit — which doubles your capacity to 32 states.
+</Quiz>
+
+## The Engineering Trade-off: Bits at Scale
+
+Understanding bits as a unit of measurement — not just a concept — is what separates engineers who design systems from engineers who use them.
+
+**Scenario:** your system needs to track, for each of 1 billion users, whether they have completed onboarding. You have three options.
+
+**Option A — `boolean` column in Postgres:** A Postgres `boolean` is stored as 1 byte (8 bits — the extra 7 are wasted for alignment). 1 billion rows × 1 byte = 1 GB of storage just for this flag. Add index overhead, WAL bloat, and row headers, and you're looking at several gigabytes in practice.
+
+**Option B — `boolean[]` in Java heap:** HotSpot stores each element of a `boolean[]` as 1 byte. 1 billion booleans = 1 GB of heap. Your GC pauses start resembling infrastructure incidents.
+
+**Option C — `BitSet` or Redis bitmap:** 1 bit per user. 1 billion bits = 125 MB. Eight times smaller than Option A. Fits in L3 cache on a modern server. Bitwise OR lets you compute "users who completed onboarding AND redeemed a coupon" across 64 users in a single CPU instruction.
+
+The difference between Option A and Option C is not micro-optimisation. It is the difference between an RDS instance that costs $2,000/month and one that costs $250/month. It is the difference between a full-table scan that takes 40 seconds and one that takes 800 milliseconds.
+
+```java
+// The expensive way: one boolean per user, each stored as a full byte
+boolean[] completed = new boolean[1_000_000_000]; // ~1 GB of heap
+
+// The correct way at scale: one bit per user
+java.util.BitSet completed = new java.util.BitSet(1_000_000_000); // ~125 MB
+
+// Mark user 42 as having completed onboarding
+completed.set(42);
+
+// Check user 42
+System.out.println(completed.get(42)); // true
+
+// Count how many users completed onboarding
+System.out.println(completed.cardinality());
+
+// Find users who completed onboarding AND accepted the terms (bitwise AND)
+BitSet acceptedTerms = new BitSet(1_000_000_000);
+acceptedTerms.set(42);
+acceptedTerms.set(99);
+
+BitSet both = (BitSet) completed.clone();
+both.and(acceptedTerms); // intersects in a single pass
+System.out.println(both.cardinality()); // users who did both
+```
+
+Run this. Heap-profile both versions. The code is almost identical. The cost at a billion users is not.
+
+## Walking Through the Bits in Java
+
+Let's make the physics tangible. Java exposes the raw bit representation of its primitive types. Here's how to look at what's actually in memory.
+
+```java
+public class BitExplorer {
+    public static void main(String[] args) {
+        int value = 77;
+
+        // See the binary representation (Java omits leading zeros)
+        System.out.println(Integer.toBinaryString(value));
+        // Output: 1001101
+
+        // Pad to the full 32-bit form
+        String padded = String.format("%32s", Integer.toBinaryString(value)).replace(' ', '0');
+        System.out.println(padded);
+        // Output: 00000000000000000000000001001101
+
+        // The same bits, interpreted as a character
+        System.out.println((char) value);
+        // Output: M
+
+        // The same numeric value as a float — completely different bit pattern
+        float f = 77.0f;
+        System.out.println(Integer.toBinaryString(Float.floatToIntBits(f)));
+        // Output: 1000010100110100000000000000000
+        // That is 77.0 in IEEE 754 format. Nothing like the integer 77.
+
+        // Inspect individual bits with shifting and masking
+        for (int i = 7; i >= 0; i--) {
+            int bit = (value >> i) & 1;
+            System.out.print(bit);
+        }
+        System.out.println();
+        // Output: 01001101
+    }
+}
+```
+
+Look at the last loop. `(value >> i) & 1` is the fundamental bit inspection operation. Shift the bit you want into position 0, then AND with 1 to isolate it. This pattern appears in every low-level Java library ever written — JVM source, Netty, Kafka's serialisation layer, `HashMap`'s hash spreading, all of it.
+
+The float output is the one that should unsettle you. The integer 77 and the float 77.0 are both 32 bits in memory. But their bit patterns are completely different, because they are decoded by different hardware circuits. The integer circuit reads `01001101` at the low byte. The floating-point unit reads `01000010 10011010 00000000 00000000` across all 32 bits. Same memory size. Different meaning. Type safety is the only thing preventing your code from confusing the two — and in older C code, without type safety, this confusion was a real and catastrophic source of bugs.
+
+<Quiz question="What does `(77 >> 2) & 1` evaluate to? Walk through each step.">
+Start with 77 in binary: `01001101`. Right-shift by 2: `00010011` (the two rightmost bits fall off, two zeros come in from the left). Now AND with 1 (`00000001`): only the rightmost bit survives. The rightmost bit of `00010011` is `1`. Result: `1`. Bit 2 (zero-indexed from the right) of 77 is set.
+</Quiz>
+
+## What You Now Own
+
+A bit is not an abstraction — it is a transistor holding a voltage, a physical object with mass, temperature, and a noise tolerance that dictated the shape of all modern computing. You now understand why binary beat decimal at the hardware level (noise margin, not arbitrary convention), how the same 8-bit pattern becomes an integer, a character, or a permission flag depending purely on which instruction reads it, and how to compute the state space of any bit-width with `2ⁿ`. You know why `BitSet` exists, when to reach for it, and what it costs not to. Every time you write `boolean`, `int`, or `long` from here forward, you're not writing an abstraction — you're allocating specific voltages inside a chip, and you now know exactly what that means.
+
+## Exercises
+
+These are not optional. You will not own this material until you have done them on paper.
+
+**Exercise 1 — Draw the transistor.** Without looking at the diagram, draw a MOSFET transistor. Label the gate, drain, and source. Annotate: what voltage at the gate produces a 0? What voltage produces a 1? Which terminal carries the control signal, and which terminals carry the data current?
+
+**Exercise 2 — Draw the byte.** Draw 8 boxes in a row. Label them bit 7 (MSB) through bit 0 (LSB). Fill in the pattern `01001101`. Write the decimal value below it. Write the ASCII character it represents. Write what each bit position means if these 8 bits are boolean flags in a permission system.
+
+**Exercise 3 — State space reasoning.** A JVM object header contains a 32-bit mark word. Part of it stores the identity hashcode in 25 bits. How many distinct hashcodes can those 25 bits hold? If you added one more bit, how many could fit? What is the ratio? Does the JVM's `System.identityHashCode()` ever return a value larger than that maximum?
+
+**Exercise 4 — Bit manipulation, no computer.** Trace through `(77 >> 2) & 1` step by step on paper. Write out the binary representation of 77. Write the result after shifting. Write the result after the AND. Then run it in Java to verify.
+
+**Exercise 5 — Scale calculation.** Your team stores a `has_read` flag for 800 million messages in a Postgres `boolean` column. A colleague proposes a Redis bitmap. Calculate the storage difference in megabytes. At $0.115 per GB-month for RDS gp3 storage, what is the annual cost difference between the two approaches?

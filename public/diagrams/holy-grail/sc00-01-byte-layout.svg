@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="680" height="180" viewBox="0 0 680 180" font-family="'Geist Mono', monospace">
+  <rect width="680" height="180" fill="#0f0d09"/>
+
+  <!-- Title -->
+  <text x="340" y="22" text-anchor="middle" fill="#92400e" font-size="10" letter-spacing="2" font-weight="700">ONE BYTE — 8 BITS — THE PATTERN 01001101</text>
+
+  <!-- Bit boxes -->
+  <!-- Bit 7 (MSB) -->
+  <g transform="translate(40, 36)">
+    <rect width="68" height="52" rx="4" fill="#1a1510" stroke="#3d2e0f" stroke-width="1.2"/>
+    <text x="34" y="32" text-anchor="middle" fill="#b7b1b1" font-size="26" font-weight="700">0</text>
+    <text x="34" y="62" text-anchor="middle" fill="#92400e" font-size="9">bit 7</text>
+    <text x="34" y="73" text-anchor="middle" fill="#3d2e0f" font-size="8">MSB</text>
+  </g>
+  <!-- Bit 6 -->
+  <g transform="translate(114, 36)">
+    <rect width="68" height="52" rx="4" fill="#1f1608" stroke="#f59e0b" stroke-width="1.5"/>
+    <text x="34" y="32" text-anchor="middle" fill="#fbbf24" font-size="26" font-weight="700">1</text>
+    <text x="34" y="62" text-anchor="middle" fill="#d97706" font-size="9">bit 6</text>
+  </g>
+  <!-- Bit 5 -->
+  <g transform="translate(188, 36)">
+    <rect width="68" height="52" rx="4" fill="#1a1510" stroke="#3d2e0f" stroke-width="1.2"/>
+    <text x="34" y="32" text-anchor="middle" fill="#b7b1b1" font-size="26" font-weight="700">0</text>
+    <text x="34" y="62" text-anchor="middle" fill="#92400e" font-size="9">bit 5</text>
+  </g>
+  <!-- Bit 4 -->
+  <g transform="translate(262, 36)">
+    <rect width="68" height="52" rx="4" fill="#1a1510" stroke="#3d2e0f" stroke-width="1.2"/>
+    <text x="34" y="32" text-anchor="middle" fill="#b7b1b1" font-size="26" font-weight="700">0</text>
+    <text x="34" y="62" text-anchor="middle" fill="#92400e" font-size="9">bit 4</text>
+  </g>
+  <!-- Bit 3 -->
+  <g transform="translate(336, 36)">
+    <rect width="68" height="52" rx="4" fill="#1f1608" stroke="#f59e0b" stroke-width="1.5"/>
+    <text x="34" y="32" text-anchor="middle" fill="#fbbf24" font-size="26" font-weight="700">1</text>
+    <text x="34" y="62" text-anchor="middle" fill="#d97706" font-size="9">bit 3</text>
+  </g>
+  <!-- Bit 2 -->
+  <g transform="translate(410, 36)">
+    <rect width="68" height="52" rx="4" fill="#1f1608" stroke="#f59e0b" stroke-width="1.5"/>
+    <text x="34" y="32" text-anchor="middle" fill="#fbbf24" font-size="26" font-weight="700">1</text>
+    <text x="34" y="62" text-anchor="middle" fill="#d97706" font-size="9">bit 2</text>
+  </g>
+  <!-- Bit 1 -->
+  <g transform="translate(484, 36)">
+    <rect width="68" height="52" rx="4" fill="#1a1510" stroke="#3d2e0f" stroke-width="1.2"/>
+    <text x="34" y="32" text-anchor="middle" fill="#b7b1b1" font-size="26" font-weight="700">0</text>
+    <text x="34" y="62" text-anchor="middle" fill="#92400e" font-size="9">bit 1</text>
+  </g>
+  <!-- Bit 0 (LSB) -->
+  <g transform="translate(558, 36)">
+    <rect width="68" height="52" rx="4" fill="#1f1608" stroke="#f59e0b" stroke-width="1.5"/>
+    <text x="34" y="32" text-anchor="middle" fill="#fbbf24" font-size="26" font-weight="700">1</text>
+    <text x="34" y="62" text-anchor="middle" fill="#d97706" font-size="9">bit 0</text>
+    <text x="34" y="73" text-anchor="middle" fill="#3d2e0f" font-size="8">LSB</text>
+  </g>
+
+  <!-- Three interpretations -->
+  <line x1="40" y1="118" x2="626" y2="118" stroke="#3d2e0f" stroke-width="1" stroke-dasharray="3 3"/>
+
+  <rect x="40" y="126" width="174" height="38" rx="4" fill="#120e08" stroke="#3d2e0f" stroke-width="1"/>
+  <text x="127" y="140" text-anchor="middle" fill="#92400e" font-size="9" letter-spacing="1">AS INTEGER</text>
+  <text x="127" y="156" text-anchor="middle" fill="#fef3c7" font-size="13" font-weight="700">77</text>
+
+  <rect x="226" y="126" width="228" height="38" rx="4" fill="#120e08" stroke="#3d2e0f" stroke-width="1"/>
+  <text x="340" y="140" text-anchor="middle" fill="#92400e" font-size="9" letter-spacing="1">AS ASCII CHARACTER</text>
+  <text x="340" y="156" text-anchor="middle" fill="#fef3c7" font-size="13" font-weight="700">'M'</text>
+
+  <rect x="466" y="126" width="160" height="38" rx="4" fill="#120e08" stroke="#3d2e0f" stroke-width="1"/>
+  <text x="546" y="140" text-anchor="middle" fill="#92400e" font-size="9" letter-spacing="1">8 FLAGS</text>
+  <text x="546" y="156" text-anchor="middle" fill="#fef3c7" font-size="11" font-weight="700">off·on·off·off·on·on·off·on</text>
+
+  <!-- Label: same bits, different meaning -->
+  <text x="340" y="172" text-anchor="middle" fill="#3d2e0f" font-size="9" letter-spacing="1">SAME 8 BITS — MEANING LIVES IN THE CODE THAT READS THEM</text>
+</svg>

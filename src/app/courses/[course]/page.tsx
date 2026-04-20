@@ -6,6 +6,7 @@ import { getAllCourses, getCourseLessonsAll } from "@/lib/mdx/getAllContent";
 import { parseFrontmatter } from "@/lib/mdx/parseFrontmatter";
 import { CourseFrontmatterSchema } from "@/types/course";
 import { MDXContent } from "@/components/mdx/MDXContent";
+import type { SubCourse } from "@/types/course";
 import fs from "fs";
 import path from "path";
 
@@ -24,6 +25,80 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return { title: found.frontmatter.title, description: found.frontmatter.description };
 }
 
+// ── Holy Grail sub-course card ─────────────────────────────────────────────
+function SubCourseCard({
+  sc,
+  firstLessonSlug,
+  courseSlug,
+  publishedCount,
+  totalCount,
+}: {
+  sc: SubCourse;
+  firstLessonSlug: string | null;
+  courseSlug: string;
+  publishedCount: number;
+  totalCount: number;
+}) {
+  const inner = (
+    <div className="group relative flex flex-col gap-3 break-inside-avoid rounded-[var(--radius-lg)] border border-[var(--color-bg-border)] bg-[var(--color-bg-elevated)] p-5 transition-all duration-300 hover:border-amber-800/60">
+      {/* Number badge */}
+      <div className="flex items-center gap-3">
+        <span
+          className="shrink-0 font-mono text-3xl font-bold leading-none tabular-nums"
+          style={{
+            background: "linear-gradient(135deg, #f59e0b, #fbbf24)",
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
+            backgroundClip: "text",
+            opacity: 0.6,
+          }}
+        >
+          {String(sc.number).padStart(2, "0")}
+        </span>
+        {publishedCount > 0 && (
+          <span className="font-mono text-[10px] text-[#f59e0b] opacity-70">
+            {publishedCount}/{totalCount} live
+          </span>
+        )}
+      </div>
+
+      {/* Title */}
+      <p className="text-base font-semibold leading-snug text-[var(--color-text-primary)] group-hover:text-amber-400 transition-colors">
+        {sc.title}
+      </p>
+
+      {/* Description */}
+      <p className="text-sm leading-relaxed text-[var(--color-text-faint)]">
+        {sc.description}
+      </p>
+
+      {/* Footer */}
+      <div className="mt-auto pt-1 flex items-center justify-between">
+        <span className="font-mono text-[11px] text-[var(--color-text-faint)]">
+          {sc.lessonCount} lessons
+        </span>
+        {firstLessonSlug && (
+          <span className="font-mono text-[11px] text-[#f59e0b] opacity-0 group-hover:opacity-100 transition-opacity">
+            start →
+          </span>
+        )}
+      </div>
+    </div>
+  );
+
+  if (!firstLessonSlug) return <div>{inner}</div>;
+
+  return (
+    <Link
+      href={`/courses/${courseSlug}/${firstLessonSlug}`}
+      className="block no-underline hover:no-underline"
+    >
+      {inner}
+    </Link>
+  );
+}
+
+// ── Main page ──────────────────────────────────────────────────────────────
 export default async function CourseOverviewPage({ params }: Props) {
   const { course: slug } = await params;
   const courses = getAllCourses();
@@ -38,6 +113,7 @@ export default async function CourseOverviewPage({ params }: Props) {
   const { content } = parseFrontmatter(source, CourseFrontmatterSchema, metaPath);
 
   const accent = course.frontmatter.accent ?? "#4ade80";
+  const isMega = course.frontmatter.isMegaCourse;
 
   const levelColors = {
     beginner: "text-green-400 border-green-900 bg-green-950/30",
@@ -47,6 +123,76 @@ export default async function CourseOverviewPage({ params }: Props) {
 
   const firstPublished = lessons.find((l) => !l.draft);
 
+  // ── Mega course layout ───────────────────────────────────────────────────
+  if (isMega) {
+    const subCourses = course.frontmatter.subCourses ?? [];
+
+    return (
+      <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
+        {/* Header */}
+        <div className="mb-10 border-b border-[var(--color-bg-border)] pb-8">
+          <p className="mb-2 font-mono text-xs text-[var(--color-text-faint)]">
+            <Link href="/courses" className="hover:text-[var(--color-text-muted)] no-underline">
+              Courses
+            </Link>
+            {" / "}
+            <span style={{ color: "#f59e0b" }}>Featured</span>
+          </p>
+          <h1
+            className="mb-3 text-3xl font-bold leading-tight"
+            style={{
+              background: "linear-gradient(90deg, #f59e0b, #fbbf24, #fff7ed, #fbbf24, #f59e0b)",
+              backgroundSize: "200% auto",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              backgroundClip: "text",
+              animation: "grail-shimmer 5s linear infinite",
+            }}
+          >
+            {course.frontmatter.title}
+          </h1>
+          <p className="mb-4 max-w-2xl text-[var(--color-text-muted)]">
+            {course.frontmatter.description}
+          </p>
+          <div className="flex flex-wrap items-center gap-4">
+            <span className="font-mono text-xs text-[var(--color-text-faint)]">
+              {subCourses.length} sub-courses
+            </span>
+            <span className="font-mono text-xs text-[var(--color-text-faint)]">
+              {lessons.length} lessons total
+            </span>
+            {publishedCount > 0 && (
+              <span className="font-mono text-xs" style={{ color: "#f59e0b" }}>
+                {publishedCount} available
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Masonry sub-course grid */}
+        <div className="masonry-grid">
+          {subCourses.map((sc) => {
+            const scLessons = lessons.filter((l) => l.frontmatter.subCourse === sc.number);
+            const scPublished = scLessons.filter((l) => !l.draft);
+            const firstLesson = scPublished[0] ?? null;
+            return (
+              <div key={sc.number} className="mb-6">
+                <SubCourseCard
+                  sc={sc}
+                  firstLessonSlug={firstLesson?.slug ?? null}
+                  courseSlug={slug}
+                  publishedCount={scPublished.length}
+                  totalCount={sc.lessonCount}
+                />
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
+  // ── Regular course layout ────────────────────────────────────────────────
   return (
     <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6">
       {/* Header */}
@@ -94,9 +240,7 @@ export default async function CourseOverviewPage({ params }: Props) {
             return (
               <li key={lesson.slug}>
                 {isDraft ? (
-                  <div
-                    className="flex items-start gap-4 rounded-[var(--radius-lg)] border border-[var(--color-bg-border)] bg-[var(--color-bg-elevated)] p-4 opacity-50"
-                  >
+                  <div className="flex items-start gap-4 rounded-[var(--radius-lg)] border border-[var(--color-bg-border)] bg-[var(--color-bg-elevated)] p-4 opacity-50">
                     <span className="shrink-0 font-mono text-sm text-[var(--color-text-faint)] pt-0.5">
                       {String(lesson.frontmatter.lessonNumber).padStart(2, "0")}
                     </span>

@@ -6,6 +6,7 @@ import { Callout } from "./Callout";
 import { H2, H3, H4 } from "./Heading";
 import { Complexity } from "./ComplexityBadge";
 import { Figure } from "./Figure";
+import { Quiz } from "./Quiz";
 
 const components = {
   // Override HTML elements
@@ -18,6 +19,7 @@ const components = {
   Callout,
   Complexity,
   Figure,
+  Quiz,
 };
 
 interface MDXContentProps {

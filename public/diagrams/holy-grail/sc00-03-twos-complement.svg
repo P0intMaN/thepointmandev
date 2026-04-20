@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="680" height="255" viewBox="0 0 680 255" font-family="'Geist Mono', monospace">
+  <rect width="680" height="255" fill="#0f0d09"/>
+
+  <!-- Title -->
+  <text x="340" y="17" text-anchor="middle" fill="#92400e" font-size="10" letter-spacing="2" font-weight="700">TWO'S COMPLEMENT — CONVERTING +5 TO −5 (8-BIT)</text>
+
+  <!-- Step 1: +5 -->
+  <text x="110" y="40" text-anchor="middle" fill="#92400e" font-size="9" letter-spacing="1">STEP 1 — START</text>
+  <rect x="30" y="46" width="160" height="36" rx="4" fill="#1a1510" stroke="#3d2e0f" stroke-width="1"/>
+  <text x="110" y="62" text-anchor="middle" fill="#3d2e0f" font-size="9">+5 in binary</text>
+  <text x="110" y="75" text-anchor="middle" fill="#fef3c7" font-size="13" font-weight="700">0000 0101</text>
+
+  <!-- Arrow -->
+  <text x="214" y="68" text-anchor="middle" fill="#3d2e0f" font-size="18">→</text>
+
+  <!-- Step 2: flip bits -->
+  <text x="340" y="40" text-anchor="middle" fill="#92400e" font-size="9" letter-spacing="1">STEP 2 — FLIP ALL BITS</text>
+  <rect x="260" y="46" width="160" height="36" rx="4" fill="#1a1510" stroke="#3d2e0f" stroke-width="1"/>
+  <text x="340" y="62" text-anchor="middle" fill="#3d2e0f" font-size="9">invert every bit</text>
+  <text x="340" y="75" text-anchor="middle" fill="#67e8f9" font-size="13" font-weight="700">1111 1010</text>
+
+  <!-- Arrow -->
+  <text x="444" y="68" text-anchor="middle" fill="#3d2e0f" font-size="18">→</text>
+
+  <!-- Step 3: add 1 -->
+  <text x="570" y="40" text-anchor="middle" fill="#92400e" font-size="9" letter-spacing="1">STEP 3 — ADD 1</text>
+  <rect x="490" y="46" width="160" height="36" rx="4" fill="#0f1a0f" stroke="#4ade80" stroke-width="1.5"/>
+  <text x="570" y="62" text-anchor="middle" fill="#4ade80" font-size="9">result = −5</text>
+  <text x="570" y="75" text-anchor="middle" fill="#4ade80" font-size="13" font-weight="700">1111 1011</text>
+
+  <!-- Verification: -5 + 5 = 0 -->
+  <text x="340" y="102" text-anchor="middle" fill="#92400e" font-size="9" letter-spacing="1">VERIFY: (+5) + (−5) USING THE SAME ADD CIRCUIT</text>
+
+  <rect x="120" y="110" width="440" height="70" rx="4" fill="#120e08" stroke="#3d2e0f" stroke-width="1"/>
+  <text x="340" y="127" text-anchor="middle" fill="#3d2e0f" font-size="9">  0000 0101   (+5)</text>
+  <text x="340" y="141" text-anchor="middle" fill="#3d2e0f" font-size="9">+ 1111 1011   (−5)</text>
+  <line x1="168" y1="147" x2="512" y2="147" stroke="#3d2e0f" stroke-width="1"/>
+  <text x="340" y="161" text-anchor="middle" fill="#fef3c7" font-size="10">1 0000 0000   ← the carry bit falls off the end → 0000 0000 = 0  ✓</text>
+
+  <!-- Key insight box -->
+  <rect x="30" y="192" width="620" height="32" rx="4" fill="#1a1510" stroke="#f59e0b" stroke-width="1"/>
+  <text x="340" y="206" text-anchor="middle" fill="#f59e0b" font-size="9" font-weight="700">SIGNED AND UNSIGNED ADDITION USE THE IDENTICAL CIRCUIT. THE BITS ARE THE BITS.</text>
+  <text x="340" y="218" text-anchor="middle" fill="#92400e" font-size="9">Interpretation as signed or unsigned is imposed by your code, not the hardware.</text>
+
+  <!-- Range asymmetry diagram -->
+  <text x="340" y="242" text-anchor="middle" fill="#3d2e0f" font-size="9" letter-spacing="1">8-BIT RANGE:  −128 (0x80) ─────────── 0 ─────────── +127 (0x7F)  ·  ONE MORE NEGATIVE THAN POSITIVE</text>
+  <text x="340" y="253" text-anchor="middle" fill="#f87171" font-size="8">−(−128) overflows back to −128  ·  Math.abs(Byte.MIN_VALUE) is negative</text>
+</svg>

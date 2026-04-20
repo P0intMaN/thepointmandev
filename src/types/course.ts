@@ -1,5 +1,12 @@
 import { z } from "zod";
 
+export const SubCourseSchema = z.object({
+  number: z.number(),
+  title: z.string(),
+  description: z.string(),
+  lessonCount: z.number(),
+});
+
 export const CourseFrontmatterSchema = z.object({
   title: z.string(),
   slug: z.string(),
@@ -17,6 +24,9 @@ export const CourseFrontmatterSchema = z.object({
   order: z.number().optional(),
   prerequisites: z.array(z.string()).optional(),
   next: z.string().optional(),
+  // Mega course
+  isMegaCourse: z.boolean().default(false),
+  subCourses: z.array(SubCourseSchema).optional(),
 });
 
 export const LessonFrontmatterSchema = z.object({
@@ -27,8 +37,10 @@ export const LessonFrontmatterSchema = z.object({
   date: z.string(),
   draft: z.boolean().default(false),
   prerequisites: z.array(z.string()).optional(),
+  subCourse: z.number().optional(),
 });
 
+export type SubCourse = z.infer<typeof SubCourseSchema>;
 export type CourseFrontmatter = z.infer<typeof CourseFrontmatterSchema>;
 export type LessonFrontmatter = z.infer<typeof LessonFrontmatterSchema>;
 

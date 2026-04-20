@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="680" height="230" viewBox="0 0 680 230" font-family="'Geist Mono', monospace">
+  <rect width="680" height="230" fill="#0f0d09"/>
+
+  <!-- Title -->
+  <text x="340" y="20" text-anchor="middle" fill="#92400e" font-size="10" letter-spacing="2" font-weight="700">WHY BINARY WINS: NOISE MARGIN</text>
+
+  <!-- === LEFT: BINARY === -->
+  <text x="170" y="40" text-anchor="middle" fill="#fbbf24" font-size="11" font-weight="700">BINARY (2 levels)</text>
+
+  <!-- Voltage axis -->
+  <line x1="60" y1="55" x2="60" y2="195" stroke="#3d2e0f" stroke-width="1.5"/>
+  <text x="48" y="59" text-anchor="end" fill="#92400e" font-size="9">1.1V</text>
+  <text x="48" y="125" text-anchor="end" fill="#92400e" font-size="9">0.5V</text>
+  <text x="48" y="195" text-anchor="end" fill="#92400e" font-size="9">0.0V</text>
+  <line x1="57" y1="55" x2="63" y2="55" stroke="#3d2e0f" stroke-width="1"/>
+  <line x1="57" y1="125" x2="63" y2="125" stroke="#3d2e0f" stroke-width="1"/>
+  <line x1="57" y1="195" x2="63" y2="195" stroke="#3d2e0f" stroke-width="1"/>
+
+  <!-- HIGH zone (safe) -->
+  <rect x="70" y="55" width="200" height="46" rx="3" fill="rgba(74,222,128,0.12)" stroke="#4ade80" stroke-width="1" stroke-dasharray="3 2"/>
+  <text x="170" y="75" text-anchor="middle" fill="#4ade80" font-size="10" font-weight="700">HIGH = 1</text>
+  <text x="170" y="90" text-anchor="middle" fill="#4ade80" font-size="9">safe zone: 0.65V–1.1V</text>
+
+  <!-- Forbidden zone -->
+  <rect x="70" y="101" width="200" height="24" rx="3" fill="rgba(248,113,113,0.08)" stroke="#f87171" stroke-width="1" stroke-dasharray="2 2"/>
+  <text x="170" y="116" text-anchor="middle" fill="#f87171" font-size="9">forbidden zone (~0.45V gap)</text>
+
+  <!-- LOW zone (safe) -->
+  <rect x="70" y="125" width="200" height="70" rx="3" fill="rgba(74,222,128,0.12)" stroke="#4ade80" stroke-width="1" stroke-dasharray="3 2"/>
+  <text x="170" y="157" text-anchor="middle" fill="#4ade80" font-size="10" font-weight="700">LOW = 0</text>
+  <text x="170" y="172" text-anchor="middle" fill="#4ade80" font-size="9">safe zone: 0.0V–0.4V</text>
+
+  <!-- Noise spike (small, harmless) -->
+  <path d="M120 175 L130 148 L140 175" fill="none" stroke="#67e8f9" stroke-width="1.5" stroke-linejoin="round"/>
+  <text x="130" y="145" text-anchor="middle" fill="#67e8f9" font-size="8">noise</text>
+  <text x="130" y="188" text-anchor="middle" fill="#4ade80" font-size="8">still reads 0 ✓</text>
+
+  <!-- === RIGHT: DECIMAL (hypothetical) === -->
+  <text x="510" y="40" text-anchor="middle" fill="#f87171" font-size="11" font-weight="700">DECIMAL (10 levels) — hypothetical</text>
+
+  <!-- Voltage axis -->
+  <line x1="400" y1="55" x2="400" y2="195" stroke="#3d2e0f" stroke-width="1.5"/>
+  <text x="388" y="59" text-anchor="end" fill="#92400e" font-size="9">1.1V</text>
+  <text x="388" y="195" text-anchor="end" fill="#92400e" font-size="9">0.0V</text>
+
+  <!-- 10 tiny zones -->
+  <g opacity="0.85">
+    <rect x="410" y="55"  width="200" height="13" rx="2" fill="rgba(248,113,113,0.15)" stroke="#f87171" stroke-width="0.8"/>
+    <rect x="410" y="69"  width="200" height="13" rx="2" fill="rgba(248,113,113,0.15)" stroke="#f87171" stroke-width="0.8"/>
+    <rect x="410" y="83"  width="200" height="13" rx="2" fill="rgba(248,113,113,0.15)" stroke="#f87171" stroke-width="0.8"/>
+    <rect x="410" y="97"  width="200" height="13" rx="2" fill="rgba(248,113,113,0.15)" stroke="#f87171" stroke-width="0.8"/>
+    <rect x="410" y="111" width="200" height="13" rx="2" fill="rgba(248,113,113,0.15)" stroke="#f87171" stroke-width="0.8"/>
+    <rect x="410" y="125" width="200" height="13" rx="2" fill="rgba(248,113,113,0.15)" stroke="#f87171" stroke-width="0.8"/>
+    <rect x="410" y="139" width="200" height="13" rx="2" fill="rgba(248,113,113,0.15)" stroke="#f87171" stroke-width="0.8"/>
+    <rect x="410" y="153" width="200" height="13" rx="2" fill="rgba(248,113,113,0.15)" stroke="#f87171" stroke-width="0.8"/>
+    <rect x="410" y="167" width="200" height="13" rx="2" fill="rgba(248,113,113,0.15)" stroke="#f87171" stroke-width="0.8"/>
+    <rect x="410" y="181" width="200" height="13" rx="2" fill="rgba(248,113,113,0.15)" stroke="#f87171" stroke-width="0.8"/>
+  </g>
+
+  <!-- Labels on zones -->
+  <text x="618" y="64" fill="#f87171" font-size="8">9</text>
+  <text x="618" y="78" fill="#f87171" font-size="8">8</text>
+  <text x="618" y="92" fill="#f87171" font-size="8">7</text>
+  <text x="618" y="106" fill="#f87171" font-size="8">6</text>
+  <text x="618" y="120" fill="#f87171" font-size="8">5</text>
+  <text x="618" y="134" fill="#f87171" font-size="8">4</text>
+  <text x="618" y="148" fill="#f87171" font-size="8">3</text>
+  <text x="618" y="162" fill="#f87171" font-size="8">2</text>
+  <text x="618" y="176" fill="#f87171" font-size="8">1</text>
+  <text x="618" y="190" fill="#f87171" font-size="8">0</text>
+
+  <!-- Noise spike (same size, but it crosses into next zone) -->
+  <path d="M490 178 L500 151 L510 178" fill="none" stroke="#67e8f9" stroke-width="1.5" stroke-linejoin="round"/>
+  <text x="500" y="148" text-anchor="middle" fill="#67e8f9" font-size="8">same noise</text>
+  <!-- Arrow showing it crossed a zone boundary -->
+  <line x1="500" y1="165" x2="500" y2="155" stroke="#f87171" stroke-width="1" marker-end="url(#arrow)"/>
+  <text x="500" y="208" text-anchor="middle" fill="#f87171" font-size="8">flips 1→2 ✗ data corruption</text>
+  <text x="500" y="220" text-anchor="middle" fill="#f87171" font-size="8">only ~0.1V of headroom per level</text>
+
+  <!-- Bottom annotation -->
+  <text x="340" y="210" text-anchor="middle" fill="#3d2e0f" font-size="9" letter-spacing="1">BINARY: 0.45V NOISE MARGIN PER LEVEL · DECIMAL: 0.05V — 9× MORE VULNERABLE</text>
+</svg>

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getAllCourses } from "@/lib/mdx/getAllContent";
 import { CourseCard } from "@/components/course/CourseCard";
+import { MegaCourseCard } from "@/components/course/MegaCourseCard";
 import type { Course } from "@/types/course";
 
 export const metadata: Metadata = {
@@ -11,7 +12,6 @@ export const metadata: Metadata = {
 // Controls display order. Categories not listed here appear at the end under "Other".
 const SECTION_ORDER = [
   "System Design",
-  "Data Structures",
   "Algorithms",
   "JVM & Runtime",
   "Java Language",
@@ -44,9 +44,13 @@ function SectionHeader({ name, count }: { name: string; count: number }) {
 export default function CoursesPage() {
   const allCourses = getAllCourses();
 
-  // Group by category, sorted by order within each group
+  // Separate mega courses from regular courses
+  const megaCourses = allCourses.filter((c) => c.frontmatter.isMegaCourse);
+  const regularCourses = allCourses.filter((c) => !c.frontmatter.isMegaCourse);
+
+  // Group regular courses by category, sorted by order within each group
   const grouped = new Map<string, Course[]>();
-  for (const course of allCourses) {
+  for (const course of regularCourses) {
     const cat = course.frontmatter.category;
     if (!grouped.has(cat)) grouped.set(cat, []);
     grouped.get(cat)!.push(course);
@@ -79,6 +83,19 @@ export default function CoursesPage() {
         <p className="text-[var(--color-text-faint)]">No courses yet — check back soon.</p>
       ) : (
         <div className="space-y-14">
+          {/* Mega courses — full-width featured cards */}
+          {megaCourses.length > 0 && (
+            <section>
+              <SectionHeader name="Featured" count={megaCourses.length} />
+              <div className="mt-6 space-y-4">
+                {megaCourses.map((course) => (
+                  <MegaCourseCard key={course.slug} course={course} />
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Regular sections */}
           {sections.map(([name, entries]) => (
             <section key={name}>
               <SectionHeader name={name} count={entries.length} />

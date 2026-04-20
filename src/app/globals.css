@@ -123,6 +123,41 @@
   0%, 100% { border-color: #262626; }
   50%       { border-color: rgba(74,222,128,0.6); }
 }
+@keyframes grail-shimmer {
+  0%   { background-position: 200% center; }
+  100% { background-position: -200% center; }
+}
+@keyframes grail-glow {
+  0%, 100% { opacity: 0.5; }
+  50%       { opacity: 1; }
+}
+/* Diagonal light sweep — pauses between each pass */
+@keyframes grail-sweep {
+  0%   { transform: translateX(-180%) skewX(-22deg); opacity: 0; }
+  6%   { opacity: 1; }
+  44%  { opacity: 1; }
+  50%  { transform: translateX(220%) skewX(-22deg); opacity: 0; }
+  100% { transform: translateX(220%) skewX(-22deg); opacity: 0; }
+}
+/* Star pulse — scale + glow breathe */
+@keyframes grail-star-pulse {
+  0%, 100% { opacity: 0.25; transform: scale(0.7); }
+  30%       { opacity: 1;    transform: scale(1.15); }
+  60%       { opacity: 0.5;  transform: scale(0.9); }
+  80%       { opacity: 0.9;  transform: scale(1.2); }
+}
+/* Rotating star rays */
+@keyframes grail-rays {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+.masonry-grid {
+  column-count: 1;
+  column-gap: 1.5rem;
+}
+@media (min-width: 640px)  { .masonry-grid { column-count: 2; } }
+@media (min-width: 1024px) { .masonry-grid { column-count: 3; } }
 
 /* ── Prose content styles ─────────────────────── */
 @layer components {
