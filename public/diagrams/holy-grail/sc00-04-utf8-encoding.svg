@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="680" height="198" viewBox="0 0 680 198" font-family="'Geist Mono', monospace">
+  <rect width="680" height="198" fill="#0f0d09"/>
+
+  <!-- Title -->
+  <text x="340" y="16" text-anchor="middle" fill="#92400e" font-size="10" letter-spacing="2" font-weight="700">UTF-8 — 1 TO 4 BYTES PER CODE POINT</text>
+
+  <!-- Column headers -->
+  <text x="42"  y="32" text-anchor="middle" fill="#3d2e0f" font-size="9">BYTES</text>
+  <text x="235" y="32" text-anchor="middle" fill="#3d2e0f" font-size="9">BIT PATTERN   (amber=framing · cyan=payload)</text>
+  <text x="528" y="32" text-anchor="middle" fill="#3d2e0f" font-size="9">RANGE</text>
+  <text x="638" y="32" text-anchor="middle" fill="#3d2e0f" font-size="9">EXAMPLE</text>
+
+  <!-- Row 1: 1 byte (ASCII) -->
+  <rect x="10"  y="38" width="640" height="36" rx="3" fill="#120e08" stroke="#3d2e0f" stroke-width="1"/>
+  <text x="42"  y="62" text-anchor="middle" fill="#fbbf24" font-size="14" font-weight="700">1</text>
+
+  <!-- Bit pattern with colored framing -->
+  <text x="105" y="62" fill="#f59e0b" font-size="13" font-weight="700">0</text>
+  <text x="116" y="62" fill="#67e8f9" font-size="13">xxxxxxx</text>
+  <text x="240" y="62" fill="#3d2e0f" font-size="9">7 payload bits</text>
+
+  <text x="390" y="60" fill="#fef3c7" font-size="10">U+0000 – U+007F</text>
+  <text x="390" y="74" fill="#3d2e0f" font-size="9">ASCII range (128 chars)</text>
+  <text x="592" y="62" fill="#67e8f9" font-size="10">'A' → 0x41</text>
+
+  <!-- Row 2: 2 bytes -->
+  <rect x="10"  y="78" width="640" height="36" rx="3" fill="#1a1510" stroke="#3d2e0f" stroke-width="1"/>
+  <text x="42"  y="102" text-anchor="middle" fill="#fbbf24" font-size="14" font-weight="700">2</text>
+
+  <text x="105" y="102" fill="#f59e0b" font-size="13" font-weight="700">110</text>
+  <text x="129" y="102" fill="#67e8f9" font-size="13">xxxxx </text>
+  <text x="183" y="102" fill="#f59e0b" font-size="13" font-weight="700">10</text>
+  <text x="199" y="102" fill="#67e8f9" font-size="13">xxxxxx</text>
+  <text x="270" y="102" fill="#3d2e0f" font-size="9">11 payload bits</text>
+
+  <text x="390" y="100" fill="#fef3c7" font-size="10">U+0080 – U+07FF</text>
+  <text x="390" y="114" fill="#3d2e0f" font-size="9">accented chars, Latin ext.</text>
+  <text x="568" y="102" fill="#67e8f9" font-size="10">'é' → C3 A9</text>
+
+  <!-- Row 3: 3 bytes -->
+  <rect x="10"  y="118" width="640" height="36" rx="3" fill="#120e08" stroke="#3d2e0f" stroke-width="1"/>
+  <text x="42"  y="142" text-anchor="middle" fill="#fbbf24" font-size="14" font-weight="700">3</text>
+
+  <text x="105" y="142" fill="#f59e0b" font-size="13" font-weight="700">1110</text>
+  <text x="135" y="142" fill="#67e8f9" font-size="13">xxxx </text>
+  <text x="186" y="142" fill="#f59e0b" font-size="13" font-weight="700">10</text>
+  <text x="202" y="142" fill="#67e8f9" font-size="13">xxxxxx </text>
+  <text x="262" y="142" fill="#f59e0b" font-size="13" font-weight="700">10</text>
+  <text x="278" y="142" fill="#67e8f9" font-size="13">xxxxxx</text>
+
+  <text x="390" y="140" fill="#fef3c7" font-size="10">U+0800 – U+FFFF</text>
+  <text x="390" y="154" fill="#3d2e0f" font-size="9">CJK, most scripts (BMP)</text>
+  <text x="556" y="142" fill="#67e8f9" font-size="10">'中' → E4 B8 AD</text>
+
+  <!-- Row 4: 4 bytes -->
+  <rect x="10"  y="158" width="640" height="36" rx="3" fill="#1a1510" stroke="#3d2e0f" stroke-width="1"/>
+  <text x="42"  y="182" text-anchor="middle" fill="#fbbf24" font-size="14" font-weight="700">4</text>
+
+  <text x="105" y="182" fill="#f59e0b" font-size="13" font-weight="700">11110</text>
+  <text x="141" y="182" fill="#67e8f9" font-size="13">xxx </text>
+  <text x="175" y="182" fill="#f59e0b" font-size="13" font-weight="700">10</text>
+  <text x="191" y="182" fill="#67e8f9" font-size="13">xxxxxx </text>
+  <text x="252" y="182" fill="#f59e0b" font-size="13" font-weight="700">10</text>
+  <text x="268" y="182" fill="#67e8f9" font-size="13">xxxxxx </text>
+  <text x="329" y="182" fill="#f59e0b" font-size="13" font-weight="700">10</text>
+  <text x="345" y="182" fill="#67e8f9" font-size="13">xxxxxx</text>
+
+  <text x="390" y="178" fill="#fef3c7" font-size="10">U+10000 – U+10FFFF</text>
+  <text x="390" y="192" fill="#3d2e0f" font-size="9">emoji, ancient scripts</text>
+  <text x="548" y="182" fill="#67e8f9" font-size="10">'😀' → F0 9F 98 80</text>
+</svg>

@@ -1,0 +1,94 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="680" height="330" viewBox="0 0 680 330" font-family="'Geist Mono', monospace">
+  <rect width="680" height="330" fill="#0f0d09"/>
+
+  <!-- Title -->
+  <text x="340" y="16" text-anchor="middle" fill="#92400e" font-size="10" letter-spacing="2" font-weight="700">CLASS LOADING: PARENT DELEGATION + THREE PHASES</text>
+
+  <!-- ── LEFT: Parent Delegation ── -->
+  <text x="168" y="34" text-anchor="middle" fill="#3d2e0f" font-size="9" font-weight="700">PARENT DELEGATION MODEL</text>
+  <text x="168" y="46" text-anchor="middle" fill="#3d2e0f" font-size="8">request bubbles UP — loaded on the way DOWN</text>
+
+  <!-- Bootstrap -->
+  <rect x="84" y="52" width="168" height="34" rx="3" fill="#78350f" stroke="#f59e0b" stroke-width="1.5"/>
+  <text x="168" y="67" text-anchor="middle" fill="#fef3c7" font-size="9" font-weight="700">Bootstrap Class Loader</text>
+  <text x="168" y="80" text-anchor="middle" fill="#92400e" font-size="8">java.lang.* · java.util.* · core JDK</text>
+
+  <!-- Arrow down -->
+  <line x1="168" y1="88" x2="168" y2="106" stroke="#f59e0b" stroke-width="1.5"/>
+  <polygon points="164,106 168,114 172,106" fill="#f59e0b"/>
+
+  <!-- Platform -->
+  <rect x="84" y="116" width="168" height="34" rx="3" fill="#1a1510" stroke="#f59e0b" stroke-width="1"/>
+  <text x="168" y="131" text-anchor="middle" fill="#fef3c7" font-size="9">Platform Class Loader</text>
+  <text x="168" y="144" text-anchor="middle" fill="#3d2e0f" font-size="8">JDK modules not in bootstrap</text>
+
+  <!-- Arrow down -->
+  <line x1="168" y1="152" x2="168" y2="170" stroke="#f59e0b" stroke-width="1.5"/>
+  <polygon points="164,170 168,178 172,170" fill="#f59e0b"/>
+
+  <!-- System/App -->
+  <rect x="84" y="180" width="168" height="34" rx="3" fill="#1a1510" stroke="#f59e0b" stroke-width="1"/>
+  <text x="168" y="195" text-anchor="middle" fill="#fef3c7" font-size="9">Application Class Loader</text>
+  <text x="168" y="208" text-anchor="middle" fill="#3d2e0f" font-size="8">your -classpath / module-path</text>
+
+  <!-- "request flow" annotation -->
+  <text x="70" y="110" text-anchor="end" fill="#4ade80" font-size="8">① delegate</text>
+  <text x="70" y="122" text-anchor="end" fill="#4ade80" font-size="8">  up first</text>
+  <text x="70" y="190" text-anchor="end" fill="#67e8f9" font-size="8">② only load</text>
+  <text x="70" y="202" text-anchor="end" fill="#67e8f9" font-size="8">  if parent</text>
+  <text x="70" y="214" text-anchor="end" fill="#67e8f9" font-size="8">  missed</text>
+
+  <!-- Security note -->
+  <rect x="20" y="232" width="312" height="30" rx="2" fill="#1f1608" stroke="#f59e0b" stroke-width="1"/>
+  <text x="176" y="245" text-anchor="middle" fill="#f59e0b" font-size="8" font-weight="700">Why this exists:</text>
+  <text x="176" y="258" text-anchor="middle" fill="#3d2e0f" font-size="8">Malicious java.lang.String on classpath is never reached — bootstrap wins.</text>
+
+  <!-- ── RIGHT: Three Phases ── -->
+  <text x="504" y="34" text-anchor="middle" fill="#3d2e0f" font-size="9" font-weight="700">THREE PHASES PER CLASS</text>
+
+  <!-- Phase 1: Loading -->
+  <rect x="352" y="46" width="314" height="52" rx="3" fill="#0f1a0f" stroke="#4ade80" stroke-width="1.5"/>
+  <text x="509" y="62" text-anchor="middle" fill="#4ade80" font-size="10" font-weight="700">1 — Loading</text>
+  <text x="509" y="76" text-anchor="middle" fill="#3d2e0f" font-size="8">Find and read .class bytes (disk, JAR, network, generated)</text>
+  <text x="509" y="88" text-anchor="middle" fill="#3d2e0f" font-size="8">Result: raw byte array in memory. Class not yet usable.</text>
+
+  <line x1="509" y1="100" x2="509" y2="114" stroke="#4ade80" stroke-width="1.5"/>
+  <polygon points="505,114 509,122 513,114" fill="#4ade80"/>
+
+  <!-- Phase 2: Linking (3 sub-steps) -->
+  <rect x="352" y="124" width="314" height="100" rx="3" fill="#0c1518" stroke="#67e8f9" stroke-width="1.5"/>
+  <text x="509" y="140" text-anchor="middle" fill="#67e8f9" font-size="10" font-weight="700">2 — Linking</text>
+
+  <rect x="362" y="148" width="88" height="34" rx="2" fill="#1a1510" stroke="#3d2e0f" stroke-width="1"/>
+  <text x="406" y="161" text-anchor="middle" fill="#fef3c7" font-size="8" font-weight="700">Verify</text>
+  <text x="406" y="173" text-anchor="middle" fill="#3d2e0f" font-size="7">bytecode is valid</text>
+  <text x="406" y="183" text-anchor="middle" fill="#3d2e0f" font-size="7">type-safe, no underflow</text>
+
+  <rect x="460" y="148" width="88" height="34" rx="2" fill="#1a1510" stroke="#3d2e0f" stroke-width="1"/>
+  <text x="504" y="161" text-anchor="middle" fill="#fef3c7" font-size="8" font-weight="700">Prepare</text>
+  <text x="504" y="173" text-anchor="middle" fill="#3d2e0f" font-size="7">alloc statics → 0/null</text>
+  <text x="504" y="183" text-anchor="middle" fill="#3d2e0f" font-size="7">(not user values yet)</text>
+
+  <rect x="558" y="148" width="98" height="34" rx="2" fill="#1a1510" stroke="#3d2e0f" stroke-width="1"/>
+  <text x="607" y="161" text-anchor="middle" fill="#fef3c7" font-size="8" font-weight="700">Resolve</text>
+  <text x="607" y="173" text-anchor="middle" fill="#3d2e0f" font-size="7">symbolic refs →</text>
+  <text x="607" y="183" text-anchor="middle" fill="#3d2e0f" font-size="7">direct pointers (lazy)</text>
+
+  <text x="509" y="214" text-anchor="middle" fill="#3d2e0f" font-size="7">Verify is security-critical — prevents bytecode from corrupting the JVM at runtime.</text>
+
+  <line x1="509" y1="226" x2="509" y2="240" stroke="#4ade80" stroke-width="1.5"/>
+  <polygon points="505,240 509,248 513,240" fill="#4ade80"/>
+
+  <!-- Phase 3: Initialization -->
+  <rect x="352" y="250" width="314" height="52" rx="3" fill="#1f1608" stroke="#f59e0b" stroke-width="1.5"/>
+  <text x="509" y="266" text-anchor="middle" fill="#f59e0b" font-size="10" font-weight="700">3 — Initialization</text>
+  <text x="509" y="280" text-anchor="middle" fill="#3d2e0f" font-size="8">Run static { } blocks and static field initializers in source order.</text>
+  <text x="509" y="292" text-anchor="middle" fill="#3d2e0f" font-size="8">Triggered by: new / static method / static field / reflection / subclass init / main class.</text>
+
+  <!-- Divider between left and right -->
+  <line x1="342" y1="30" x2="342" y2="310" stroke="#3d2e0f" stroke-width="1" stroke-dasharray="3 3"/>
+
+  <!-- Bottom -->
+  <line x1="10" y1="312" x2="668" y2="312" stroke="#3d2e0f" stroke-width="1" stroke-dasharray="3 3"/>
+  <text x="340" y="326" text-anchor="middle" fill="#92400e" font-size="8" font-weight="700">Loading is lazy — a class is loaded only when it is first referenced. The 50,000 classes on your classpath cost nothing until used.</text>
+</svg>

@@ -1,0 +1,149 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="680" height="340" viewBox="0 0 680 340" font-family="'Geist Mono', monospace">
+  <rect width="680" height="340" fill="#0f0d09"/>
+
+  <!-- Title -->
+  <text x="340" y="16" text-anchor="middle" fill="#92400e" font-size="10" letter-spacing="2" font-weight="700">x86-64 GENERAL-PURPOSE REGISTERS</text>
+  <text x="340" y="28" text-anchor="middle" fill="#3d2e0f" font-size="8">64-bit · writing to 32-bit (eXX) zeroes upper 32 bits of rXX · sub-registers alias same physical storage</text>
+
+  <!-- === LEFT: register sub-size table === -->
+  <!-- Column headers -->
+  <text x="20"  y="46" fill="#92400e" font-size="8" font-weight="700">64-bit</text>
+  <text x="80"  y="46" fill="#92400e" font-size="8" font-weight="700">32-bit</text>
+  <text x="136" y="46" fill="#92400e" font-size="8" font-weight="700">16-bit</text>
+  <text x="184" y="46" fill="#92400e" font-size="8" font-weight="700">8-bit</text>
+  <text x="228" y="46" fill="#92400e" font-size="8" font-weight="700">ABI Role</text>
+
+  <!-- Divider -->
+  <line x1="10" y1="50" x2="380" y2="50" stroke="#3d2e0f" stroke-width="1"/>
+
+  <!-- Rows: historical GPRs with ABI roles -->
+  <!-- rax -->
+  <rect x="10" y="54" width="370" height="16" rx="1" fill="#1a1510"/>
+  <text x="20" y="66" fill="#f59e0b" font-size="9" font-weight="700">rax</text>
+  <text x="80" y="66" fill="#fef3c7" font-size="9">eax</text>
+  <text x="136" y="66" fill="#fef3c7" font-size="9">ax</text>
+  <text x="184" y="66" fill="#fef3c7" font-size="9">al</text>
+  <text x="228" y="66" fill="#4ade80" font-size="8">return value / accumulator</text>
+
+  <!-- rdi -->
+  <rect x="10" y="72" width="370" height="16" rx="1" fill="#120e08"/>
+  <text x="20" y="84" fill="#f59e0b" font-size="9" font-weight="700">rdi</text>
+  <text x="80" y="84" fill="#fef3c7" font-size="9">edi</text>
+  <text x="136" y="84" fill="#fef3c7" font-size="9">di</text>
+  <text x="184" y="84" fill="#fef3c7" font-size="9">dil</text>
+  <text x="228" y="84" fill="#67e8f9" font-size="8">arg 1</text>
+
+  <!-- rsi -->
+  <rect x="10" y="90" width="370" height="16" rx="1" fill="#1a1510"/>
+  <text x="20" y="102" fill="#f59e0b" font-size="9" font-weight="700">rsi</text>
+  <text x="80" y="102" fill="#fef3c7" font-size="9">esi</text>
+  <text x="136" y="102" fill="#fef3c7" font-size="9">si</text>
+  <text x="184" y="102" fill="#fef3c7" font-size="9">sil</text>
+  <text x="228" y="102" fill="#67e8f9" font-size="8">arg 2</text>
+
+  <!-- rdx -->
+  <rect x="10" y="108" width="370" height="16" rx="1" fill="#120e08"/>
+  <text x="20" y="120" fill="#f59e0b" font-size="9" font-weight="700">rdx</text>
+  <text x="80" y="120" fill="#fef3c7" font-size="9">edx</text>
+  <text x="136" y="120" fill="#fef3c7" font-size="9">dx</text>
+  <text x="184" y="120" fill="#fef3c7" font-size="9">dl</text>
+  <text x="228" y="120" fill="#67e8f9" font-size="8">arg 3 / high word of mul</text>
+
+  <!-- rcx -->
+  <rect x="10" y="126" width="370" height="16" rx="1" fill="#1a1510"/>
+  <text x="20" y="138" fill="#f59e0b" font-size="9" font-weight="700">rcx</text>
+  <text x="80" y="138" fill="#fef3c7" font-size="9">ecx</text>
+  <text x="136" y="138" fill="#fef3c7" font-size="9">cx</text>
+  <text x="184" y="138" fill="#fef3c7" font-size="9">cl</text>
+  <text x="228" y="138" fill="#67e8f9" font-size="8">arg 4 / shift count</text>
+
+  <!-- r8 -->
+  <rect x="10" y="144" width="370" height="16" rx="1" fill="#120e08"/>
+  <text x="20" y="156" fill="#f59e0b" font-size="9" font-weight="700">r8</text>
+  <text x="80" y="156" fill="#fef3c7" font-size="9">r8d</text>
+  <text x="136" y="156" fill="#fef3c7" font-size="9">r8w</text>
+  <text x="184" y="156" fill="#fef3c7" font-size="9">r8b</text>
+  <text x="228" y="156" fill="#67e8f9" font-size="8">arg 5</text>
+
+  <!-- r9 -->
+  <rect x="10" y="162" width="370" height="16" rx="1" fill="#1a1510"/>
+  <text x="20" y="174" fill="#f59e0b" font-size="9" font-weight="700">r9</text>
+  <text x="80" y="174" fill="#fef3c7" font-size="9">r9d</text>
+  <text x="136" y="174" fill="#fef3c7" font-size="9">r9w</text>
+  <text x="184" y="174" fill="#fef3c7" font-size="9">r9b</text>
+  <text x="228" y="174" fill="#67e8f9" font-size="8">arg 6</text>
+
+  <!-- rbx -->
+  <rect x="10" y="180" width="370" height="16" rx="1" fill="#120e08"/>
+  <text x="20" y="192" fill="#3d2e0f" font-size="9">rbx</text>
+  <text x="80" y="192" fill="#3d2e0f" font-size="9">ebx</text>
+  <text x="136" y="192" fill="#3d2e0f" font-size="9">bx</text>
+  <text x="184" y="192" fill="#3d2e0f" font-size="9">bl</text>
+  <text x="228" y="192" fill="#3d2e0f" font-size="8">callee-saved (must preserve)</text>
+
+  <!-- rbp -->
+  <rect x="10" y="198" width="370" height="16" rx="1" fill="#1a1510"/>
+  <text x="20" y="210" fill="#3d2e0f" font-size="9">rbp</text>
+  <text x="80" y="210" fill="#3d2e0f" font-size="9">ebp</text>
+  <text x="136" y="210" fill="#3d2e0f" font-size="9">bp</text>
+  <text x="184" y="210" fill="#3d2e0f" font-size="9">bpl</text>
+  <text x="228" y="210" fill="#3d2e0f" font-size="8">callee-saved / frame pointer</text>
+
+  <!-- r12-r15 (grouped) -->
+  <rect x="10" y="216" width="370" height="16" rx="1" fill="#120e08"/>
+  <text x="20" y="228" fill="#3d2e0f" font-size="9">r12–r15</text>
+  <text x="80" y="228" fill="#3d2e0f" font-size="9">r12d–r15d</text>
+  <text x="184" y="228" fill="#3d2e0f" font-size="9">…</text>
+  <text x="228" y="228" fill="#3d2e0f" font-size="8">callee-saved</text>
+
+  <!-- rsp -->
+  <rect x="10" y="234" width="370" height="16" rx="1" fill="#1f1608" stroke="#f87171" stroke-width="1"/>
+  <text x="20" y="246" fill="#f87171" font-size="9" font-weight="700">rsp</text>
+  <text x="80" y="246" fill="#fef3c7" font-size="9">esp</text>
+  <text x="136" y="246" fill="#fef3c7" font-size="9">sp</text>
+  <text x="184" y="246" fill="#fef3c7" font-size="9">spl</text>
+  <text x="228" y="246" fill="#f87171" font-size="8">stack pointer — SACRED, never trash</text>
+
+  <!-- r10-r11 -->
+  <rect x="10" y="252" width="370" height="16" rx="1" fill="#120e08"/>
+  <text x="20" y="264" fill="#3d2e0f" font-size="9">r10, r11</text>
+  <text x="80" y="264" fill="#3d2e0f" font-size="9">r10d…</text>
+  <text x="228" y="264" fill="#3d2e0f" font-size="8">caller-saved scratch</text>
+
+  <!-- rip special note -->
+  <rect x="10" y="270" width="370" height="18" rx="1" fill="#0c1518" stroke="#67e8f9" stroke-width="1"/>
+  <text x="20" y="283" fill="#67e8f9" font-size="9" font-weight="700">rip</text>
+  <text x="60" y="283" fill="#fef3c7" font-size="9">— instruction pointer — not directly writable; modified by jmp / call / ret</text>
+
+  <!-- === RIGHT: caller vs callee saved explanation === -->
+  <rect x="396" y="38" width="272" height="252" rx="4" fill="#1a1510" stroke="#3d2e0f" stroke-width="1"/>
+  <text x="532" y="56" text-anchor="middle" fill="#92400e" font-size="9" font-weight="700" letter-spacing="1">ARG ORDER TO MEMORIZE</text>
+
+  <!-- Argument order -->
+  <text x="410" y="74" fill="#67e8f9" font-size="11" font-weight="700">rdi  rsi  rdx  rcx  r8  r9</text>
+  <text x="532" y="88" text-anchor="middle" fill="#3d2e0f" font-size="8">1st   2nd   3rd   4th  5th  6th integer arg</text>
+  <text x="532" y="100" text-anchor="middle" fill="#3d2e0f" font-size="8">Return value → rax</text>
+  <text x="532" y="112" text-anchor="middle" fill="#3d2e0f" font-size="7">System V AMD64 ABI (Linux / macOS)</text>
+
+  <line x1="410" y1="120" x2="656" y2="120" stroke="#3d2e0f" stroke-width="0.5" stroke-dasharray="3 2"/>
+
+  <text x="532" y="136" text-anchor="middle" fill="#92400e" font-size="9" font-weight="700">CALLER-SAVED</text>
+  <text x="532" y="150" text-anchor="middle" fill="#3d2e0f" font-size="8">rax, rdi, rsi, rdx, rcx, r8, r9, r10, r11</text>
+  <text x="532" y="164" text-anchor="middle" fill="#3d2e0f" font-size="8">Assume these are trashed after any call.</text>
+  <text x="532" y="176" text-anchor="middle" fill="#3d2e0f" font-size="8">Save them yourself before calling if needed.</text>
+
+  <line x1="410" y1="184" x2="656" y2="184" stroke="#3d2e0f" stroke-width="0.5" stroke-dasharray="3 2"/>
+
+  <text x="532" y="200" text-anchor="middle" fill="#92400e" font-size="9" font-weight="700">CALLEE-SAVED</text>
+  <text x="532" y="214" text-anchor="middle" fill="#3d2e0f" font-size="8">rbx, rbp, r12, r13, r14, r15</text>
+  <text x="532" y="228" text-anchor="middle" fill="#3d2e0f" font-size="8">If you use one, push it on entry,</text>
+  <text x="532" y="242" text-anchor="middle" fill="#3d2e0f" font-size="8">pop it before ret. The ABI guarantees</text>
+  <text x="532" y="256" text-anchor="middle" fill="#3d2e0f" font-size="8">their values survive across calls.</text>
+  <text x="532" y="270" text-anchor="middle" fill="#f87171" font-size="8">rsp must always be 16-byte aligned</text>
+  <text x="532" y="282" text-anchor="middle" fill="#3d2e0f" font-size="7">at the point of a call instruction</text>
+
+  <!-- Sub-sizes note at bottom -->
+  <line x1="10" y1="298" x2="668" y2="298" stroke="#3d2e0f" stroke-width="1" stroke-dasharray="3 3"/>
+  <text x="340" y="312" text-anchor="middle" fill="#3d2e0f" font-size="8">Sub-register aliases: rax (64b) / eax (32b, zeroes upper 32b on write) / ax (16b) / al (8b low) / ah (8b high of ax)</text>
+  <text x="340" y="326" text-anchor="middle" fill="#3d2e0f" font-size="8">SIMD: xmm0–xmm15 (128b), ymm0–ymm15 (256b), zmm0–zmm31 (512b AVX-512) — you'll see these in auto-vectorized loops</text>
+</svg>

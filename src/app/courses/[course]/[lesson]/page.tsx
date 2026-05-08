@@ -55,6 +55,7 @@ export default async function LessonPage({ params }: Props) {
                 lessons={lessons}
                 courseSlug={courseSlug}
                 courseTitle={course?.frontmatter.title ?? courseSlug}
+                subCourses={course?.frontmatter.subCourses}
               />
             </div>
           </aside>

@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="680" height="310" viewBox="0 0 680 310" font-family="'Geist Mono', monospace">
+  <rect width="680" height="310" fill="#0f0d09"/>
+
+  <!-- Title -->
+  <text x="340" y="16" text-anchor="middle" fill="#92400e" font-size="10" letter-spacing="2" font-weight="700">PROCESS ADDRESS SPACE LAYOUT</text>
+  <text x="340" y="28" text-anchor="middle" fill="#3d2e0f" font-size="8">high addresses at top · stack grows downward · heap grows upward · (ASLR randomizes bases, not structure)</text>
+
+  <!-- Address labels on left -->
+  <text x="56" y="52" text-anchor="end" fill="#3d2e0f" font-size="8">high addr</text>
+  <text x="56" y="288" text-anchor="end" fill="#3d2e0f" font-size="8">low addr</text>
+
+  <!-- Stack region -->
+  <rect x="62" y="38" width="330" height="60" rx="3" fill="#1a0f0f" stroke="#f87171" stroke-width="1.5"/>
+  <text x="227" y="58" text-anchor="middle" fill="#f87171" font-size="11" font-weight="700">Stack</text>
+  <text x="227" y="72" text-anchor="middle" fill="#92400e" font-size="9">~512 KB – 8 MB per thread</text>
+  <text x="227" y="84" text-anchor="middle" fill="#3d2e0f" font-size="8">local variables · return addresses · saved registers</text>
+  <!-- Downward arrow -->
+  <line x1="227" y1="100" x2="227" y2="126" stroke="#f87171" stroke-width="2"/>
+  <polygon points="223,126 227,134 231,126" fill="#f87171"/>
+  <text x="250" y="116" fill="#f87171" font-size="9">grows ↓</text>
+
+  <!-- Guard page -->
+  <rect x="62" y="140" width="330" height="18" rx="2" fill="#120e08" stroke="#f87171" stroke-width="1" stroke-dasharray="4 2"/>
+  <text x="227" y="153" text-anchor="middle" fill="#f87171" font-size="8">guard page (unmapped) — triggers SIGSEGV / StackOverflowError</text>
+
+  <!-- Heap region -->
+  <rect x="62" y="162" width="330" height="60" rx="3" fill="#0f1a0f" stroke="#4ade80" stroke-width="1.5"/>
+  <text x="227" y="182" text-anchor="middle" fill="#4ade80" font-size="11" font-weight="700">Heap</text>
+  <text x="227" y="196" text-anchor="middle" fill="#3d2e0f" font-size="9">GBs of virtual space · managed by GC (Java) or malloc/free (C)</text>
+  <text x="227" y="210" text-anchor="middle" fill="#3d2e0f" font-size="8">objects · arrays · dynamically sized data</text>
+  <!-- Upward arrow -->
+  <line x1="227" y1="158" x2="227" y2="140" stroke="#4ade80" stroke-width="2"/>
+  <text x="250" y="154" fill="#4ade80" font-size="9">grows ↑</text>
+
+  <!-- BSS -->
+  <rect x="62" y="226" width="330" height="18" rx="2" fill="#1a1510" stroke="#3d2e0f" stroke-width="1"/>
+  <text x="227" y="239" text-anchor="middle" fill="#3d2e0f" font-size="9">BSS — zero-initialized globals and static fields</text>
+
+  <!-- Data -->
+  <rect x="62" y="248" width="330" height="18" rx="2" fill="#1a1510" stroke="#3d2e0f" stroke-width="1"/>
+  <text x="227" y="261" text-anchor="middle" fill="#3d2e0f" font-size="9">Data — initialized globals, string literals, class metadata</text>
+
+  <!-- Text / code -->
+  <rect x="62" y="270" width="330" height="22" rx="3" fill="#0c1518" stroke="#67e8f9" stroke-width="1.5"/>
+  <text x="227" y="285" text-anchor="middle" fill="#67e8f9" font-size="9" font-weight="700">Text — compiled machine code (read-only, executable)</text>
+
+  <!-- Right panel: stack vs heap comparison -->
+  <rect x="408" y="38" width="258" height="254" rx="4" fill="#1a1510" stroke="#3d2e0f" stroke-width="1"/>
+  <text x="537" y="56" text-anchor="middle" fill="#92400e" font-size="9" font-weight="700" letter-spacing="1">STACK vs HEAP</text>
+
+  <text x="420" y="76" fill="#f87171" font-size="9" font-weight="700">Stack</text>
+  <text x="420" y="90" fill="#3d2e0f" font-size="8">Allocation: sub rsp, N (1 cycle)</text>
+  <text x="420" y="104" fill="#3d2e0f" font-size="8">Deallocation: add rsp, N (1 cycle)</text>
+  <text x="420" y="118" fill="#3d2e0f" font-size="8">Lifetime: this function call only</text>
+  <text x="420" y="132" fill="#3d2e0f" font-size="8">Order: LIFO — no choice</text>
+  <text x="420" y="146" fill="#3d2e0f" font-size="8">Size: fixed per thread at creation</text>
+  <text x="420" y="160" fill="#4ade80" font-size="8">+ ~1 ns per alloc/dealloc</text>
+  <text x="420" y="174" fill="#f87171" font-size="8">– tiny (512 KB – 8 MB)</text>
+
+  <line x1="420" y1="184" x2="654" y2="184" stroke="#3d2e0f" stroke-width="0.5" stroke-dasharray="3 2"/>
+
+  <text x="420" y="200" fill="#4ade80" font-size="9" font-weight="700">Heap</text>
+  <text x="420" y="214" fill="#3d2e0f" font-size="8">Allocation: allocator walk + book- </text>
+  <text x="420" y="226" fill="#3d2e0f" font-size="8">  keeping update (tens of ns)</text>
+  <text x="420" y="240" fill="#3d2e0f" font-size="8">Deallocation: GC (Java) / free (C)</text>
+  <text x="420" y="254" fill="#3d2e0f" font-size="8">Lifetime: until freed / collected</text>
+  <text x="420" y="268" fill="#3d2e0f" font-size="8">Order: any order, any time</text>
+  <text x="420" y="282" fill="#4ade80" font-size="8">+ GBs available</text>
+  <text x="420" y="296" fill="#f87171" font-size="8">– fragmentation over time</text>
+</svg>

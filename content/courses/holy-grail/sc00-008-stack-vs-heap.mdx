@@ -5,9 +5,503 @@ lessonNumber: 8
 subCourse: 0
 description: "Frame pointers, calling conventions, stack overflow mechanics, and heap fragmentation."
 date: "2026-04-19"
-draft: true
+draft: false
 ---
 
-## Coming Soon
+## 1. The Motivation
 
-This lesson is being written.
+You have been writing functions your whole programming life. You have called them, returned from them, passed arguments into them, and — if you have been careless with recursion — accidentally detonated them. You have done all of this without knowing what actually happens to memory when a function is called.
+
+That gap will cost you eventually. Here is a partial list of production incidents that trace back to not understanding the call stack:
+
+- A recursive tree traversal works perfectly in tests on balanced trees with 10,000 nodes, then throws `StackOverflowError` in production on a degenerate linked-list-shaped tree with 200,000 nodes.
+- A service's p99.9 latency spikes to 50 ms. The culprit is heap allocation rate — the allocation path is slow, the GC is stressed, and nobody knew to look there because "we don't write C."
+- A `StackOverflowError` is caught and "handled," the service continues running, and then it starts returning wrong answers — because the catch block itself needed stack frames that weren't there.
+
+This lesson lands you at **Level 3** of understanding the call stack: not "there's a stack somewhere," not "each call adds a frame," but: you can sketch byte-by-byte what a function call does to memory, name every register involved, state exactly how many bytes each frame costs, and compute precisely when your recursion will exhaust the stack on a given thread.
+
+This matters immediately. Sub-course 6 (Trees) and Sub-course 8 (Graphs) both have algorithms with O(n) recursion depth on adversarial input. We will always provide iterative variants. This lesson is why.
+
+---
+
+## 2. The Mental Model: Two Memory Regions with Different Rules
+
+Every running program has its memory divided into several regions. Two of them dominate everything in this lesson.
+
+<Figure
+  src="/diagrams/holy-grail/sc00-08-address-space.svg"
+  alt="Process address space layout showing stack, heap, BSS, data, and text segments"
+  caption="The stack lives at high addresses and grows downward. The heap lives above the code and grows upward. A guard page between them triggers the OS signal that becomes StackOverflowError. ASLR randomizes where these regions start, but not their structure."
+  label="address-space.svg"
+/>
+
+The question to ask about any piece of data is: *how long does it need to live, and is its size known at compile time?*
+
+**The Stack** is a contiguous block of memory — one per thread — managed by a single register called the stack pointer (`rsp` on x86-64, `sp` on ARM). It has one rule that is absolute and unbreakable: you can only release memory in the reverse order you allocated it. Last in, first out. This constraint makes stack allocation essentially free — "allocating" N bytes means subtracting N from the stack pointer. One instruction. One cycle. The flip side: data on the stack dies when its enclosing function returns. You cannot return a pointer to a local variable. You cannot pass stack memory to a thread that outlives the function.
+
+**The Heap** is a large, unstructured pool of memory shared by all threads. You can allocate from it in any order, in any size, and release in any order. The memory persists until you explicitly free it (C) or until the garbage collector determines nothing refers to it (Java). This flexibility costs: every allocation requires the allocator to find a free block, update bookkeeping, possibly split a larger block — tens to hundreds of nanoseconds. Every deallocation has similar overhead. And over time, as allocations of varying sizes come and go, the heap develops **fragmentation**: free space is plentiful in total but useless in practice because it's scattered in small chunks.
+
+Write this in your notebook. The rest of the lesson hangs on it:
+
+> The stack is fast because allocation is just a pointer decrement, and the CPU knows exactly when to reclaim memory (function return). The heap is flexible because memory can live arbitrarily long, but this comes at the cost of allocator overhead and fragmentation.
+
+---
+
+## 3. The Stack: Mechanically
+
+The stack pointer `rsp` starts at the top of the stack region (high address) and moves downward as the stack grows. "Allocating" space on the stack means moving `rsp` to a lower address:
+
+```
+sub rsp, 32    ; allocate 32 bytes (one x86-64 instruction)
+```
+
+That is the complete allocation operation. No data structures. No searching. No locking. One instruction, one cycle, 32 bytes of stack space available from the new `rsp` to the old `rsp`.
+
+"Deallocating" is the reverse:
+
+```
+add rsp, 32    ; release those 32 bytes
+```
+
+This is why local variables in performance-critical C (and in JIT-compiled Java with escape analysis) are dramatically cheaper than heap-allocated objects. The cost is hidden in the function call overhead and is amortized across all locals in the frame.
+
+The CPU also has implicit stack operations used by function calls:
+
+```
+push rax    ; rsp -= 8; memory[rsp] = rax
+pop rax     ; rax = memory[rsp]; rsp += 8
+call f      ; push next_instruction; jump to f
+ret         ; pop return_address; jump to return_address
+```
+
+These four instructions — `push`, `pop`, `call`, `ret` — are the complete machinery of function calls. Every function your program has ever invoked was called through some combination of them.
+
+---
+
+## 4. The Implementation: Anatomy of a Function Call
+
+Let me walk through a complete function call, step by step, at the assembly level. Not conceptually — mechanically, in the registers and memory.
+
+Consider:
+
+```java
+int sum(int a, int b) {
+    int result = a + b;
+    return result;
+}
+```
+
+When `caller()` invokes `sum(3, 5)`, here is the sequence.
+
+### Step 1: Arguments — The Calling Convention
+
+Before issuing the call, the caller must deliver the arguments to `sum`. On x86-64 Linux/macOS (the **System V AMD64 ABI** — the convention the JVM uses internally for native frames), the first six integer arguments go into registers:
+
+```
+1st argument: rdi
+2nd argument: rsi
+3rd argument: rdx
+4th argument: rcx
+5th argument: r8
+6th argument: r9
+```
+
+For `sum(3, 5)`:
+
+```
+mov edi, 3    ; a = 3 (using 32-bit register for int)
+mov esi, 5    ; b = 5
+```
+
+Arguments beyond six spill to the stack. Floating-point arguments use `xmm0`–`xmm7`. The return value of integer functions goes back in `rax`.
+
+This specific set of rules — how arguments are passed, where the return value lives, which registers the caller must preserve, which the callee must preserve, how the stack must be aligned — is the **calling convention**. The broader term is **ABI** (Application Binary Interface): the complete contract between separately compiled pieces of code. The ABI is what lets code compiled by GCC call code compiled by Clang without any explicit coordination. Both sides honour the same contract. JNI works because both the JVM and native code agree on the System V ABI (or Windows x64 ABI on Windows).
+
+### Step 2: The `call` Instruction
+
+```
+call sum
+```
+
+This single instruction does exactly two things, atomically:
+
+1. Pushes the return address onto the stack. The return address is the address of the instruction *after* the `call` — the instruction `caller()` wants to resume at when `sum` returns. `rsp -= 8`; `memory[rsp] = address_of_next_instruction`.
+2. Jumps to `sum`'s entry point. `rip = address_of_sum`.
+
+After `call`:
+
+```
+... caller's frame ...
+return address (8 bytes)   ← rsp now points here
+```
+
+### Step 3: The Prologue
+
+`sum` begins with its **prologue** — three instructions every non-leaf function emits:
+
+```
+push rbp          ; save caller's frame pointer to the stack
+mov  rbp, rsp     ; rbp now points to the base of this frame
+sub  rsp, 16      ; allocate 16 bytes for locals (16-byte aligned)
+```
+
+`rbp` is the **frame pointer** (or base pointer). It points to a stable location within the current function's stack frame — specifically, right below the saved return address. Local variables are accessed as fixed offsets from `rbp`: `[rbp - 4]`, `[rbp - 8]`, etc. This makes the compiler's job easier and makes stack traces debuggable: each frame's `rbp` points to the saved `rbp` of the caller, forming a chain you can walk to reconstruct the call chain.
+
+<Figure
+  src="/diagrams/holy-grail/sc00-08-stack-frame.svg"
+  alt="Full stack frame anatomy showing caller and callee frames with return address, saved rbp, and locals"
+  caption="The complete picture of the stack during sum(3, 5). Arguments arrive in rdi and rsi. The return address is pushed by call. The callee's prologue saves rbp and allocates locals. Every element has a fixed offset from rbp."
+  label="stack-frame.svg"
+/>
+
+After the prologue, `sum`'s frame is fully set up. The frame contains:
+- The **return address** (pushed by `call`) — 8 bytes
+- The **saved `rbp`** (pushed by `push rbp`) — 8 bytes
+- Space for **local variables** (allocated by `sub rsp, N`) — variable
+- Any **spilled registers** the callee needs to preserve (callee-saved registers: `rbx`, `r12`–`r15`, `rbp` on x86-64)
+
+For `sum`, which has one `int result` local, the frame is 32 bytes total: 8 (return addr) + 8 (saved rbp) + 4 (result) + 12 (alignment padding to keep `rsp` 16-byte aligned per ABI requirement).
+
+### Step 4: The Function Body
+
+```
+mov eax, edi       ; eax = a (from rdi/edi)
+add eax, esi       ; eax = a + b
+mov [rbp - 4], eax ; result = a + b (write local)
+mov eax, [rbp - 4] ; load result (return value goes in rax/eax)
+```
+
+The `result` variable lives at address `rbp - 4`. The compiler resolves this at compile time; it is a fixed offset known statically. Accessing a local variable is a register + immediate offset — the CPU's address unit resolves it in one cycle, almost always hitting L1 cache because the stack is hot.
+
+This is why local variable access is so fast. It is not a "variable" in any abstract sense — it is a specific byte offset from a register. No pointer dereferences. No heap lookups. One memory operation, almost certainly an L1 hit.
+
+### Step 5: The Epilogue and Return
+
+```
+mov rsp, rbp   ; release all locals (move rsp up to rbp)
+pop rbp        ; restore caller's frame pointer (rsp += 8)
+ret            ; pop return address and jump to it (rsp += 8)
+```
+
+Or using the `leave` shorthand:
+
+```
+leave          ; equivalent to: mov rsp, rbp; pop rbp
+ret
+```
+
+After `ret`, control returns to `caller()`. `rsp` is back where it was before the `call`. `rbp` is restored to `caller()`'s frame pointer. `rax` contains 8 (the return value). `caller()` resumes from the instruction after `call sum`.
+
+The complete call cost: roughly 8–10 instructions of prologue/epilogue overhead, about 2–4 ns on modern hardware. This is why the JIT aggressively **inlines** hot small methods — eliminating this overhead entirely for millions of calls per second is measurable.
+
+<Quiz question="Why does the JVM not need to save and restore rdi, rsi on every call, even though they contain the arguments? Who is responsible for preserving those registers across a call?">
+  By the System V AMD64 calling convention, rdi and rsi are caller-saved registers — the caller is responsible for saving them if it needs their values after the call. If caller() has other uses for rdi after calling sum(), it must save rdi before the call and restore it afterward. The callee (sum) is free to overwrite rdi, rsi, rdx, rcx, r8, r9, r10, r11, and the xmm registers without restoring them. Callee-saved registers (rbx, rbp, r12–r15) must be preserved by the callee if used. This division reduces the number of saves/restores in the common case where most arguments are consumed and not needed again.
+</Quiz>
+
+---
+
+## 5. Stack Overflow: The Hard Limit
+
+The stack is a finite region, allocated when the thread is created. Default sizes:
+
+| Context | Default stack size |
+|---|---|
+| Linux native thread (pthread) | 8 MB |
+| Windows native thread | 1 MB |
+| JVM main thread | 1 MB (most platforms) |
+| JVM application threads | 512 KB (most platforms) |
+| JVM thread with `-Xss` flag | configurable |
+
+Every function call consumes some of this space. How much? At minimum:
+
+- Return address: 8 bytes
+- Saved `rbp`: 8 bytes
+- Local variables: depends on the function
+- Saved callee-saved registers: 8 bytes each
+
+A minimal function with no locals and no callee-saved registers uses 16 bytes per frame. A function with `int[] buffer = new int[1024]` as a local array uses `16 + 4096 = 4112` bytes per frame. Most typical Java methods fall in the range of 64–256 bytes per frame, depending on locals and stack spills.
+
+**How deep can you recurse?**
+
+```
+max_depth = stack_size / bytes_per_frame
+```
+
+With a 512 KB stack and 256 bytes per frame:
+
+```
+max_depth = 524,288 / 256 = 2,048 frames
+```
+
+With a heavy frame (say, a recursive sort with large locals and spilled registers at 1,024 bytes per frame):
+
+```
+max_depth = 524,288 / 1,024 = 512 frames
+```
+
+This is not hypothetical. A balanced binary tree with a million nodes has depth ~20 — trivially safe. An unbalanced (degenerate) tree with a million nodes can have depth 1,000,000 — guaranteed overflow.
+
+### What Happens at the Boundary
+
+The OS protects the bottom of the stack with a **guard page** — a single 4 KB page below the stack region that is intentionally left unmapped. When the stack pointer grows into this page (because a function call tried to allocate its frame there), the CPU generates a page fault. The OS delivers a `SIGSEGV`. The JVM catches this signal and throws `StackOverflowError`.
+
+`StackOverflowError` is technically catchable. Do not try to recover from it. When the stack overflows, the JVM is in an inconsistent state — the frame that overflowed didn't complete its prologue, there may be half-written data on the stack, and the catch block itself needs stack space to execute. `StackOverflowError` should be treated as "this thread is dead; log and restart."
+
+**Stack overflow is a property of total frame size, not depth alone.** A function with `int[10000] buffer` declared as a local allocates 40 KB per frame — it will overflow at depth 12 on a 512 KB stack. A simple accumulator function with no locals beyond a single integer can recurse 32,000 deep on the same stack.
+
+<Quiz question="A Java method uses 320 bytes of stack per frame. The thread's stack is 512 KB (524,288 bytes). Approximately how many recursive calls can it make before StackOverflowError? Show the arithmetic.">
+  524,288 / 320 = 1,638.4, so approximately 1,638 recursive frames before the stack exhausts. In practice slightly fewer because the JVM itself and the thread's initial setup consume some stack space. The JVM also needs a few hundred bytes of "emergency" stack room to construct the StackOverflowError itself, which is why the exception is thrown before the very last possible byte is consumed.
+</Quiz>
+
+---
+
+## 6. The Heap: Flexible but Costly
+
+The heap is the other side of the trade-off. It gives you memory that lives as long as you need it, in any size you request, released in any order. The cost is that these flexibilities require machinery.
+
+When you allocate from the heap (via `new` in Java, `malloc` in C), the allocator must:
+
+1. **Find a free block** of at least the requested size. Allocators maintain data structures for this: segregated free lists (one list per size class), red-black trees of free blocks by size, buddy systems. Each strategy has different trade-offs for speed and fragmentation.
+2. **Possibly split the block.** If the smallest free block is 128 bytes and you asked for 64, the allocator gives you 64 bytes and puts the other 64 back as a new free block.
+3. **Update bookkeeping.** Every allocation has a small header (typically 8–16 bytes in native allocators) storing the size and status. The allocator's internal state must be updated atomically in a multi-threaded environment — which usually means locking or lock-free CAS operations.
+
+A typical `malloc` call costs 30–200 ns. A typical `free` call is similar. Compare to the stack: 1 cycle.
+
+### Java's TLAB: Closing the Gap
+
+The JVM narrows this gap significantly with **Thread-Local Allocation Buffers (TLABs)**. Each thread owns a private chunk of the heap — typically 512 KB to a few MB. When the thread allocates an object, it simply bumps a pointer forward within its TLAB:
+
+```
+tlab_pointer += object_size;
+```
+
+One add. No locking. No free-list searching. TLAB allocation costs roughly 5–10 ns — slower than the stack, but far faster than `malloc`. This is why Java allocation is sometimes faster than C `malloc` in microbenchmarks: the common case hits a bump pointer.
+
+When a TLAB fills up, the thread requests a new one from the GC — this is slow (~100 µs), but rare. The amortized cost per allocation remains low.
+
+### Heap Fragmentation: The Long-Term Problem
+
+Fragmentation is what happens to the heap over time. Objects of different sizes are allocated and freed in arbitrary order. The free space becomes fragmented — split into many small chunks scattered throughout the heap.
+
+<Figure
+  src="/diagrams/holy-grail/sc00-08-heap-fragmentation.svg"
+  alt="Heap fragmentation over time versus GC compaction restoring contiguity"
+  caption="A fragmented heap has gigabytes of free space but no usable contiguous blocks. GC compaction moves live objects together, restoring a single large free region. C's malloc has no compaction; fragmentation accumulates indefinitely."
+  label="heap-fragmentation.svg"
+/>
+
+In C programs with `malloc`/`free`, fragmentation accumulates forever. A long-running server that allocates and frees millions of objects per second will, over days, develop a heap so fragmented that `malloc` returns `NULL` despite gigabytes of nominal free space. This is one of the serious miseries of long-running C services and why many C servers restart periodically to clear fragmentation.
+
+The JVM's modern garbage collectors — G1, ZGC, Shenandoah — all **compact** the heap: they move live objects together, eliminating the gaps. After compaction, the free space is a single contiguous region, and allocation reverts to a fast bump pointer. The cost is the work done during compaction (GC pause, or concurrent threads competing with your application). The benefit is that fragmentation never accumulates — your heap is as usable on day 365 as on day 1.
+
+This is a structural advantage of managed runtimes over C for long-running services. You trade GC pauses for indefinite heap stability.
+
+---
+
+## 7. The Analysis: Costs, Sizes, and the Overflow Calculation
+
+**Stack allocation cost:** ~0 ns (absorbed into the function prologue, which is ~2–4 ns total regardless of frame size, up to the physical cost of touching a new cache line if the frame extends onto a new cache line).
+
+**Heap allocation cost (Java TLAB):** ~5–10 ns for the bump case. ~100 µs when the TLAB refills (rare). Amortized: ~10 ns per allocation.
+
+**Heap allocation cost (C `malloc`):** 30–200 ns in the uncontended case. More under contention.
+
+**Stack depth calculation (exact):**
+
+```
+Let S = stack size in bytes
+Let F = bytes per frame
+max_depth = floor(S / F)
+
+Example: S = 524,288 bytes (512 KB), F = 256 bytes
+max_depth = floor(524,288 / 256) = 2,048 calls
+```
+
+Note: in practice subtract a few hundred bytes for the JVM's own stack setup, and a small margin the JVM keeps in reserve to construct and throw `StackOverflowError` itself.
+
+**Default `-Xss` values and their consequences:**
+
+| Thread type | Default `-Xss` | Typical max depth (256B/frame) |
+|---|---|---|
+| JVM main thread | 1 MB | ~4,096 |
+| JVM app thread | 512 KB | ~2,048 |
+| Custom `-Xss2m` | 2 MB | ~8,192 |
+
+You can increase `-Xss` to allow deeper recursion. The cost is that each thread consumes more virtual address space. With a 64-bit JVM and virtual memory, this is usually fine for a small number of threads. With thousands of threads (a thread-per-connection server), a large `-Xss` consumes virtual address space rapidly — typically a non-issue, but worth monitoring.
+
+---
+
+## 8. The Proof: Why Stack is LIFO, and Why That is Non-Negotiable
+
+The stack's LIFO property is not a convention — it is a physical consequence of using a single pointer to track the top.
+
+**Claim:** If data is allocated on the stack in order A, B, C, it can only be deallocated in order C, B, A.
+
+**Proof:** The stack pointer `rsp` points to the top of the stack. Allocation moves `rsp` down by N bytes; deallocation moves `rsp` up by N bytes. There is one pointer tracking the entire structure. "Deallocating" item B, which was allocated between A and C, would require either:
+(a) Moving `rsp` up past C (which also "deallocates" C), or
+(b) Leaving a hole in the stack (A...hole...C) — which the single pointer cannot represent.
+
+Neither is compatible with `rsp` as the sole state. The single-pointer model gives O(1) allocation and deallocation precisely *because* it enforces LIFO. Any other deallocation order requires additional bookkeeping — which is exactly what the heap's allocator provides, at additional cost. □
+
+This proof, though obvious when stated, has a design consequence: any data whose lifetime doesn't fit LIFO order must go on the heap. The stack can only hold data that dies in reverse creation order — i.e., data whose lifetime is exactly the scope of a function call.
+
+---
+
+## 9. Tail-Call Optimization: What the JVM Refuses to Do
+
+A **tail call** is a function call that is the last thing a function does — the result of the called function is directly the result of the calling function, with no additional work after the return:
+
+```java
+// Tail-recursive — the recursive call is the last operation
+int factorial(int n, int acc) {
+    if (n == 0) return acc;
+    return factorial(n - 1, n * acc);  // result passes through directly
+}
+```
+
+Compare to this version, which is *not* tail-recursive:
+
+```java
+// NOT tail-recursive — multiplication happens AFTER the recursive call returns
+int factorial(int n) {
+    if (n == 0) return 1;
+    return n * factorial(n - 1);  // n * ??? requires waiting for the call to return
+}
+```
+
+In the tail-recursive version, when `factorial` calls itself, the caller has no work left to do. The recursive call's result is the caller's result. A smart compiler recognizes this and **reuses the current stack frame** instead of allocating a new one. The recursive call becomes a jump back to the function's entry point, with arguments updated. This is **Tail-Call Optimization (TCO)** or tail-call elimination.
+
+TCO transforms tail recursion into iteration mechanically. A function using proper tail calls can recurse to any depth without consuming additional stack. Functional languages (Scheme, OCaml, Haskell, Clojure) depend on this — their idiomatic code uses deep tail recursion, and TCO is the only reason it doesn't blow the stack.
+
+**The JVM does not do TCO.** Not even for obvious tail calls. Not even when the compiler can statically prove no work follows the recursive call.
+
+The reason is the JVM specification's requirement that **stack frames be observable for security and debugging**. Java's security model includes stack inspection — checking which classes and methods appear in the call chain to grant or deny permissions. Java agents and profilers introspect stack frames. Removing frames via TCO would change the observable call chain, breaking these guarantees. Making TCO opt-in would introduce a backward-incompatible change. The JVM architects chose observable correctness over stack efficiency.
+
+The practical consequence, for this curriculum: **every algorithm you see in Java that could be elegantly expressed as tail recursion must instead be written iteratively, with an explicit stack on the heap**. We will see this pattern repeatedly starting in Sub-course 6.
+
+```java
+// Recursive DFS — elegant, but blows stack on deep trees
+void dfs(TreeNode node) {
+    if (node == null) return;
+    process(node);
+    dfs(node.left);
+    dfs(node.right);
+}
+
+// Iterative DFS — safe at any depth (heap memory, not stack)
+void dfs(TreeNode root) {
+    Deque<TreeNode> stack = new ArrayDeque<>();
+    stack.push(root);
+    while (!stack.isEmpty()) {
+        TreeNode node = stack.pop();
+        if (node == null) continue;
+        process(node);
+        stack.push(node.right);  // right first so left processes first
+        stack.push(node.left);
+    }
+}
+```
+
+The iterative version uses a `Deque` on the heap. The heap has gigabytes. The stack has megabytes. For a tree with 1 million nodes, the heap-based stack uses ~8 MB (1M pointers × 8 bytes); the JVM stack would need 1M frames × 256 bytes = 256 MB, which vastly exceeds the thread's stack.
+
+---
+
+## 10. The Trade-offs
+
+**Use the stack for:**
+- All local primitive variables (Java will do this for you automatically)
+- Method-scoped intermediate results
+- Data whose lifetime exactly matches a function call
+- Performance-critical hot loops where heap allocation and GC pressure matter
+
+**Use the heap for:**
+- Any object that outlives its creating function
+- Data passed between threads
+- Variable-sized data (arrays whose size is not known at compile time)
+- Data whose lifetime doesn't follow LIFO order
+
+**In Java:** you do not choose. Primitive local variables live on the stack. Objects live on the heap. The JIT's **escape analysis** can sometimes prove an object doesn't escape its allocating method and eliminate the heap allocation, promoting the object's fields to registers or stack slots. This is an optimization you can sometimes encourage (keep objects local to methods, avoid passing them to lambdas or other methods in hot paths), but cannot mandate.
+
+**The concurrency story.** Stack memory is per-thread — it is inherently thread-private with no synchronization needed. Heap memory is shared and requires synchronization if multiple threads access the same object. This is one of the fundamental reasons thread-local data (stack variables, `ThreadLocal`) are safer and faster than shared heap data.
+
+**Increasing `-Xss`.** For recursive algorithms that legitimately need depth, increase the thread stack size with `-Xss` (e.g., `-Xss4m` for 4 MB). Understand that each thread consumes this much virtual address space (usually fine with virtual memory), and that the memory is committed per thread (or per page touched, with lazy allocation — same story as Lesson 0.7). A service with 100 threads and `-Xss4m` reserves 400 MB of virtual stack space.
+
+**Real systems:**
+- **Scala's `@tailrec` annotation** tells the Scala compiler to verify a method is tail-recursive and optimize the call into a loop, emitting iterative bytecode. This works for self-tail-calls and avoids the JVM's TCO limitation for that specific case. It does not help mutual recursion.
+- **Kotlin's `tailrec` modifier** does the same thing.
+- **`ForkJoinPool`** is designed for recursive task decomposition. It manages its own task queue on the heap, allowing deep algorithmic recursion without consuming JVM stack frames. Tasks are submitted as objects to a heap queue, not as actual call stack frames.
+- **Java 21's Virtual Threads (Project Loom)** dramatically changes the stack story: virtual threads are cheap enough to create millions of them, and their stacks are heap-allocated and can grow dynamically. A virtual thread's stack starts at a few hundred bytes and grows as needed, never overflowing for reasonable programs. This is one of the largest ergonomic changes to Java since generics.
+
+---
+
+## 11. The Exercises
+
+**Exercise (a) — Verify (frame sketch)**
+
+For this Java method:
+
+```java
+long sum(long[] arr) {
+    long total = 0;
+    for (int i = 0; i < arr.length; i++) {
+        total += arr[i];
+    }
+    return total;
+}
+```
+
+Sketch the stack frame. Answer:
+1. Where does `total` live? What size?
+2. Where does `i` live? What size?
+3. Where does `arr` (the array reference) live? What size?
+4. Approximately how large is the frame in bytes? Account for return address, saved `rbp`, locals, and alignment.
+5. Is `arr` the array itself, or a reference (pointer) to it? Where does the actual array data live?
+
+*Hint:* `long` is 8 bytes. `int` is 4 bytes. A reference on a 64-bit JVM is 4 bytes (compressed OOPs) or 8 bytes (uncompressed). The array data always lives on the heap.
+
+*What makes (5) important:* The local variable `arr` in `sum` is a reference — 4 or 8 bytes on the stack pointing to a heap object. The array's 8 × arr.length bytes are on the heap. The stack frame is small regardless of the array size.
+
+**Exercise (b) — Derive (overflow calculation)**
+
+A Java method uses 320 bytes of stack per frame. The thread runs with `-Xss512k` (512 KB = 524,288 bytes). The JVM reserves 1,024 bytes for its own overhead and for constructing `StackOverflowError`.
+
+1. How many recursive calls can this method make before `StackOverflowError`? Show the arithmetic precisely.
+2. If the input is a balanced binary tree with N nodes (depth ~log₂N), at what N does recursion become unsafe?
+3. If the input is a worst-case degenerate tree (depth = N), at what N does recursion become unsafe?
+
+*What makes (3) hard:* The recursion depth equals the number of nodes, not the height. A tree with 1,600 nodes in a linked-list shape has depth 1,600 — right at the edge of the overflow boundary.
+
+**Exercise (c) — Engineer (the tree traversal)**
+
+```java
+int countNodes(TreeNode root) {
+    if (root == null) return 0;
+    return 1 + countNodes(root.left) + countNodes(root.right);
+}
+```
+
+1. Explain precisely why this is not tail-recursive. What computation happens *after* each recursive call returns?
+2. For a balanced binary tree with 1,000,000 nodes, what is the maximum recursion depth? Is it safe with a 512 KB stack and 320 bytes/frame?
+3. For a worst-case skewed tree (each node has only a right child) with 1,000,000 nodes, what is the recursion depth? Will it overflow?
+4. Write an iterative version using `Deque<TreeNode>` that correctly counts nodes at any depth without stack overflow.
+
+*Hint for (1):* After `countNodes(root.left)` returns, the caller still needs to call `countNodes(root.right)` and then add 1. The call is not the last operation.
+
+*What makes (4) hard:* Counting requires visiting every node exactly once. The iterative version must simulate what the call stack was doing implicitly — remember which nodes have been partially processed. The simplest correct approach is BFS (level-order) with a queue. A DFS with a stack is also valid but requires more care.
+
+**Exercise (d) — Engineer (heap health)**
+
+A Java microservice processes 1,000 requests/second. Each request allocates ~10 KB of short-lived objects. After 24 hours of uptime, GC pauses lengthen and become more frequent.
+
+1. Describe what is happening to the heap. Use the vocabulary: allocation rate, TLAB pressure, generational collection, promotion, old-gen fragmentation.
+2. Suggest two JVM-level changes to investigate. For each, explain the mechanism by which it would help.
+
+*Hint for (1):* If objects are short-lived, they should die in the young generation. What causes them to get promoted to the old generation instead? What happens to old-gen when it fills with promoted short-lived objects that the young GC couldn't collect fast enough?
+
+*What makes this hard:* The answer is allocation tuning, not GC tuning. The root cause is that the allocation rate (~10 MB/s = 36 GB/hour) is stressing the young generation. Increasing young gen size (via `-Xmn`) or switching to a concurrent collector (G1 or ZGC) addresses different symptoms of the same underlying pressure.
+
+---
+
+## What you now own
+
+You can now open a disassembler on any JVM method and read the prologue — `push rbp; mov rbp, rsp; sub rsp, N` — and know exactly what those instructions are doing to memory and registers. You can compute, from frame size and `-Xss`, precisely when a recursive algorithm will blow the stack. You understand why the heap is slow (allocator overhead, fragmentation) and why the JVM narrows that gap with TLABs and compacting GCs. And you know why tail-call optimization doesn't exist in the JVM — not as a limitation to work around, but as a deliberate trade-off — so when you see deep recursion in Java, you reach for an explicit heap-based stack without hesitation or nostalgia for the elegant recursive form.

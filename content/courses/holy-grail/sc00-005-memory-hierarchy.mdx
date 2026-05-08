@@ -5,9 +5,362 @@ lessonNumber: 5
 subCourse: 0
 description: "Registers, L1/L2/L3, RAM, disk. Latency numbers every programmer should know, in nanoseconds."
 date: "2026-04-19"
-draft: true
+draft: false
 ---
 
-## Coming Soon
+## 1. The Motivation
 
-This lesson is being written.
+For four lessons I have been telling you that memory is a big array of bytes. That was a useful lie. It gave you a foundation to reason about bits, endianness, two's complement, and character encodings. Today I rip it apart.
+
+Here is the truth: when your code executes `x = arr[i]`, the CPU can take anywhere from **0.33 nanoseconds to 150 milliseconds** to satisfy that request, depending on where the data lives. That is a range of eleven orders of magnitude. Eleven. If a one-second operation scaled the same way, it would take 4,700 years.
+
+This fact dominates the design of every high-performance system ever built. Every data structure in this curriculum — starting with arrays in Sub-course 2 — has its real-world performance determined not by asymptotic complexity but by how well it cooperates with the memory hierarchy. A linked list and an array both traverse in O(n). On modern hardware, the array is often 50 to 100 times faster. The reason is entirely in this lesson.
+
+When Google engineers talk about making a service "10× faster," they are almost never talking about algorithmic improvements — those were found years ago. They are talking about reducing cache misses. Cache misses are the dominant cost in production software, and they are almost never visible in Big-O notation.
+
+---
+
+## 2. The Mental Model: The Hierarchy
+
+The fundamental problem is this: CPUs got fast much faster than RAM did.
+
+A 3 GHz CPU completes one cycle in 0.33 nanoseconds. In that time, light travels 10 centimeters. A modern CPU can retire 3 to 4 instructions per cycle — over 10 billion operations per second. That is genuinely extraordinary.
+
+DRAM — the dynamic random-access memory that makes up your computer's main memory — takes 60 to 100 nanoseconds to respond to a read request. At 3 GHz, 100 nanoseconds is **300 CPU cycles**. If the CPU had to wait for RAM on every memory access, it would be idle for 299 cycles out of every 300. A chip clocked at 3 GHz would perform like a 10 MHz chip from 1985.
+
+This gap — called the **memory wall** — has been widening for forty years. CPU speeds have improved roughly 1000× since 1980. DRAM latency has improved by maybe 10×. The absolute gap has grown, not closed.
+
+The industry's response is the **memory hierarchy**: a series of intermediate storage layers between the CPU and RAM, each faster and smaller than the one below.
+
+<Figure
+  src="/diagrams/holy-grail/sc00-05-memory-hierarchy.svg"
+  alt="The memory hierarchy from CPU registers to cross-world network, with sizes and latencies"
+  caption="Each level is roughly 3–10× slower and orders of magnitude larger than the level above it. The boundary between L3 and RAM is the most important one to keep in mind."
+  label="memory-hierarchy.svg"
+/>
+
+Study these numbers. Commit the orders of magnitude to memory. They are the scale you will think in for the rest of your career.
+
+The key boundary is the one between L3 cache and RAM. Everything above the line — registers, L1, L2, L3 — lives on the CPU chip. Everything below — RAM, SSD, disk, network — is physically separate. Crossing the chip boundary costs roughly one order of magnitude in latency. Crossing from RAM to SSD costs three more orders of magnitude.
+
+<Quiz question="At 3 GHz, the CPU completes one cycle every 0.33 ns. A RAM access takes 100 ns. How many CPU cycles elapse during a single RAM read? What does the CPU do during those cycles?">
+  100 ns ÷ 0.33 ns/cycle ≈ 300 cycles. During those 300 cycles, the CPU does not sit completely idle — it uses out-of-order execution to work on other instructions whose operands are already available. But if the stalled instruction is on the critical path (i.e., subsequent instructions depend on its result), those 300 cycles are effectively wasted. This is why cache misses are catastrophic on the critical path and why compilers and CPUs work so hard to hide them.
+</Quiz>
+
+---
+
+## 3. The Mental Model: Norvig's Numbers
+
+Peter Norvig at Google published a table that belongs on every systems engineer's wall. Jeff Dean has a similar one. This table is not trivia — it is the ruler you use to sanity-check every performance claim you will ever encounter.
+
+<Figure
+  src="/diagrams/holy-grail/sc00-05-norvig-numbers.svg"
+  alt="Latency numbers every programmer should know, normalized so 1 CPU cycle = 1 second"
+  caption="The normalized column makes the abstraction visceral. A RAM access feels like a 5-minute wait to the CPU. A disk seek feels like most of a year."
+  label="norvig-numbers.svg"
+/>
+
+The normalized column is the one I want you to internalize. It rescales so that one CPU cycle — the CPU's fundamental unit of time — equals one second. At that scale:
+
+- L1 cache hit: 3 seconds
+- L2 cache hit: 12 seconds
+- RAM access: **5 minutes**
+- SSD read: 13 hours
+- Disk seek: 10 months
+- Cross-world network: 12 years
+
+When your code does `x = arr[i]` and the data is not in cache, the CPU waits five of its subjective minutes. Five minutes of doing nothing. Then it resumes.
+
+Memorise these numbers the way you memorised your times tables. They are not optional background — they are the precision instrument you think with.
+
+---
+
+## 4. The Implementation: What the CPU Actually Does
+
+### Registers: The Only Storage CPUs Operate On
+
+Registers are the top of the hierarchy: physically inside the CPU core, directly wired to the arithmetic units. A modern x86-64 CPU has 16 general-purpose 64-bit registers (`rax`, `rbx`, `rcx`, ...), 16 SIMD registers (`xmm0`–`xmm15`, each 128 bits), and a handful of special registers. Total capacity: a few hundred bytes.
+
+**All arithmetic happens in registers.** The CPU cannot add two values directly from memory. It must:
+1. Load operand A from memory into a register
+2. Load operand B from memory into a register
+3. Execute the add: `register_C = register_A + register_B`
+4. Store register_C back to memory
+
+Steps 1, 2, and 4 are where memory latency lives. Step 3 is one cycle.
+
+This has a concrete implication for how you write Java:
+
+```java
+int sum = 0;
+for (int i = 0; i < arr.length; i++) {
+    sum += arr[i];
+}
+```
+
+The JIT compiler almost certainly keeps `sum` and `i` in registers for the entire loop. They are never written to RAM during iteration. The only memory traffic is the load of `arr[i]` on each iteration. The accumulator variable is effectively free — zero additional memory cost.
+
+This is one reason local variables are faster than object fields. Local variables can live in registers. Object fields live on the heap and must be loaded on every access. (The JIT can sometimes "scalar replace" an object — promote its fields to registers — if it proves the object does not escape to other methods. This is called escape analysis. Do not rely on it.)
+
+### Cache Lines: The Atomic Unit of Memory Traffic
+
+Here is the single most important mechanical fact in this lesson:
+
+**The CPU does not fetch one byte from memory. It fetches a cache line — always 64 bytes — aligned to a 64-byte boundary.**
+
+When your code accesses `arr[5]` and that data is not in L1 cache:
+
+1. The CPU computes the address of `arr[5]`. Say it's `0x1000_0014`.
+2. The cache rounds down to the nearest 64-byte boundary: `0x1000_0000`.
+3. The cache fetches all 64 bytes from `0x1000_0000` to `0x1000_003F` from RAM — one transfer.
+4. The line is placed in L1.
+5. The specific 4 bytes at offset 20 are returned to the CPU.
+
+The critical observation: **fetching 1 byte costs exactly the same as fetching 64 bytes**. The transfer is always 64 bytes. Always. One byte or sixty-four, the RAM latency is identical.
+
+<Figure
+  src="/diagrams/holy-grail/sc00-05-cache-line.svg"
+  alt="A 64-byte cache line: the requested element triggers the miss, all 15 neighbours arrive for free"
+  caption="arr[5] triggers the cache miss. arr[0]–arr[4] and arr[6]–arr[15] arrive for free. Sequential access pays 100 ns once per 16 accesses; random access pays 100 ns every time."
+  label="cache-line.svg"
+/>
+
+An `int` array has 4-byte elements. A 64-byte cache line holds **16 integers**. When you read `arr[5]`, you get `arr[0]` through `arr[15]` in L1 for the cost of one RAM access. The next 15 sequential reads are L1 hits at ~1 ns each, not ~100 ns RAM reads.
+
+**Sequential access:** one miss per 16 accesses → average ~7 ns/element.
+**Random access:** one miss per access → average ~100 ns/element. The same O(n) traversal, **14× slower**.
+
+This gap is not theoretical. Run it. The numbers hold.
+
+### Why 64 Bytes?
+
+This is not arbitrary. CPU architects measured the miss penalty (how long a miss takes) and the transfer bandwidth (how fast bytes can move from RAM to cache) and found that 64 bytes strikes the optimal balance: large enough that spatial locality is exploited, small enough that the latency of the fetch itself does not dominate. Fetching 128 bytes would take longer per miss and waste bandwidth when only nearby elements are needed. Fetching 32 bytes would leave too much exploitation on the table.
+
+The 64-byte cache line has been near-universal across Intel, AMD, ARM, and Apple Silicon for two decades. Treat it as a physical constant of your hardware.
+
+### The Cache Levels: L1, L2, and L3
+
+The diagram showed you the numbers. Now let me explain what is physically happening at each level, because the physical reality determines what you can and cannot count on when you write performance-sensitive code.
+
+**L1 — The Speed Demon.** L1 is the smallest cache and the fastest. It lives physically inside each CPU core — on the same silicon die as the execution units that consume it. On modern chips it is 32 to 64 KB per core. At that size, the round-trip latency is 3 to 4 cycles — about 1 nanosecond at 3 GHz.
+
+One thing most tutorials skip: L1 is split. Every modern CPU has a separate **L1-D** (data cache) and **L1-I** (instruction cache). The CPU needs to fetch both the instructions it is executing and the data those instructions operate on. Keeping them in the same cache would create contention — an instruction fetch would compete with a data load for the same slots. Splitting them lets the CPU satisfy both in parallel. When you write `sum += arr[i]`, the add instruction comes from L1-I and the value of `arr[i]` comes from L1-D simultaneously.
+
+Because L1 is per-core, each core has its own private copy of the data it is working on. This is the root of the coherence problem we will dissect in the next lesson.
+
+**L2 — The Middle Child.** L2 is larger and slower. Typical sizes are 256 KB to 1 MB per core — the exact number varies significantly by chip generation. Intel's consumer chips have historically given 512 KB to 1 MB per core. Apple's M-series processors use unusually large per-core L2s (several MB), which is a key reason for their performance characteristics. Latency: roughly 10 to 15 cycles, or 3 to 5 nanoseconds.
+
+L2 is sometimes per-core, sometimes shared between pairs of cores, depending on the microarchitecture. In some designs, L2 acts as a **victim cache**: when a line is evicted from L1, it goes into L2 rather than straight to L3 or RAM. This gives you a second chance to hit it cheaply — if you touched a line recently but not recently enough to stay in L1, it may still be in L2.
+
+**L3 — The Big Shared Pool.** L3 is the largest on-chip cache — typically 8 to 64 MB on consumer chips, and up to 256 MB on server chips (AMD's EPYC line). It is shared across all cores on the chip. Latency: 30 to 50 cycles, or 10 to 15 nanoseconds.
+
+The shared nature of L3 makes it a coordination point. When core 0 reads data that core 1 recently modified, the data often travels from core 1's private caches through L3 to core 0, rather than going all the way to RAM and back. This makes L3 central to the cache coherence story — it is the common ground between cores. We will return to exactly how this works in Lesson 0.6.
+
+For working-set reasoning, L3 is the last line of defence before RAM. If your hot data fits in L3, you pay 10–15 ns per miss. If it does not, you pay 100 ns. That 10× cliff is real and it is where many performance regressions live — a dataset that was fast when it fit in the 32 MB L3 of an older machine becomes slow on a machine where the L3 is smaller, or where the working set grew past the boundary.
+
+**A note on architecture drift.** These three levels are the standard, but the boundaries are blurring. Apple's M-series has a large "System Level Cache" between L2 and RAM that behaves like a fourth cache level. AMD's X3D chips stack an extra 64 MB of SRAM directly on the CPU die using 3D packaging — so the L3 on an AMD Ryzen 7 7800X3D is 96 MB rather than 32 MB, and it runs faster because it is physically closer to the cores. Intel's multi-tile designs have non-uniform L3 access latency depending on which tile the data lives on.
+
+The principle is invariant even as the levels evolve: a hierarchy of caches, each larger and slower than the level above, each holding copies of recently used data from the level below. Whether a specific chip has three or four or five effective levels is implementation detail. The reasoning is the same.
+
+---
+
+## 5. The Analysis: Locality, Misses, and What to Count
+
+### Two Kinds of Locality
+
+Caches work because real programs exhibit two patterns. Without these patterns, caches would be useless. With them, a 32 KB L1 can effectively serve a working set many times larger.
+
+<Figure
+  src="/diagrams/holy-grail/sc00-05-locality.svg"
+  alt="Temporal locality (same address accessed repeatedly) vs spatial locality (neighbouring addresses accessed together)"
+  caption="Temporal locality makes the LRU eviction policy effective. Spatial locality makes 64-byte cache lines effective. Every fast data structure exploits at least one."
+  label="locality.svg"
+/>
+
+**Temporal locality:** if you access a memory location, you are likely to access it again soon. Examples: a loop counter, the top of a stack, a frequently checked configuration flag. Caches exploit this by keeping recently used lines resident. LRU (Least Recently Used) eviction is optimal when temporal locality holds.
+
+**Spatial locality:** if you access a memory location, you are likely to access nearby locations soon. Examples: traversing an array sequentially, reading the fields of a struct or object, iterating through any contiguous data. Caches exploit this by fetching entire 64-byte lines — you get 15 neighbours for free.
+
+Both principles degrade for pointer-chasing data structures. A linked list node holds a value and a pointer to the next node. The nodes can be scattered anywhere on the heap. Following the chain — `node = node.next` — is a random memory access on each step. No spatial locality (adjacent heap bytes are not the next node). Temporal locality helps only if the same node is visited repeatedly. In practice, linked list traversal pays a cache miss per node. This is why arrays consistently beat linked lists on traversal, despite identical O(n) complexity.
+
+### Three Kinds of Miss
+
+Cache misses fall into three categories (Mark Hill's "3Cs"):
+
+**Compulsory miss (cold miss).** The first access to any piece of data is always a miss — it has never been loaded. Unavoidable. The only remedy is prefetching before you need it.
+
+**Capacity miss.** Your working set is larger than the cache. Data gets evicted before you come back to it. If your hot data is 100 MB and L3 is 32 MB, you will have perpetual capacity misses. The fix is either to reduce the working set (more compact data structures) or to access data in an order that fits the cache (loop tiling, blocking).
+
+**Conflict miss.** Caches are not fully associative — not every line can go in every slot. Due to how addresses hash into cache slots, two frequently accessed lines can map to the same slot and evict each other repeatedly, even when the cache is not full. This is a subtle, pathological case. We will revisit it in Sub-course 2 when we discuss cache set associativity.
+
+### The Row-Major vs Column-Major Demonstration
+
+The canonical demonstration of cache behaviour. Consider a 4096 × 4096 matrix of `int` values. Each `int` is 4 bytes. The total matrix is 64 MB — larger than a typical L3 cache. In Java (and C), 2D arrays are laid out row-major: `arr[0][0]`, `arr[0][1]`, ..., `arr[0][4095]`, then `arr[1][0]`, etc. Adjacent elements in the same row are adjacent in memory.
+
+```java
+int[][] arr = new int[4096][4096];
+long sum = 0;
+
+// Row-major: sequential access within each row
+long t0 = System.nanoTime();
+for (int i = 0; i < 4096; i++)
+    for (int j = 0; j < 4096; j++)
+        sum += arr[i][j];
+long rowTime = System.nanoTime() - t0;
+
+// Column-major: stride of 4096 ints = 16 KB per step
+long t1 = System.nanoTime();
+for (int j = 0; j < 4096; j++)
+    for (int i = 0; i < 4096; i++)
+        sum += arr[i][j];
+long colTime = System.nanoTime() - t1;
+
+System.out.printf("Row-major:    %,d ms%n", rowTime / 1_000_000);
+System.out.printf("Column-major: %,d ms%n", colTime / 1_000_000);
+```
+
+```
+Row-major:    108 ms
+Column-major: 612 ms
+```
+
+Both loops execute exactly 16,777,216 additions. Identical O(n²). Identical element count. The column-major version is **5.7× slower** — purely from cache behaviour.
+
+**Why?** Row-major accesses `arr[i][0]`, `arr[i][1]`, `arr[i][2]` — consecutive in memory, all in the same or adjacent cache lines. One miss per 16 elements.
+
+Column-major accesses `arr[0][j]`, `arr[1][j]`, `arr[2][j]` — these are 4096 × 4 = 16,384 bytes apart in memory. Each is on a different cache line. Each requires a full RAM fetch. You pull in 64 bytes of cache line to use 4 bytes, then that line gets evicted before you come back. **93% of every fetched cache line is wasted.**
+
+This is the first thing I check when reviewing code that processes 2D data: are the inner loop dimensions in the right order?
+
+---
+
+## 6. The Proof: Why Cache-Friendly Code Wins on the Same Algorithm
+
+Let me make the cache line argument formal.
+
+**Setup.** Array of `n` integers, each 4 bytes. Cache line size `L = 64` bytes, so `L/4 = 16` integers per line. Let `M` be the miss penalty in nanoseconds (approximately 100 ns for RAM), and `H` be the hit latency (approximately 1 ns for L1).
+
+**Sequential traversal, cold start.**
+
+Number of cache lines loaded: `n / 16` (each line covers 16 integers).
+
+Total time: `(n/16) × M + (n - n/16) × H`
+
+For large `n`, the second term dominates — most accesses are hits. Simplifying:
+
+```
+T_seq ≈ (n/16) × 100 + (15n/16) × 1
+      = 6.25n + 0.94n
+      ≈ 7.2n  nanoseconds
+```
+
+**Random access, cold start.**
+
+Every access hits a different cache line. All misses.
+
+```
+T_rand ≈ n × 100  nanoseconds
+```
+
+**Ratio:**
+
+```
+T_rand / T_seq ≈ 100n / 7.2n ≈ 14×
+```
+
+Fourteen times slower. Same O(n) complexity. The constant factor difference is entirely due to cache behavior, and it is not small. On a million-element array: sequential finishes in ~7 ms; random finishes in ~100 ms. At a billion elements: 7 seconds vs 100 seconds.
+
+**The lesson for data structure design:**
+
+Any data structure whose traversal requires following pointers to arbitrary heap locations pays the random-access cost per step. This is the foundational argument against linked data structures for traversal-heavy workloads, and it will recur in every lesson where we compare an array-based and a pointer-based implementation.
+
+The formal complexity analysis says O(n) = O(n). The cache analysis says 7 ns/element vs 100 ns/element. Both are correct. You need both.
+
+---
+
+## 7. The Trade-offs
+
+**Use arrays (contiguous memory) when:**
+- Sequential traversal is common
+- Random access by index is needed (O(1) with spatial locality)
+- Memory footprint matters — arrays have no per-element overhead
+- SIMD / vectorized operations are needed (they require contiguity)
+
+**Do not use arrays when:**
+- Insert/delete at arbitrary positions is frequent (O(n) shift)
+- Size is highly unpredictable and large reallocations are unacceptable
+- You need persistent data structures or structural sharing
+
+**Use linked structures (pointer-chasing) when:**
+- Insert/delete at known positions is dominant
+- The list is short enough to fit entirely in L1 or L2 cache
+- Pointer-following is rare relative to modification
+
+**The concurrency story.** Cache lines create a concurrency hazard called **false sharing**: two threads writing to *different* variables that happen to share a cache line. When thread A writes to its variable and thread B writes to its variable, and both live in the same 64-byte line, the coherence protocol forces both threads to invalidate and re-fetch the line on every write — even though they are modifying different data. We cover this in Sub-course 0.6.
+
+**The working set test.** Before writing any loop-heavy code, ask: what is my working set size? If it fits in L1 (32 KB), you are flying. If it fits in L3 (8–64 MB), you are fine. If it does not fit in RAM (GBs), you are doing I/O. Each boundary is a cliff: performance drops by a factor of 10× or more as you cross from one level to the next.
+
+**Real systems that got this right:**
+- **Redis** stores its most-accessed data structures (sorted sets, hashes) in compact formats that fit cache lines. Its listpack encoding packs values contiguously specifically to preserve spatial locality.
+- **Java's ArrayList** beats `LinkedList` for almost all workloads — not because it has better algorithmic complexity, but because contiguous allocation exploits the cache line.
+- **Column-oriented databases (Parquet, DuckDB)** store all values of one column contiguously rather than all columns of one row. This is cache-hostile for fetching single rows but cache-optimal for aggregations like `SUM(price)` — the dominant query pattern in analytics.
+- **Google's Protocol Buffers** wire format is designed to keep small messages in one cache line. An 8-field proto message with int64 fields fits in 64 bytes. Not accidental.
+
+<Quiz question="A HashMap with 1 million entries and a LinkedList with 1 million entries both support O(1) average-case lookup (HashMap) and O(n) traversal (both). When iterating over all entries in both structures, which will be faster on modern hardware and why? What does this have to do with cache lines?">
+  The HashMap's internal array (`table[]`) is a contiguous array of references, and in modern Java (since Java 8), each bucket stores entries as a contiguous linked list or tree. Traversal visits the `table` array sequentially — good spatial locality on the reference array. The LinkedList stores nodes scattered across the heap; traversal follows `node.next` pointers to arbitrary heap locations — random access, one cache miss per node. For a million nodes where each node is at a different cache line (likely for a well-used heap), the LinkedList traversal pays ~100 ns per node vs the HashMap's array traversal paying ~7 ns per index. The HashMap wins by roughly an order of magnitude despite having nominally equivalent traversal complexity.
+</Quiz>
+
+---
+
+## 8. The Exercises
+
+**Exercise (a) — Estimate (latency reasoning)**
+
+Given the numbers from this lesson, estimate how long each of the following takes. Show your reasoning — do not just cite the table.
+
+1. A function that executes 100 arithmetic operations, all on register-resident data, at 3 GHz with 2 operations per cycle.
+2. A function that sums a cold array of 1 million `int` values stored sequentially in memory.
+3. A function that accesses 1 million random `int` values in a 4 GB array (each access is a RAM miss).
+4. A function that reads 1 MB sequentially from an NVMe SSD.
+
+*Hint for (2):* A million integers is 4 MB. A 64-byte cache line holds 16 ints. How many lines? How many misses on first pass? What is the cost of a miss vs a hit?
+
+*What makes (3) interesting:* A 4 GB array does not fit in any cache. Every access is a cache miss. There is no amortization. The answer is exactly `n × 100 ns`.
+
+**Exercise (b) — Derive (matrix traversal)**
+
+You have a 1024 × 1024 matrix of `double` values. Each `double` is 8 bytes.
+
+1. What is the total size of the matrix in bytes?
+2. How many 64-byte cache lines does it occupy?
+3. For a **row-major** traversal, how many cache misses occur on the first (cold) pass? Explain your reasoning in terms of cache line size and element size.
+4. For a **column-major** traversal of the same matrix, how many cache misses occur?
+5. If a RAM miss costs 100 ns and an L1 hit costs 1 ns, estimate the wall-clock time for each traversal.
+
+*Hint:* A `double` is 8 bytes; a 64-byte cache line holds 8 doubles. Work out how many elements share a line, then count misses accordingly.
+
+*What makes this hard:* Column-major traversal of a 1024-row matrix steps 1024 × 8 = 8,192 bytes between accesses. A cache line is 64 bytes. Do successive column accesses share a cache line? What does this imply about the number of misses?
+
+**Exercise (c) — Engineer (first-principles design)**
+
+You are designing a data structure that must support two operations: insert an integer, and check whether an integer is present. Dataset: 10 million integers. Memory budget: 100 MB.
+
+Argue — on first principles, using the vocabulary of spatial locality, temporal locality, cache lines, and working set size — the memory-hierarchy trade-offs of each of the following layouts. Do not pick a winner. Articulate the trade-offs.
+
+1. **Sorted array:** binary search for lookup (O(log n) comparisons), shift elements for insert (O(n)).
+2. **Singly linked list:** walk from head for lookup (O(n)), prepend for insert (O(1)).
+3. **Array of 100,000 buckets:** each bucket is a small contiguous array of ~100 integers, using hash of the key to select the bucket.
+
+For each layout, answer:
+- What is the access pattern for lookup? What is its cache behaviour?
+- What is the access pattern for insert? What is its cache behaviour?
+- Does the working set fit in L3? In L2?
+- Where does each layout lose and where does it win?
+
+*What makes this hard:* The sorted array has beautiful spatial locality on the final comparisons — after a few binary search steps, you converge to a region of a few cache lines — but the early steps jump across the entire array. Quantify how many cache misses binary search on a cold 40 MB array (10M × 4 bytes) actually costs. The answer will surprise you.
+
+---
+
+## What you now own
+
+You can reason about memory performance without approximation. You know why the CPU's fastest computation — register arithmetic — costs one cycle, and why a cache miss costs 300. You can look at any traversal pattern and predict, from cache line size and access stride, whether it will pay 7 ns/element or 100 ns/element — and you can derive the number rather than recite it. When someone tells you a linked list and an array are equivalent for traversal, you have a precise and quantified answer: they are not, and the gap is a factor of fourteen, derivable from first principles in under a minute.

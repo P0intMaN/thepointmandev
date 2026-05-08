@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="680" height="310" viewBox="0 0 680 310" font-family="'Geist Mono', monospace">
+  <rect width="680" height="310" fill="#0f0d09"/>
+
+  <!-- Title -->
+  <text x="340" y="16" text-anchor="middle" fill="#92400e" font-size="10" letter-spacing="2" font-weight="700">LATENCY NUMBERS EVERY PROGRAMMER SHOULD KNOW</text>
+  <text x="340" y="28" text-anchor="middle" fill="#3d2e0f" font-size="8">If 1 CPU cycle = 1 second, how long does each operation feel to the CPU?</text>
+
+  <!-- Column headers -->
+  <text x="20"  y="44" fill="#3d2e0f" font-size="9" font-weight="700">OPERATION</text>
+  <text x="380" y="44" fill="#3d2e0f" font-size="9" font-weight="700">ACTUAL LATENCY</text>
+  <text x="530" y="44" fill="#3d2e0f" font-size="9" font-weight="700">IF 1 CYCLE = 1 SEC</text>
+
+  <!-- Separator -->
+  <line x1="10" y1="48" x2="670" y2="48" stroke="#3d2e0f" stroke-width="1"/>
+
+  <!-- Row 1: L1 cache -->
+  <rect x="10" y="50" width="660" height="22" rx="2" fill="#1a1510"/>
+  <text x="20"  y="65" fill="#4ade80" font-size="10">L1 cache reference</text>
+  <text x="380" y="65" fill="#4ade80" font-size="10">1 ns</text>
+  <text x="530" y="65" fill="#4ade80" font-size="10">3 seconds</text>
+
+  <!-- Row 2: Branch miss -->
+  <rect x="10" y="74" width="660" height="22" rx="2" fill="#120e08"/>
+  <text x="20"  y="89" fill="#4ade80" font-size="10">Branch mispredict</text>
+  <text x="380" y="89" fill="#4ade80" font-size="10">3 ns</text>
+  <text x="530" y="89" fill="#4ade80" font-size="10">9 seconds</text>
+
+  <!-- Row 3: L2 cache -->
+  <rect x="10" y="98" width="660" height="22" rx="2" fill="#1a1510"/>
+  <text x="20"  y="113" fill="#4ade80" font-size="10">L2 cache reference</text>
+  <text x="380" y="113" fill="#4ade80" font-size="10">4 ns</text>
+  <text x="530" y="113" fill="#4ade80" font-size="10">12 seconds</text>
+
+  <!-- Row 4: Mutex -->
+  <rect x="10" y="122" width="660" height="22" rx="2" fill="#120e08"/>
+  <text x="20"  y="137" fill="#fbbf24" font-size="10">Mutex lock/unlock</text>
+  <text x="380" y="137" fill="#fbbf24" font-size="10">17 ns</text>
+  <text x="530" y="137" fill="#fbbf24" font-size="10">51 seconds</text>
+
+  <!-- Row 5: RAM — highlighted as the key threshold -->
+  <rect x="10" y="146" width="660" height="22" rx="2" fill="#1f1608" stroke="#f59e0b" stroke-width="1"/>
+  <text x="20"  y="161" fill="#f59e0b" font-size="10" font-weight="700">Main memory (RAM) reference</text>
+  <text x="380" y="161" fill="#f59e0b" font-size="10" font-weight="700">100 ns</text>
+  <text x="530" y="161" fill="#f59e0b" font-size="10" font-weight="700">5 minutes</text>
+
+  <!-- Row 6: Compress -->
+  <rect x="10" y="170" width="660" height="22" rx="2" fill="#120e08"/>
+  <text x="20"  y="185" fill="#f87171" font-size="10">Compress 1 KB (Zstd)</text>
+  <text x="380" y="185" fill="#f87171" font-size="10">2 µs</text>
+  <text x="530" y="185" fill="#f87171" font-size="10">1 hr 40 min</text>
+
+  <!-- Row 7: SSD random read -->
+  <rect x="10" y="194" width="660" height="22" rx="2" fill="#1a1510"/>
+  <text x="20"  y="209" fill="#f87171" font-size="10">SSD random read</text>
+  <text x="380" y="209" fill="#f87171" font-size="10">16 µs</text>
+  <text x="530" y="209" fill="#f87171" font-size="10">13 hours</text>
+
+  <!-- Row 8: Sequential 1MB from RAM -->
+  <rect x="10" y="218" width="660" height="22" rx="2" fill="#120e08"/>
+  <text x="20"  y="233" fill="#f87171" font-size="10">Read 1 MB sequentially from RAM</text>
+  <text x="380" y="233" fill="#f87171" font-size="10">3 µs</text>
+  <text x="530" y="233" fill="#f87171" font-size="10">2.5 hours</text>
+
+  <!-- Row 9: Same datacenter roundtrip -->
+  <rect x="10" y="242" width="660" height="22" rx="2" fill="#1a1510"/>
+  <text x="20"  y="257" fill="#f87171" font-size="10">Round trip, same datacenter</text>
+  <text x="380" y="257" fill="#f87171" font-size="10">500 µs</text>
+  <text x="530" y="257" fill="#f87171" font-size="10">2 weeks</text>
+
+  <!-- Row 10: Disk seek -->
+  <rect x="10" y="266" width="660" height="22" rx="2" fill="#120e08"/>
+  <text x="20"  y="281" fill="#f87171" font-size="10">Disk seek (HDD)</text>
+  <text x="380" y="281" fill="#f87171" font-size="10">10 ms</text>
+  <text x="530" y="281" fill="#f87171" font-size="10">~10 months</text>
+
+  <!-- Row 11: Cross-world network -->
+  <rect x="10" y="290" width="660" height="14" rx="2" fill="#1a1510"/>
+  <text x="20"  y="302" fill="#f87171" font-size="9">Cross-world packet  150 ms</text>
+  <text x="530" y="302" fill="#f87171" font-size="9">~12 years</text>
+
+  <!-- Bottom note -->
+  <text x="340" y="308" text-anchor="middle" fill="#3d2e0f" font-size="8" letter-spacing="1">SOURCE: PETER NORVIG / JEFF DEAN — "LATENCY NUMBERS EVERY PROGRAMMER SHOULD KNOW"</text>
+</svg>

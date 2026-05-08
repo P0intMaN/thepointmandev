@@ -1,0 +1,105 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="680" height="310" viewBox="0 0 680 310" font-family="'Geist Mono', monospace">
+  <rect width="680" height="310" fill="#0f0d09"/>
+
+  <!-- Title -->
+  <text x="340" y="16" text-anchor="middle" fill="#92400e" font-size="10" letter-spacing="2" font-weight="700">4-LEVEL PAGE TABLE WALK — TLB MISS SLOW PATH</text>
+  <text x="340" y="28" text-anchor="middle" fill="#3d2e0f" font-size="8">4 memory accesses to translate 1 virtual address — each can hit or miss the regular data cache</text>
+
+  <!-- CR3 register (CPU) -->
+  <rect x="22" y="38" width="100" height="36" rx="3" fill="#1a0f0f" stroke="#f87171" stroke-width="1.5"/>
+  <text x="72" y="55" text-anchor="middle" fill="#f87171" font-size="9" font-weight="700">CR3</text>
+  <text x="72" y="68" text-anchor="middle" fill="#f87171" font-size="8">CPU register</text>
+  <text x="72" y="78" fill="#3d2e0f" font-size="7" text-anchor="middle">→ PML4 base addr</text>
+
+  <!-- Arrow 1: CR3 → PML4 -->
+  <line x1="122" y1="56" x2="166" y2="56" stroke="#f59e0b" stroke-width="1.5"/>
+  <polygon points="166,52 174,56 166,60" fill="#f59e0b"/>
+  <text x="144" y="48" text-anchor="middle" fill="#67e8f9" font-size="8">RAM access 1</text>
+
+  <!-- PML4 table -->
+  <rect x="174" y="38" width="110" height="90" rx="3" fill="#1a1510" stroke="#f59e0b" stroke-width="1.5"/>
+  <text x="229" y="54" text-anchor="middle" fill="#f59e0b" font-size="9" font-weight="700">PML4</text>
+  <line x1="174" y1="58" x2="284" y2="58" stroke="#3d2e0f" stroke-width="0.5"/>
+  <rect x="182" y="62" width="92" height="14" rx="1" fill="#2a1f08" stroke="#f59e0b" stroke-width="1"/>
+  <text x="228" y="73" text-anchor="middle" fill="#f59e0b" font-size="8">→ PDPT [bits 47-39]</text>
+  <rect x="182" y="78" width="92" height="10" rx="1" fill="#1a1510"/>
+  <rect x="182" y="90" width="92" height="10" rx="1" fill="#1a1510"/>
+  <rect x="182" y="102" width="92" height="10" rx="1" fill="#1a1510"/>
+  <text x="228" y="125" text-anchor="middle" fill="#3d2e0f" font-size="7">512 entries</text>
+
+  <!-- Arrow 2: PML4 → PDPT -->
+  <line x1="284" y1="69" x2="328" y2="69" stroke="#f59e0b" stroke-width="1.5"/>
+  <polygon points="328,65 336,69 328,73" fill="#f59e0b"/>
+  <text x="306" y="61" text-anchor="middle" fill="#67e8f9" font-size="8">RAM access 2</text>
+
+  <!-- PDPT table -->
+  <rect x="336" y="38" width="110" height="90" rx="3" fill="#1a1510" stroke="#f59e0b" stroke-width="1.2"/>
+  <text x="391" y="54" text-anchor="middle" fill="#f59e0b" font-size="9" font-weight="700">PDPT</text>
+  <line x1="336" y1="58" x2="446" y2="58" stroke="#3d2e0f" stroke-width="0.5"/>
+  <rect x="344" y="62" width="92" height="14" rx="1" fill="#2a1f08" stroke="#f59e0b" stroke-width="1"/>
+  <text x="390" y="73" text-anchor="middle" fill="#f59e0b" font-size="8">→ PD [bits 38-30]</text>
+  <rect x="344" y="78" width="92" height="10" rx="1" fill="#1a1510"/>
+  <rect x="344" y="90" width="92" height="10" rx="1" fill="#1a1510"/>
+  <rect x="344" y="102" width="92" height="10" rx="1" fill="#1a1510"/>
+  <text x="390" y="125" text-anchor="middle" fill="#3d2e0f" font-size="7">512 entries</text>
+
+  <!-- Arrow 3: PDPT → PD -->
+  <line x1="446" y1="69" x2="490" y2="69" stroke="#f59e0b" stroke-width="1.5"/>
+  <polygon points="490,65 498,69 490,73" fill="#f59e0b"/>
+  <text x="468" y="61" text-anchor="middle" fill="#67e8f9" font-size="8">RAM access 3</text>
+
+  <!-- PD table -->
+  <rect x="498" y="38" width="110" height="90" rx="3" fill="#1a1510" stroke="#f59e0b" stroke-width="1"/>
+  <text x="553" y="54" text-anchor="middle" fill="#f59e0b" font-size="9" font-weight="700">PD</text>
+  <line x1="498" y1="58" x2="608" y2="58" stroke="#3d2e0f" stroke-width="0.5"/>
+  <rect x="506" y="62" width="92" height="14" rx="1" fill="#2a1f08" stroke="#f59e0b" stroke-width="1"/>
+  <text x="552" y="73" text-anchor="middle" fill="#f59e0b" font-size="8">→ PT [bits 29-21]</text>
+  <rect x="506" y="78" width="92" height="10" rx="1" fill="#1a1510"/>
+  <rect x="506" y="90" width="92" height="10" rx="1" fill="#1a1510"/>
+  <rect x="506" y="102" width="92" height="10" rx="1" fill="#1a1510"/>
+  <text x="552" y="125" text-anchor="middle" fill="#3d2e0f" font-size="7">512 entries</text>
+
+  <!-- Arrow 4: PD → PT (goes down) -->
+  <line x1="553" y1="128" x2="553" y2="160" stroke="#f59e0b" stroke-width="1.5"/>
+  <polygon points="549,160 553,168 557,160" fill="#f59e0b"/>
+  <text x="600" y="150" fill="#67e8f9" font-size="8">RAM access 4</text>
+
+  <!-- PT table -->
+  <rect x="498" y="168" width="110" height="90" rx="3" fill="#1a1510" stroke="#f59e0b" stroke-width="1"/>
+  <text x="553" y="184" text-anchor="middle" fill="#f59e0b" font-size="9" font-weight="700">PT (Page Table)</text>
+  <line x1="498" y1="188" x2="608" y2="188" stroke="#3d2e0f" stroke-width="0.5"/>
+  <rect x="506" y="192" width="92" height="14" rx="1" fill="#0f1a0f" stroke="#4ade80" stroke-width="1.5"/>
+  <text x="552" y="203" text-anchor="middle" fill="#4ade80" font-size="8">PPN [bits 20-12]</text>
+  <rect x="506" y="208" width="92" height="10" rx="1" fill="#1a1510"/>
+  <rect x="506" y="220" width="92" height="10" rx="1" fill="#1a1510"/>
+  <rect x="506" y="232" width="92" height="10" rx="1" fill="#1a1510"/>
+  <text x="552" y="255" text-anchor="middle" fill="#3d2e0f" font-size="7">512 entries · each 8 bytes</text>
+
+  <!-- Arrow: PPN + offset → physical address -->
+  <line x1="498" y1="199" x2="436" y2="199" stroke="#4ade80" stroke-width="1.5"/>
+  <polygon points="436,195 428,199 436,203" fill="#4ade80"/>
+
+  <!-- Physical address box -->
+  <rect x="22" y="168" width="404" height="52" rx="3" fill="#0f1a0f" stroke="#4ade80" stroke-width="1.5"/>
+  <text x="224" y="190" text-anchor="middle" fill="#4ade80" font-size="10" font-weight="700">Physical Address = PPN :: Offset</text>
+  <text x="224" y="206" text-anchor="middle" fill="#3d2e0f" font-size="9">PPN (from PT entry) + low 12 bits of virtual address</text>
+  <text x="224" y="218" text-anchor="middle" fill="#67e8f9" font-size="8">Result stored in TLB so next access to same page costs ~1 cycle, not 4 memory accesses</text>
+
+  <!-- Divider -->
+  <line x1="22" y1="232" x2="658" y2="232" stroke="#3d2e0f" stroke-width="1" stroke-dasharray="3 3"/>
+
+  <!-- Cost breakdown -->
+  <text x="22" y="248" fill="#92400e" font-size="9" letter-spacing="1" font-weight="700">COST BREAKDOWN — depends on where page table entries are cached</text>
+
+  <rect x="22" y="254" width="192" height="22" rx="2" fill="#0f1a0f" stroke="#4ade80" stroke-width="1"/>
+  <text x="118" y="269" text-anchor="middle" fill="#4ade80" font-size="9">Tables in L1: 4 × 1 ns = 4 ns</text>
+
+  <rect x="220" y="254" width="196" height="22" rx="2" fill="#1a1510" stroke="#f59e0b" stroke-width="1"/>
+  <text x="318" y="269" text-anchor="middle" fill="#f59e0b" font-size="9">Tables in L3: 4 × 12 ns = 48 ns</text>
+
+  <rect x="422" y="254" width="236" height="22" rx="2" fill="#1a0f0f" stroke="#f87171" stroke-width="1"/>
+  <text x="540" y="269" text-anchor="middle" fill="#f87171" font-size="9">Tables in RAM: 4 × 100 ns = 400 ns</text>
+
+  <text x="340" y="292" text-anchor="middle" fill="#3d2e0f" font-size="9" letter-spacing="1">PLUS the actual data access cost on top of translation cost</text>
+  <text x="340" y="306" text-anchor="middle" fill="#f87171" font-size="8">If page not mapped at all → page fault → OS handler → microseconds to milliseconds</text>
+</svg>

@@ -3,11 +3,379 @@ title: "JVM Architecture"
 courseSlug: "holy-grail"
 lessonNumber: 10
 subCourse: 1
-description: "Class loader, method area, heap, stack, PC registers, and native method stack — the full picture."
-date: "2026-04-19"
-draft: true
+description: "Class loader, method area, heap, stack, PC registers, and native method stack — the full picture of what the JVM actually is."
+date: "2026-04-28"
+draft: false
 ---
 
-## Coming Soon
+## 1. The Motivation
 
-This lesson is being written.
+You've been writing `javac` and running `java` for years, possibly without ever really thinking about what those commands invoke. You know there's a "JVM" somewhere beneath your code. But what *is* it, precisely?
+
+This matters more than it might seem. Sub-course 0 gave you the machine: registers, caches, virtual memory, the call stack, the instruction set. Sub-course 1 takes everything you now know and re-anchors it inside the JVM. And before you can understand object layout (Lesson 1.2) or escape analysis (Lesson 1.6) or GC (Lesson 1.5), you need a clear map of the JVM's architecture — what components exist, what each one does, how they talk to each other, and which ones you interact with when you write Java code.
+
+The first evidence that this matters is concrete: the JVM spec defines five distinct *runtime data areas*, and the difference between a shared area and a per-thread area is the entire mechanical basis of Java's memory model and its synchronization requirements. When two threads can see each other's writes without any synchronization, it's because they share the heap. When a local variable is inherently thread-safe, it's because the JVM stack is per-thread. You cannot reason about thread safety without understanding this.
+
+---
+
+## 2. The Mental Model: What Is a "JVM"?
+
+A "JVM" is not a single thing. It is a specification — the *Java Virtual Machine Specification*, currently around 600 pages — and there are multiple implementations:
+
+- **HotSpot** (Oracle/OpenJDK) — the dominant JVM in production. When people say "the JVM," they mean HotSpot.
+- **GraalVM** (also Oracle) — HotSpot with an additional native-image compilation path and an alternative JIT compiler called Graal.
+- **Eclipse OpenJ9** (IBM) — optimized for low memory footprint; common in containerized environments.
+- **Azul Zing / Azul Prime** — JVMs focused on eliminating GC pause times.
+
+The architecture we're about to walk through is defined by the specification, not by any implementation. The five runtime data areas, the class-loading mechanism, the bytecode instruction set — these apply to all JVMs. The implementation details (exactly how the heap is subdivided, when the JIT kicks in, what the GC algorithm does) vary. The architecture does not.
+
+We'll use HotSpot as our reference implementation throughout this sub-course, because it's what most Java programs run on, and because its internals are the best-documented.
+
+---
+
+## 3. What Happens When You Run `java MyClass`
+
+Walk through this with me, step by step. You type:
+
+```bash
+$ java MyClass
+```
+
+**Step 1: The launcher starts.** The `java` binary is a native executable — written in C++, compiled for your platform. The launcher's job is small: parse the command line, load the JVM shared library (`libjvm.so` on Linux, `jvm.dll` on Windows), and call into it with the right arguments. The launcher is not the JVM. It's the thing that starts the JVM.
+
+**Step 2: The JVM allocates its runtime data areas.** The heap is reserved from virtual address space using `mmap`. The method area is set up. Per-thread structures are allocated for the main thread. This is all just operating system calls — `mmap`, `VirtualAlloc` — reserving virtual memory. At this point, nothing of yours has run.
+
+**Step 3: Core classes are loaded.** Before your code can execute, `java.lang.Object`, `java.lang.String`, `java.lang.Class`, and the rest of the bootstrapping infrastructure need to be in place. Without `Object`, you can't describe what any class is. The bootstrap class loader handles this.
+
+**Step 4: `MyClass.class` is found and loaded.** The JVM searches the classpath, finds the binary file, reads it, verifies its structure, and stores its metadata in the method area. Your class is now *represented* in the runtime, but hasn't run yet.
+
+**Step 5: Static initializers run.** Any `static { ... }` blocks in `MyClass` execute, in declaration order. Static fields with initializers are set. If `MyClass` refers to other classes, *those* classes are loaded first.
+
+**Step 6: `main` is invoked.** The JVM locates `public static void main(String[])`, constructs the `String[]` argument from the command line, pushes a stack frame, and begins executing bytecode. Your program is now running.
+
+From step 6 onward, every time your code touches a class it hasn't seen before — `new ArrayList<>()`, `String.valueOf(5)`, `System.out.println` — the load-link-initialize cycle repeats for that class. Classes load lazily, only when first referenced. A program with 50,000 classes on its classpath only pays for the ones it actually uses.
+
+<Quiz question="If you have a class FooBar with a static field private static final Logger log = LoggerFactory.getLogger(FooBar.class), when exactly does FooBar get initialized?">
+  When FooBar is first referenced by the running code — not before. The JVM spec is precise: initialization is triggered by new FooBar(), accessing a non-constant static field of FooBar, calling a static method on FooBar, reflective access, or initializing a subclass of FooBar. Simply having FooBar.class on the classpath does not cause initialization. This is why lazy-loading patterns work in Java: classes are initialized exactly at the point of first use.
+</Quiz>
+
+---
+
+## 4. The Five Runtime Data Areas
+
+The JVM spec defines five runtime data areas. Two are shared across all threads. Three are private to each thread.
+
+<Figure
+  src="/diagrams/holy-grail/sc01-01-runtime-data-areas.svg"
+  alt="JVM runtime data areas: shared heap and method area, and per-thread JVM stack, PC register, and native stack"
+  caption="The heap and method area are shared — changes made by one thread are visible to all others. The JVM stack, PC register, and native stack are private to each thread — no sharing, no synchronization needed."
+  label="sc01-01-runtime-data-areas.svg"
+/>
+
+### The Heap
+
+Where all objects and arrays live. One heap per JVM instance, shared by all threads. Managed by the garbage collector. Its size is configurable: `-Xms` sets the initial size, `-Xmx` sets the maximum. A typical server might run with `-Xms4g -Xmx8g`.
+
+When you write `new int[1000]`, the array lands on the heap. When you write `new String("hello")`, the String object lands on the heap. The heap is shared because objects need to be visible across threads — that's the entire basis of Java's concurrency model.
+
+The heap is where everything in Lesson 1.2 onward lives. Object headers, compressed OOPs, generational regions — all of it is heap structure.
+
+### The Method Area
+
+Stores class metadata: the runtime representation of every loaded class, the bytecode of every method, the constant pool, static fields. Effectively a heap for classes rather than objects.
+
+In HotSpot before Java 8, this was called **PermGen** (Permanent Generation) — a fixed-size region inside the heap, infamously prone to `OutOfMemoryError: PermGen space` when many classes were loaded dynamically. Java 8 replaced it with **Metaspace**, which lives in native (off-heap) memory and grows automatically. This eliminated the most common class-loading-related OOM.
+
+The method area is shared because class metadata is global — every thread that uses `String` sees the same `String` class definition.
+
+### The JVM Stack
+
+Per-thread. This is what you studied in Lesson 0.8 — function call frames, local variables, partial computations. Each method invocation pushes a frame; each return pops it.
+
+A JVM stack frame holds:
+- **Local variables** — parameters and declared locals, stored as an array indexed by slot number
+- **Operand stack** — the working area for stack-based bytecode operations (`iadd` pops two values and pushes their sum)
+- **Frame data** — a reference to the current class's constant pool, and the return address
+
+Default stack size is 512 KB or 1 MB depending on platform, configurable with `-Xss`. This is what overflows in a `StackOverflowError`.
+
+### The PC Register
+
+Per-thread. A single value: the address of the bytecode instruction the thread is currently executing. The JVM uses it like the `rip` register in x86-64 — the program counter advances after every instruction. When a method call happens, the JVM saves the current PC and sets it to the first instruction of the callee. When the callee returns, the saved PC is restored.
+
+When the thread is executing a native method (via JNI), the PC value is undefined — native code runs on the real hardware PC in `rip`.
+
+### The Native Method Stack
+
+Per-thread. When a thread calls a native (C/C++) method via JNI, it needs a real, native call stack. The native method stack is that — it's the OS-level thread stack we discussed in Lesson 0.8, used only during native method execution. For Java methods, the JVM stack handles frames. For JNI calls, this takes over.
+
+### The Critical Consequence
+
+The heap is visible to all threads. The JVM stack is not. This is not a concurrency feature you turn on — it is the *structural definition* of how Java memory works. A local variable `int x = 5` inside a method is on the JVM stack: private to the executing thread, requiring no synchronization. An object stored in a static field is on the heap: visible to every thread, requiring synchronization if mutated.
+
+When you ask "is this variable thread-safe?" the first question is always: does it live on the heap or on a stack?
+
+---
+
+## 5. The Class Loader
+
+The class loader's job is to get a class from some source (disk, network, a JAR file, a runtime-generated byte array) into the JVM, in a form the execution engine can use. It does this in three phases.
+
+<Figure
+  src="/diagrams/holy-grail/sc01-01-class-loading.svg"
+  alt="Class loading: parent delegation model and the three phases of loading, linking, and initialization"
+  caption="Class loaders form a delegation hierarchy. A request always travels up to Bootstrap first; only if the parent cannot satisfy it does the child try. The three phases — loading, linking, initialization — run in order, and initialization is the only one that executes user code."
+  label="sc01-01-class-loading.svg"
+/>
+
+### The Parent Delegation Model
+
+Class loaders are arranged in a hierarchy with three standard levels:
+
+1. **Bootstrap class loader** — native code, built into the JVM. Loads `java.lang.*`, `java.util.*`, and the rest of the core JDK.
+2. **Platform class loader** (formerly "extension") — loads JDK modules that aren't strictly core.
+3. **Application (system) class loader** — loads classes from your `-classpath` or `--module-path`.
+
+By convention, when any class loader is asked to load a class, it first delegates to its *parent*. Only if the parent fails — cannot find the class — does the child try to load it itself. This parent-first delegation is not optional; it's the standard behavior.
+
+Why does this matter? Security. When your code asks for `java.lang.String`, the request bubbles up to the bootstrap loader, which has the real `String`. A malicious `java.lang.String` placed on the application classpath is never reached — the bootstrap loader satisfies the request first. The parent-delegation model ensures that core classes cannot be shadowed by classpath entries.
+
+You can subvert this by writing a custom class loader that doesn't delegate — and there are legitimate reasons to do so (OSGi, plugin systems, hot-reloading frameworks). But the standard hierarchy is trusted precisely because it always delegates upward.
+
+### Phase 1: Loading
+
+Find the `.class` file and read its bytes. The result is a raw byte array representing the binary class file. The class is not yet usable — it's just bytes.
+
+### Phase 2: Linking
+
+Three sub-steps, in order:
+
+**Verification.** The JVM checks that the bytecode is structurally valid: type constraints are satisfied, the operand stack never underflows, control flow never branches into the middle of an instruction, method signatures match their declared types. This is one of the JVM's most important security mechanisms. Valid Java source cannot produce invalid bytecode — but a malicious or corrupted `.class` file could. Verification catches it before the execution engine ever sees it.
+
+**Preparation.** Static fields are allocated and set to their *default* values: `0` for numeric types, `null` for references, `false` for `boolean`. Not user-written initial values. Those come later. Just zeros.
+
+**Resolution.** Symbolic references in the bytecode — names like `"the class java.util.ArrayList"` or `"the method add on List"` — are resolved to direct references: actual pointers to loaded class objects and method tables. Resolution is lazy; it happens the first time a given symbolic reference is used, not all at once at load time.
+
+### Phase 3: Initialization
+
+Now user code runs. Static field initializers execute, then `static { ... }` blocks, all in the order they appear in the source file.
+
+The JVM spec defines exactly six situations that trigger initialization of a class `C`:
+
+1. `new C()` is executed
+2. A static method of `C` is invoked
+3. A non-constant static field of `C` is read or written
+4. `Class.forName("C")` is called reflectively
+5. A subclass of `C` is initialized (forces `C` to initialize first)
+6. `C` is the class designated as the JVM startup class (the one with `main`)
+
+Note what is *not* on this list: simply mentioning `C` in a type declaration, or having `C.class` on the classpath. The JVM is disciplined about this. Knowing the initialization triggers explains a large class of "why didn't my static block run?" bugs.
+
+<Quiz question="A class Config has a static block that reads configuration from a file. Another class App declares a field of type Config but never actually creates or uses a Config instance. Does Config's static block run?">
+  No. A field declaration of type Config (Config cfg; at the class level, for instance) is a symbolic reference that gets resolved lazily. Resolution does not trigger initialization. The static block runs only when Config is actually initialized, which requires one of the six triggers: new Config(), calling a static method on Config, reading/writing a non-constant static field of Config, Class.forName("Config"), initializing a subclass of Config, or Config being the startup class. Declaring a variable of that type is none of these.
+</Quiz>
+
+---
+
+## 6. The `.class` File
+
+A `.class` file is a binary format with a precisely specified structure — every byte's meaning is fixed by the JVM spec. A quick tour of the structure:
+
+**Magic number — 4 bytes: `0xCAFEBABE`.** The first four bytes of every valid `.class` file. If they're not there, it's not a class file. Yes, that's genuinely the magic number. James Gosling and the early Java team chose it as a joke; the separate magic number for Mac OS X's Mach-O binaries was `0xFEEDFACE` ("feed face"). These things date to when engineers had more freedom.
+
+**Version — 4 bytes.** Minor version (2 bytes) + major version (2 bytes). The major version encodes the Java language version the file was compiled for: Java 8 → major 52, Java 11 → 55, Java 17 → 61, Java 21 → 65. A JVM refuses to load a class file whose major version exceeds its own. This is the source of "Unsupported major.minor version" errors when you compile with Java 21 and try to run on Java 17.
+
+**Constant pool.** A table of constants referenced throughout the class: string literals, class names, method signatures, field descriptors, references to other classes' methods and fields. Most bytecode instructions reference constant pool entries by index rather than by literal value. The constant pool is typically the largest section of a `.class` file.
+
+**Access flags — 2 bytes.** Bitmask encoding `public`, `final`, `abstract`, `interface`, `enum`, and so on.
+
+**This class, super class.** Constant pool indices identifying this class and its direct superclass.
+
+**Interfaces, fields, methods.** The class's interface list, instance fields (name, type, flags), and methods. Each method includes its bytecode, exception table, line number table, and local variable table.
+
+**Attributes.** A flexible extension mechanism: source file name, annotations, inner class info, bootstrap methods for `invokedynamic`, etc.
+
+You can dump all of this with `javap -v MyClass.class`. Try it on any class you've written. The constant pool section alone will change how you think about Java's runtime representation.
+
+---
+
+## 7. The Execution Engine
+
+The third major component — after the class loader and the runtime data areas — is the execution engine: the code that actually runs your bytecode.
+
+HotSpot uses tiered compilation with three levels:
+
+<Figure
+  src="/diagrams/holy-grail/sc01-01-execution-tiers.svg"
+  alt="HotSpot tiered compilation: interpreter → C1 → C2, with deoptimization feedback loop"
+  caption="Every method begins in the interpreter. After roughly 1,500 invocations, C1 compiles it. After roughly 10,000 invocations, C2 recompiles with aggressive optimization. Deoptimization can roll any method back to the interpreter if the JIT's assumptions are violated."
+  label="sc01-01-execution-tiers.svg"
+/>
+
+**Tier 0 — Interpreter.** Every method starts here. The interpreter reads each bytecode and dispatches to a handler function. Simple, immediate, ~10× slower than native code. No compilation latency. Starts collecting profiling data immediately.
+
+**Tiers 1–3 — C1 (client compiler).** After a method has been invoked enough times (the threshold is ~1,500 invocations by default), HotSpot decides it's worth compiling. C1 does this quickly, applying modest optimizations — inlining small methods, eliminating obvious dead code. The resulting native code runs 1.5× to 3× faster than interpreted. C1-compiled code also continues collecting profile data (branch frequencies, type information) to inform C2.
+
+**Tier 4 — C2 (server compiler).** After a method has been C1-compiled and continues to run frequently (~10,000 invocations total), HotSpot recompiles with C2. C2 applies aggressive, profile-guided optimization: method inlining, loop unrolling, auto-vectorization, escape analysis, dead code elimination, branch prediction specialization. The output rivals hand-written C in many benchmarks.
+
+**Deoptimization.** The JIT makes assumptions to enable aggressive optimization. If C2 inlined a virtual method call because profiling showed only one implementation ever appeared at that call site, and later a second class loads with a different implementation, C2's compiled code is now wrong. The JVM *deoptimizes* — discards the compiled version, drops the method back to the interpreter or C1, and eventually recompiles with the corrected information. Deoptimization is not an error; it's a routine part of the JIT's adaptive compilation strategy.
+
+This tiered model is why JVM startup feels slow (everything is interpreted) but long-running services run fast (everything hot has been through C2). It's also why Java benchmarks must warm up — a benchmark measured in the first few seconds is measuring the interpreter, not the JIT.
+
+---
+
+## 8. The Analysis: Complete Execution Flow
+
+Here is the complete flow, end to end, from shell command to running code:
+
+```
+java MyClass
+    │
+    ▼
+JVM launcher (java binary — C++ native executable)
+    │  loads libjvm.so / jvm.dll
+    ▼
+JVM initializes runtime data areas
+    │  heap reserved via mmap · method area allocated · main thread structures created
+    ▼
+Bootstrap class loader loads core classes
+    │  java.lang.Object · java.lang.String · java.lang.Class · ...
+    ▼
+MyClass.class found and loaded
+    │  read bytes · verify · prepare · resolve
+    ▼
+Static initializers run
+    │  static { } blocks and static field initializers in source order
+    ▼
+main(String[]) invoked
+    │  stack frame pushed · command-line args built as String[]
+    ▼
+Bytecode execution begins (Tier 0 — interpreter)
+    │
+    ├── New class reference? → load-link-initialize that class
+    │
+    ├── Hot method? → C1 compile (Tier 1–3)
+    │
+    └── Still hot? → C2 compile (Tier 4)
+    
+GC runs concurrently or in pauses, reclaiming unreachable heap objects.
+
+main() returns. All non-daemon threads exit.
+Shutdown hooks run (Runtime.addShutdownHook).
+JVM terminates. Memory returned to OS.
+```
+
+This is a lot of machinery. It's also why Java is fast despite the apparent complexity: most of this overhead is fixed cost paid once at startup, and the JIT's runtime optimization accesses profile data that a static ahead-of-time compiler never has.
+
+---
+
+## 9. The Proof: Why Lazy Initialization Is Safe
+
+There's a subtle correctness question here. If multiple threads simultaneously reference a class that hasn't been initialized yet, do they all run the static initializers? Or can initialization run twice?
+
+The JVM spec is precise: **class initialization is synchronized**. The JVM holds a per-class initialization lock. The first thread to trigger initialization acquires the lock, runs the static initializers, and releases the lock. Any other thread that requests the class while initialization is in progress blocks until the first thread finishes. After initialization completes, all subsequent requests see the class already initialized and proceed without locking.
+
+The consequence: static initializers are **guaranteed to run exactly once**, no matter how many threads race to initialize the class. This is the basis of the *initialization-on-demand holder* idiom:
+
+```java
+public class Singleton {
+    private static class Holder {
+        static final Singleton INSTANCE = new Singleton();
+    }
+    
+    public static Singleton getInstance() {
+        return Holder.INSTANCE;
+    }
+}
+```
+
+`Holder` is only initialized when `getInstance()` is called for the first time. That initialization is guaranteed to run exactly once, under JVM-level synchronization, with no explicit `synchronized` keyword in the user code. The JVM's initialization lock does all the work.
+
+This is not a trick — it's a deliberate consequence of the initialization protocol. The JVM spec is guaranteeing it.
+
+---
+
+## 10. The Trade-offs
+
+**HotSpot vs GraalVM native image.** The tiered JIT approach is excellent for long-running services but terrible for short-lived processes (CLI tools, serverless functions). GraalVM's native-image compiles ahead-of-time, producing a binary that starts in milliseconds with no JIT warm-up. The trade-off: no runtime profiling means no adaptive optimization; peak throughput is lower. The JVM's tiered compilation wins for services running for hours; native image wins for functions running for milliseconds.
+
+**Metaspace growth.** Metaspace grows automatically, but it can still exhaust native memory. Applications that generate a large number of classes at runtime (frameworks that generate proxies, scripting languages, CGLIB-heavy ORMs) must monitor Metaspace with `-XX:MaxMetaspaceSize` or risk native OOM. The symptom is `OutOfMemoryError: Metaspace`, which is different from heap OOM and requires different diagnosis.
+
+**Class loader leaks.** In application servers and OSGi containers, class loaders are created and destroyed dynamically. A class loader holds references to all classes it loaded. If the class loader itself is referenced from anywhere (a static field, a thread-local, a cached instance), neither the class loader nor its classes can be garbage collected. This is the root cause of "PermGen leak" (or Metaspace leak in modern JVMs) in long-running application servers. The fix is ensuring class loader references are properly released at undeploy time.
+
+**The JIT's coupling to the heap.** C2's most aggressive optimizations — escape analysis, lock elision, stack allocation — depend on understanding object lifetimes. Those lifetimes are determined by heap structure. This is why Lessons 1.2 through 1.6 exist: understanding the heap is the prerequisite for understanding what the JIT can and cannot optimize. The JVM is not a set of independent components. It is a tightly coupled system, and the coupling between the execution engine and the heap is where most of the interesting performance behavior lives.
+
+---
+
+## Exercise 1.1
+
+**(a) Classpath size vs class loading cost.**
+A Java application has 50,000 classes on its classpath but only references 200 in a typical run. Roughly what fraction of those 50,000 classes are loaded into the method area at runtime? Why? How does this affect startup time, and what does it imply about "fat JAR" deployment?
+
+Hint: think carefully about what "on the classpath" vs "referenced at runtime" means in light of lazy loading.  
+What makes this hard: the temptation to say "all of them" because scanning the classpath happens eagerly, even though loading does not.
+
+**(b) Static initializer sequencing.**
+You write:
+
+```java
+public class Foo {
+    static int x = 10;
+    static int y;
+    
+    static {
+        y = x + 5;
+        System.out.println("Foo initialized");
+    }
+}
+```
+
+And:
+
+```java
+public class Bar {
+    public static void main(String[] args) {
+        System.out.println(Foo.x);
+    }
+}
+```
+
+Will `Foo` be initialized? What is printed? Now change `static int x = 10;` to `static final int x = 10;`. Does the answer change? Why?
+
+Hint: distinguish between compile-time constant inlining and runtime field access. The JVM spec has a specific rule about `static final` fields of primitive or String type.  
+What makes this hard: the `static final` case is a compiler optimization, not a JVM mechanism — understanding where the boundary lies requires knowing what `javac` does vs what the JVM does.
+
+**(c) Shared vs per-thread.**
+Three threads run concurrently. Each is executing `int doWork(int n)`. Which of the following are unique per thread, and which are shared?
+
+- The bytecode of `doWork`
+- The local variable `n`
+- Objects allocated inside `doWork` and stored in static fields
+- Objects allocated inside `doWork` and stored in local variables, referenced nowhere else
+- The `Class` object representing `doWork`'s declaring class
+- The PC register tracking which bytecode instruction each thread is executing
+
+Hint: map each item to one of the five runtime data areas and ask whether that area is shared or per-thread.  
+What makes this hard: the last bullet is subtle — the *contents* of the PC register differ per thread, but is the concept of "the PC register" shared? Think about what "shared" actually means in terms of memory.
+
+**(d) Heap overflow mechanics.**
+You run a Java program with `-Xmx100m` and the following class:
+
+```java
+class Big {
+    byte[] data = new byte[200_000_000]; // 200 MB
+}
+```
+
+You allocate one `Big` instance. What happens, and at precisely which point in the JVM's execution does it fail? Which runtime data area is involved? What exception is thrown?
+
+Hint: trace through the allocation path — where does `new Big()` actually try to put the `byte[]`? What happens when the GC cannot reclaim enough space?  
+What makes this hard: distinguishing between the exception type (OutOfMemoryError is a `Throwable`, not a `RuntimeException`) and understanding that the array allocation, not the `Big` object allocation, is where the failure occurs.
+
+---
+
+## What You Now Own
+
+You can describe the JVM's architecture precisely: five runtime data areas, two shared and three per-thread; a class loader hierarchy that delegates upward for security; a three-phase class-loading process where static initializers are the only part that runs user code; and a tiered execution engine that starts with the interpreter and promotes hot methods through C1 to C2. You understand why the heap is the locus of all thread-safety concerns (it's shared), why local variables need no synchronization (they're on per-thread stacks), and why lazy initialization is safe (the JVM holds an initialization lock). When you open a heap dump and see the method area, the generational heap regions, and the thread stacks, you know exactly what you're looking at.
+
+Next: Lesson 1.2, Object Layout in the Heap. You will learn the exact byte-level structure of every Java object — mark word, class pointer, instance fields, padding — and you will be able to compute the memory footprint of any class to the byte. Your tool will be JOL (Java Object Layout). Get ready to stop guessing and start measuring.

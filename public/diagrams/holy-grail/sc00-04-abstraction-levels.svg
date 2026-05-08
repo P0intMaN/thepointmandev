@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="680" height="238" viewBox="0 0 680 238" font-family="'Geist Mono', monospace">
+  <rect width="680" height="238" fill="#0f0d09"/>
+
+  <!-- Title -->
+  <text x="340" y="16" text-anchor="middle" fill="#92400e" font-size="10" letter-spacing="2" font-weight="700">FOUR ABSTRACTION LEVELS — EXAMPLE: 🇺🇸 (US FLAG EMOJI)</text>
+
+  <!-- Level 4 (top): Grapheme Cluster — the human view -->
+  <rect x="10" y="24" width="660" height="46" rx="4" fill="#0f1a0f" stroke="#4ade80" stroke-width="1.5"/>
+  <text x="24" y="43" fill="#4ade80" font-size="10" font-weight="700" letter-spacing="1">GRAPHEME CLUSTER</text>
+  <text x="24" y="58" fill="#3d2e0f" font-size="9">what a human sees as "one character"</text>
+  <text x="390" y="40" fill="#4ade80" font-size="14" font-weight="700">🇺🇸</text>
+  <text x="430" y="40" fill="#4ade80" font-size="13" font-weight="700">1 cluster</text>
+  <text x="430" y="55" fill="#3d2e0f" font-size="9">two regional indicators, no single code point</text>
+  <text x="620" y="52" text-anchor="middle" fill="#4ade80" font-size="20" font-weight="700">1</text>
+
+  <!-- Level 3: Code Points -->
+  <rect x="10" y="74" width="660" height="46" rx="4" fill="#1f1608" stroke="#f59e0b" stroke-width="1.5"/>
+  <text x="24" y="93" fill="#f59e0b" font-size="10" font-weight="700" letter-spacing="1">CODE POINTS</text>
+  <text x="24" y="108" fill="#3d2e0f" font-size="9">abstract Unicode identifiers — U+notation</text>
+  <text x="390" y="90" fill="#f59e0b" font-size="11" font-weight="700">U+1F1FA</text>
+  <text x="390" y="105" fill="#3d2e0f" font-size="9">Regional Indicator U  🇺</text>
+  <text x="510" y="90" fill="#f59e0b" font-size="11" font-weight="700">U+1F1F8</text>
+  <text x="510" y="105" fill="#3d2e0f" font-size="9">Regional Indicator S  🇸</text>
+  <text x="620" y="100" text-anchor="middle" fill="#f59e0b" font-size="20" font-weight="700">2</text>
+
+  <!-- Level 2: Code Units (UTF-16) -->
+  <rect x="10" y="124" width="660" height="46" rx="4" fill="#0c1518" stroke="#67e8f9" stroke-width="1.5"/>
+  <text x="24" y="143" fill="#67e8f9" font-size="10" font-weight="700" letter-spacing="1">CODE UNITS (UTF-16)</text>
+  <text x="24" y="158" fill="#3d2e0f" font-size="9">Java char  ·  String.length() counts these</text>
+  <rect x="390" y="129" width="52" height="34" rx="3" fill="#1a1510" stroke="#67e8f9" stroke-width="1"/>
+  <text x="416" y="148" text-anchor="middle" fill="#67e8f9" font-size="10" font-weight="700">D83C</text>
+  <rect x="446" y="129" width="52" height="34" rx="3" fill="#1a1510" stroke="#67e8f9" stroke-width="1"/>
+  <text x="472" y="148" text-anchor="middle" fill="#67e8f9" font-size="10" font-weight="700">DDFA</text>
+  <rect x="502" y="129" width="52" height="34" rx="3" fill="#1a1510" stroke="#67e8f9" stroke-width="1"/>
+  <text x="528" y="148" text-anchor="middle" fill="#67e8f9" font-size="10" font-weight="700">D83C</text>
+  <rect x="558" y="129" width="52" height="34" rx="3" fill="#1a1510" stroke="#67e8f9" stroke-width="1"/>
+  <text x="584" y="148" text-anchor="middle" fill="#67e8f9" font-size="10" font-weight="700">DDF8</text>
+  <text x="620" y="150" text-anchor="middle" fill="#67e8f9" font-size="20" font-weight="700">4</text>
+  <text x="390" y="163" fill="#3d2e0f" font-size="8">← surrogate pairs →</text>
+
+  <!-- Level 1 (bottom): Bytes (UTF-8) -->
+  <rect x="10" y="174" width="660" height="46" rx="4" fill="#1a0f0f" stroke="#f87171" stroke-width="1"/>
+  <text x="24" y="193" fill="#f87171" font-size="10" font-weight="700" letter-spacing="1">BYTES (UTF-8)</text>
+  <text x="24" y="208" fill="#3d2e0f" font-size="9">raw storage  ·  getBytes("UTF-8").length counts these</text>
+  <text x="390" y="196" fill="#f87171" font-size="10" font-weight="700">F0 9F 87 BA</text>
+  <text x="502" y="196" fill="#f87171" font-size="10" font-weight="700">F0 9F 87 B8</text>
+  <text x="390" y="210" fill="#3d2e0f" font-size="8">← 🇺 (4 bytes) →</text>
+  <text x="502" y="210" fill="#3d2e0f" font-size="8">← 🇸 (4 bytes) →</text>
+  <text x="620" y="203" text-anchor="middle" fill="#f87171" font-size="20" font-weight="700">8</text>
+
+  <!-- Bottom: the key point -->
+  <text x="340" y="230" text-anchor="middle" fill="#3d2e0f" font-size="9" letter-spacing="1">"🇺🇸".length() == 4  ·  codePointCount == 2  ·  bytes(UTF-8) == 8  ·  human sees: 1</text>
+</svg>

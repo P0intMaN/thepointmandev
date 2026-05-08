@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="680" height="340" viewBox="0 0 680 340" font-family="'Geist Mono', monospace">
+  <rect width="680" height="340" fill="#0f0d09"/>
+
+  <!-- Title -->
+  <text x="340" y="16" text-anchor="middle" fill="#92400e" font-size="10" letter-spacing="2" font-weight="700">STACK FRAME ANATOMY — caller() calling sum(int a, int b)</text>
+  <text x="340" y="28" text-anchor="middle" fill="#3d2e0f" font-size="8">stack grows downward · high addresses at top · each row = memory contents at that address range</text>
+
+  <!-- Address column header -->
+  <text x="68" y="44" text-anchor="middle" fill="#3d2e0f" font-size="8">ADDRESS</text>
+  <text x="340" y="44" text-anchor="middle" fill="#3d2e0f" font-size="8">CONTENT</text>
+  <text x="580" y="44" text-anchor="middle" fill="#3d2e0f" font-size="8">SIZE / NOTE</text>
+
+  <!-- ─── caller()'s frame ─── -->
+  <text x="340" y="60" text-anchor="middle" fill="#3d2e0f" font-size="8" letter-spacing="1">── caller()'s frame (above) ──</text>
+
+  <!-- caller locals / misc -->
+  <rect x="10" y="64" width="650" height="28" rx="2" fill="#1a1510" stroke="#3d2e0f" stroke-width="1"/>
+  <text x="68"  y="82" text-anchor="middle" fill="#3d2e0f" font-size="9">0x7FFF...A0</text>
+  <text x="340" y="82" text-anchor="middle" fill="#3d2e0f" font-size="9">caller()'s local variables and saved registers</text>
+  <text x="580" y="82" text-anchor="middle" fill="#3d2e0f" font-size="8">variable</text>
+
+  <!-- ─── transition: call instruction ─── -->
+  <text x="340" y="103" text-anchor="middle" fill="#f59e0b" font-size="8" letter-spacing="1">── call sum executed here: rdi=3, rsi=5, then call pushes return addr ──</text>
+
+  <!-- Return address: pushed by call -->
+  <rect x="10" y="108" width="650" height="28" rx="2" fill="#1f1608" stroke="#f59e0b" stroke-width="1.5"/>
+  <text x="68"  y="126" text-anchor="middle" fill="#f59e0b" font-size="9">0x7FFF...88</text>
+  <text x="340" y="126" text-anchor="middle" fill="#fef3c7" font-size="9" font-weight="700">return address — address of instruction after call sum</text>
+  <text x="580" y="122" text-anchor="middle" fill="#f59e0b" font-size="8">8 bytes</text>
+  <text x="580" y="134" text-anchor="middle" fill="#3d2e0f" font-size="7">pushed by call</text>
+
+  <!-- ─── sum()'s prologue begins ─── -->
+  <text x="340" y="147" text-anchor="middle" fill="#67e8f9" font-size="8" letter-spacing="1">── sum()'s prologue: push rbp ; mov rbp, rsp ; sub rsp, 16 ──</text>
+
+  <!-- Saved rbp: pushed by callee -->
+  <rect x="10" y="152" width="650" height="28" rx="2" fill="#0c1518" stroke="#67e8f9" stroke-width="1.5"/>
+  <text x="68"  y="170" text-anchor="middle" fill="#67e8f9" font-size="9">0x7FFF...80</text>
+  <text x="340" y="170" text-anchor="middle" fill="#fef3c7" font-size="9" font-weight="700">saved rbp — caller()'s frame pointer, pushed by sum()</text>
+  <text x="580" y="166" text-anchor="middle" fill="#67e8f9" font-size="8">8 bytes</text>
+  <text x="580" y="178" text-anchor="middle" fill="#3d2e0f" font-size="7">push rbp</text>
+
+  <!-- rbp annotation line -->
+  <line x1="10" y1="180" x2="660" y2="180" stroke="#67e8f9" stroke-width="0.5" stroke-dasharray="3 2"/>
+  <text x="680" y="183" fill="#67e8f9" font-size="8" text-anchor="end">← rbp</text>
+
+  <!-- local: result (int, 4 bytes) at [rbp - 4] -->
+  <rect x="10" y="184" width="650" height="28" rx="2" fill="#1a1510" stroke="#f59e0b" stroke-width="1"/>
+  <text x="68"  y="202" text-anchor="middle" fill="#3d2e0f" font-size="9">0x7FFF...7C</text>
+  <text x="340" y="198" text-anchor="middle" fill="#fbbf24" font-size="9">int result = a + b  ← local variable</text>
+  <text x="340" y="210" text-anchor="middle" fill="#3d2e0f" font-size="8">lives at [rbp - 4]   compiler emits: mov [rbp-4], eax</text>
+  <text x="580" y="198" text-anchor="middle" fill="#f59e0b" font-size="8">4 bytes</text>
+  <text x="580" y="210" text-anchor="middle" fill="#3d2e0f" font-size="7">sub rsp, 16</text>
+
+  <!-- padding (alignment) -->
+  <rect x="10" y="216" width="650" height="20" rx="2" fill="#120e08" stroke="#3d2e0f" stroke-width="1" stroke-dasharray="4 2"/>
+  <text x="68"  y="230" text-anchor="middle" fill="#3d2e0f" font-size="8">0x7FFF...78</text>
+  <text x="340" y="230" text-anchor="middle" fill="#3d2e0f" font-size="8">12 bytes of alignment padding (stack must be 16-byte aligned for ABI)</text>
+  <text x="580" y="230" text-anchor="middle" fill="#3d2e0f" font-size="7">12 bytes</text>
+
+  <!-- rsp annotation line -->
+  <line x1="10" y1="238" x2="660" y2="238" stroke="#f87171" stroke-width="0.5" stroke-dasharray="3 2"/>
+  <text x="680" y="241" fill="#f87171" font-size="8" text-anchor="end">← rsp</text>
+
+  <!-- Argument registers box (not on stack) -->
+  <line x1="10" y1="250" x2="660" y2="250" stroke="#3d2e0f" stroke-width="1" stroke-dasharray="3 3"/>
+  <text x="340" y="262" text-anchor="middle" fill="#3d2e0f" font-size="8" letter-spacing="1">── arguments passed in registers (System V AMD64 ABI) ──</text>
+
+  <rect x="10" y="268" width="200" height="26" rx="2" fill="#1a0f0f" stroke="#f87171" stroke-width="1"/>
+  <text x="110" y="281" text-anchor="middle" fill="#fef3c7" font-size="9">rdi = 3   (arg 1: a)</text>
+  <text x="110" y="292" text-anchor="middle" fill="#3d2e0f" font-size="7">1st integer argument</text>
+
+  <rect x="218" y="268" width="200" height="26" rx="2" fill="#1a0f0f" stroke="#f87171" stroke-width="1"/>
+  <text x="318" y="281" text-anchor="middle" fill="#fef3c7" font-size="9">rsi = 5   (arg 2: b)</text>
+  <text x="318" y="292" text-anchor="middle" fill="#3d2e0f" font-size="7">2nd integer argument</text>
+
+  <rect x="426" y="268" width="224" height="26" rx="2" fill="#0f1a0f" stroke="#4ade80" stroke-width="1"/>
+  <text x="538" y="281" text-anchor="middle" fill="#fef3c7" font-size="9">rax = 8   (return value)</text>
+  <text x="538" y="292" text-anchor="middle" fill="#3d2e0f" font-size="7">set before epilogue: ret</text>
+
+  <!-- Bottom note -->
+  <line x1="10" y1="302" x2="660" y2="302" stroke="#3d2e0f" stroke-width="1" stroke-dasharray="3 3"/>
+  <text x="340" y="316" text-anchor="middle" fill="#3d2e0f" font-size="8">Frame size: 8 (ret addr) + 8 (saved rbp) + 4 (result) + 12 (pad) = 32 bytes</text>
+  <text x="340" y="330" text-anchor="middle" fill="#f59e0b" font-size="8" font-weight="700">Epilogue: leave (= mov rsp,rbp; pop rbp) then ret — restores caller's frame in 2 instructions</text>
+</svg>

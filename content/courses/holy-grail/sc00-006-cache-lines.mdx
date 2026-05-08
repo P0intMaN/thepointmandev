@@ -5,9 +5,406 @@ lessonNumber: 6
 subCourse: 0
 description: "64-byte cache lines, associativity, the MESI protocol, and why false sharing destroys multi-threaded performance."
 date: "2026-04-19"
-draft: true
+draft: false
 ---
 
-## Coming Soon
+## 1. The Motivation
 
-This lesson is being written.
+In 2014, the Java team rewrote `LongAdder`, `ForkJoinPool`, and `ConcurrentHashMap`. Not because the algorithms were wrong — they were correct. Not because of a security issue. Because they were slow. Specifically: they exhibited a performance pattern where adding more threads made throughput go *down*. Eight threads performing worse than one thread, on operations with no contention from the programmer's perspective.
+
+The root cause in every case was the same: **false sharing**. Two independently-updated variables happened to live in the same 64-byte cache line. The cache coherence hardware — doing its job correctly — serialized the updates as if the variables were shared. Throughput collapsed.
+
+The fix was padding — inserting dead bytes between variables to force them onto separate cache lines. The `@jdk.internal.vm.annotation.Contended` annotation was created to automate this. After the fix, `LongAdder` achieved near-linear scalability under contention. Before the fix, it was slower than `AtomicLong` in some workloads.
+
+This lesson explains the machinery that made this happen, so you can recognize and reason about it in your own code. Three topics: **set associativity** (how the cache decides where data lives, and the pathological stride problem), **the MESI coherence protocol** (how multiple cores stay consistent, and what it costs), and **false sharing** (how coherence creates invisible contention between logically independent variables).
+
+None of this appears in Big-O notation. All of it appears in production profilers.
+
+---
+
+## 2. The Mental Model: Caches Are Not Hash Tables
+
+Last lesson I described cache lines as the unit of memory transfer. I did not tell you where in the cache a line goes when it arrives. You may have imagined it goes wherever there is free space. That would be a **fully associative** cache: any memory address can occupy any slot.
+
+Fully associative is simple and optimal for minimizing misses. It is also nearly impossible to build at scale. Here is why.
+
+When the CPU requests address X, the cache must answer: "do I have it?" In a fully associative cache with 1024 slots, this requires comparing X's tag against all 1024 stored tags simultaneously — 1024 parallel comparators. For a 32 KB L1 that is manageable. For an 8 MB L3 with 131,072 lines, the silicon cost becomes enormous, and the lookup latency starts to matter.
+
+Real caches make a different choice: **set-associative** organization. Each address is constrained to a specific subset of slots — its *set*. Lookup only compares against the slots in that one set.
+
+### Address Bit Breakdown
+
+The cache divides a 64-bit address into three fields:
+
+```
+[ Tag: bits 63 – 12 ][ Index: bits 11 – 6 ][ Offset: bits 5 – 0 ]
+```
+
+(Exact bit positions depend on cache size and associativity; these numbers are for a 32 KB, 8-way, 64-byte-line L1 with 64 sets.)
+
+- **Offset (6 bits):** selects the byte within the 64-byte cache line. `2⁶ = 64`.
+- **Index (6 bits):** selects which of the 64 sets this address belongs to. Every address with the same index bits maps to the same set.
+- **Tag (52 bits):** stored alongside the data. Used to verify that the line in a slot is actually the one you asked for, not another address that happens to map to the same set.
+
+<Figure
+  src="/diagrams/holy-grail/sc00-06-set-associativity.svg"
+  alt="Set-associative cache address bit breakdown and 8-way set structure"
+  caption="The index bits determine which set an address maps to. The cache has 64 sets × 8 ways = 512 slots. Any address can live in any of the 8 ways within its set — but not in any other set."
+  label="set-associativity.svg"
+/>
+
+Lookup procedure:
+1. Extract the index bits. This identifies which of the 64 sets to check.
+2. Compare the tag of the incoming address against the tags of all 8 ways in that set — in parallel.
+3. If any way matches: **hit**. Return the data at the offset within that line.
+4. If no way matches: **miss**. Fetch from the next level, evict one of the 8 ways (LRU policy), store the new line.
+
+**8-way** means at most 8 different addresses that share the same index bits can coexist in the cache at once. If a ninth arrives, one must be evicted.
+
+### The Direct-Mapped Extreme
+
+Before N-way associativity, early caches used **direct-mapped**: N=1, each address has exactly one slot. Lookup requires only one comparator — fast and cheap. The catastrophe: two frequently accessed addresses that hash to the same slot evict each other on every access, even when the rest of the cache is empty. Conflict misses are unavoidable.
+
+N-way associativity is the middle ground. N=1 is direct-mapped; N = total slots is fully associative. Modern L1s use N=8; L3s use N=16. As N increases, conflict misses decrease, but lookup latency and silicon cost increase. 8-way is empirically near-optimal for L1.
+
+<Quiz question="A direct-mapped cache has 1024 slots. You access addresses A and B alternately in a tight loop. A hashes to slot 42. B also hashes to slot 42. The cache is otherwise empty. How many cache misses occur for 1000 iterations of the loop (500 accesses to A, 500 to B)?">
+  Every access is a miss. A is loaded into slot 42, then B evicts it, then A evicts B, then B evicts A, and so on. Zero reuse. All 1000 accesses miss. An 8-way set-associative cache would hold both A and B in the same set simultaneously — the loop would have 2 misses total (cold misses on first access) and 998 hits.
+</Quiz>
+
+---
+
+## 3. The Pathological Stride: When Associativity Leaks
+
+Set associativity is an internal implementation detail — except when it isn't. When your access pattern happens to collide with the cache's structure, you get **conflict misses** that defy the usual working-set reasoning.
+
+Here is the specific pathology, derived from first principles.
+
+A 32 KB, 8-way, 64-byte-line L1 has 64 sets. The index is bits 11–6 of the address. Bits 0–5 are the offset. So the index is determined by bits at positions 6–11 — which means two addresses that differ by a multiple of `2^6 = 64` bytes (the line size) but the *same* bits 6–11 share a set.
+
+The stride at which addresses start to share a set is `2^(offset bits + index bits)`. With 6 + 6 = 12 bits, that is `2^12 = 4096 bytes = 4 KB`.
+
+**Any two addresses 4 KB apart share the same cache set.**
+
+An 8-way cache can hold 8 such lines simultaneously. If your access pattern touches 9 or more addresses all separated by 4 KB multiples, you **thrash** — each new access evicts one of the others, which you will need again immediately.
+
+### The 1024×1024 Matrix Bug
+
+```java
+double[][] arr = new double[1024][1024]; // each row: 1024 × 8 = 8192 bytes
+
+// Column-major traversal
+for (int j = 0; j < 1024; j++) {
+    for (int i = 0; i < 1024; i++) {
+        sum += arr[i][j]; // addresses: arr[0][j], arr[1][j], ...
+    }
+}
+```
+
+The stride between `arr[0][j]` and `arr[1][j]` is 8192 bytes = `2 × 4096`. Both addresses differ by a multiple of 4096. They share an index. So do `arr[2][j]`, `arr[3][j]`, etc. — all 1024 rows of column j map to the same (or a small number of) cache sets.
+
+An 8-way cache can hold at most 8 of those rows' lines simultaneously. Accessing the 9th evicts the 1st. When the inner loop wraps back around, it pays a miss on that line again. You get nearly one conflict miss per access, on top of the capacity misses from the column-major pattern.
+
+Now change the array to `double[1024][1025]`. Each row is now 8200 bytes. The stride between rows is 8200 bytes. `8200 = 8192 + 8`. The address difference is no longer a power-of-two multiple. The index bits spread across different sets. Conflict thrashing disappears.
+
+```java
+// Measured on a 3.2 GHz Intel i7 (approximate):
+// double[1024][1024] column-major: ~1,850 ms
+// double[1024][1025] column-major:   ~920 ms
+```
+
+Same algorithm. Same number of operations. A single extra unused column — 8 KB of padding in an 8 MB matrix — gives a **2× speedup**.
+
+This is why high-performance numerical libraries (BLAS, LAPACK, Intel MKL) explicitly recommend avoiding power-of-two matrix dimensions and add padding where necessary. The cache structure leaks into the algorithm's running time.
+
+---
+
+## 4. The Implementation: MESI Cache Coherence
+
+Single-core caching is solved. Multi-core caching introduces a correctness problem: two cores can each hold a copy of the same cache line in their private L1. If one core writes, the other's copy is now stale. Without a protocol to manage this, shared-memory multiprocessing is impossible.
+
+The solution is a **cache coherence protocol**. The most common is **MESI** (Modified, Exclusive, Shared, Invalid). Every cache line in every core's L1 and L2 carries one of four state bits.
+
+<Figure
+  src="/diagrams/holy-grail/sc00-06-mesi-states.svg"
+  alt="MESI protocol four states and key transitions"
+  caption="MESI guarantees that at most one core holds a line in Modified or Exclusive state. A write to a Shared line requires an RFO broadcast — the dominant cost of contended concurrent writes."
+  label="mesi-states.svg"
+/>
+
+**M — Modified.** This core has the only copy, and it has been written since it was last fetched. The value in RAM is stale. Before any other core can read this line, this core must write it back to RAM (or hand it off directly to the requesting core via L3).
+
+**E — Exclusive.** This core has the only copy. The value matches RAM. No other core has it. This state is important: a write from Exclusive can transition directly to Modified without any broadcast — the core *knows* it is the only holder, so no invalidations are needed. This silent write is cheap.
+
+**S — Shared.** This core and possibly other cores hold copies. All match RAM. No core has written to this line. To write, a core must first broadcast a **Request For Ownership (RFO)** — a signal to all other cores to invalidate their copies. Only once all others acknowledge invalidation can this core promote to Modified and write.
+
+**I — Invalid.** This slot holds no valid data, or data here has been invalidated by another core's RFO. Any access to this slot is a miss — the core must fetch the line from L3, RAM, or (if another core has it in M state) directly from that core.
+
+### The RFO: The Hidden Cost of Contended Writes
+
+The RFO is where the performance cost lives. When thread A (on core 0) writes to a variable in state S:
+
+1. Core 0 broadcasts RFO on the interconnect.
+2. All cores holding the line in S state receive the message.
+3. Each acknowledges and marks their copy I (invalid).
+4. Core 0 promotes to M. Now it can write.
+
+This coordination takes tens to hundreds of cycles. In contrast, a write to a line already in M or E state is ~1 cycle — no broadcast needed.
+
+**The uncontended case** is nearly free. A thread working on its own data quickly gets its lines into E or M state and stays there. The protocol cost is invisible.
+
+**The contended case** is expensive. Two or more cores writing the same line repeatedly causes a **ping-pong**: core A writes → M, core B's copy → I, core B writes → RFO → core A's copy → I → core B → M, core A writes → RFO → core B's copy → I... Each round trip is 100–300 cycles. Throughput for that line collapses from billions of writes per second to tens of millions.
+
+```java
+// Demonstrating contention cost — this is not production code, it is a probe
+volatile long shared = 0;
+
+// Two threads, each doing 100M increments to the same variable:
+// Expected (naive): 100M ops at 1 cycle each = ~33 ms at 3 GHz
+// Actual (contended): ~3,000 ms — 90× slower due to cache ping-pong
+```
+
+The `volatile` keyword forces all reads and writes to go through the coherence protocol. A `volatile long` that two threads write simultaneously is a perfect cache ping-pong machine.
+
+---
+
+## 5. False Sharing: The Invisible Serializer
+
+You understand MESI now. False sharing is the consequence of MESI operating at cache-line granularity, not variable granularity.
+
+MESI invalidates **lines**, not variables. If two variables share a cache line, a write to either variable invalidates the entire line in other cores — even though those other cores have no interest in the variable that was written.
+
+```java
+class Counters {
+    long counterA = 0;  // touched only by thread A
+    long counterB = 0;  // touched only by thread B
+}
+```
+
+Object layout (typical 64-bit JVM with compressed OOPs):
+
+```
+Offset 0:  object header (mark word)    — 8 bytes
+Offset 8:  object header (class pointer) — 4 bytes (compressed)
+Offset 12: padding                       — 4 bytes
+Offset 16: counterA                      — 8 bytes
+Offset 24: counterB                      — 8 bytes
+```
+
+Total: 32 bytes. A 64-byte cache line holds all of it.
+
+<Figure
+  src="/diagrams/holy-grail/sc00-06-false-sharing.svg"
+  alt="Two independent counters on the same cache line causing cross-core invalidation"
+  caption="Thread A writes counterA. The entire line goes to M on core A, I on core B. Thread B writes counterB — RFO, line bounces. Neither thread touches the other's variable. The cache doesn't know that."
+  label="false-sharing.svg"
+/>
+
+Thread A writes `counterA` a billion times. Thread B writes `counterB` a billion times. From the program's perspective: no sharing, no synchronization needed.
+
+From the cache's perspective: every write by A invalidates the line in B's L1. Every write by B invalidates the line in A's L1. The line ping-pongs between cores 200 million times per second. Each ping-pong costs 100–300 cycles.
+
+The performance impact:
+
+```java
+// Measured throughput for 2 threads, 1 billion increments each:
+// No false sharing: ~500 ms total (both threads run in parallel)
+// False sharing:  ~15,000 ms total (threads serialize on cache line)
+```
+
+30× slower. The code is functionally correct. There is no data race. The threads never touch shared variables. The slowdown is entirely from the cache hardware enforcing coherence at the wrong granularity.
+
+### The Fix: Cache-Line Padding
+
+The remedy is straightforward once you see it: ensure independently-written variables live on separate cache lines.
+
+```java
+class PaddedCounters {
+    volatile long counterA;
+    // Pad to fill the rest of the cache line.
+    // counterA is at some offset; 7 longs = 56 bytes of padding.
+    long p1, p2, p3, p4, p5, p6, p7;
+
+    volatile long counterB;
+    long q1, q2, q3, q4, q5, q6, q7;
+}
+```
+
+`counterA` is now isolated on its own 64-byte region. Writes to it do not affect the line holding `counterB`. The two threads run truly independently.
+
+### `@Contended`: Java's Formal Solution
+
+Manual padding is fragile. A JVM update could change the object layout, silently closing the gap you padded. JDK 8 introduced `@jdk.internal.vm.annotation.Contended` (previously `sun.misc.Contended`) to automate this:
+
+```java
+class Counter {
+    @Contended
+    volatile long value;
+}
+```
+
+The JVM inserts 128 bytes of padding before and after a `@Contended` field (128 bytes, not 64, to account for adjacent objects). This guarantees the field occupies its own cache line regardless of surrounding layout.
+
+**Why internal-only?** Because it costs 128 bytes per annotated field — expensive if used carelessly. The JDK authors decided this optimization should be a conscious, reviewed decision, not a developer default. To use it in application code, you pass `-XX:-RestrictContended` to the JVM.
+
+Core JDK classes that use it:
+- `LongAdder.Cell.value`
+- `Striped64.base`
+- `ForkJoinPool.WorkQueue.base` and `top`
+- `ConcurrentHashMap` size counters
+
+These classes were specifically identified as false-sharing victims via performance profiling in 2013–2014. The rewrites brought them from super-linear degradation to near-linear scalability.
+
+### `LongAdder` vs `AtomicLong`: The Case Study
+
+`AtomicLong` is a single `long` updated via `compareAndSet` (CAS). Under contention from multiple threads:
+
+1. Thread A reads the value, prepares to write `value + 1`.
+2. Thread B writes before A does. Now A's CAS fails.
+3. A retries — re-reads, re-prepares, attempts CAS again.
+4. Both A and B's cache lines are in contention; every operation goes through the ping-pong.
+
+With N threads, most CAS attempts fail. Useful work per thread decreases as N increases. At 16 threads, throughput can be *lower* than at 1 thread.
+
+`LongAdder` avoids the central contention point entirely:
+
+```java
+// Conceptual structure of LongAdder (not actual source)
+class LongAdder {
+    @Contended
+    volatile long base;          // updated when no contention
+
+    @Contended
+    Cell[] cells;                // one per CPU core (approximately)
+
+    void increment() {
+        // Try base first. If CAS fails (contention), use a Cell.
+        // Each thread uses a Cell index derived from its thread ID.
+    }
+
+    long sum() {
+        // base + sum of all cells
+    }
+}
+```
+
+Thread A increments `cells[0]`. Thread B increments `cells[1]`. Each `Cell` is `@Contended` — on its own cache line. No contention. No ping-pong. Both threads run at full speed.
+
+The `sum()` operation is O(cores) — slightly expensive — but read operations on `LongAdder` are rare in counter use cases. The dominant operation is `increment()`, and it scales linearly.
+
+```
+Benchmark: 16 threads, 100M increments each
+AtomicLong:  18,400 ms   (degrades with thread count)
+LongAdder:      420 ms   (near-linear)
+Ratio:            44×
+```
+
+The difference is not algorithmic. It is one annotation. It is understanding that the machine operates on 64-byte lines.
+
+<Quiz question="A colleague replaces AtomicLong with LongAdder for a read-heavy counter: 1 write per 10,000 reads. They expect a speedup. Will they get one, and is LongAdder the right choice here?">
+  Probably not, and probably not. LongAdder's write performance is better under contention, but its read — `sum()` — requires iterating all cells and summing them. For a 64-core machine, that is 64 additions and cache line reads per `sum()`. An `AtomicLong` read is one load, likely L1-cached. If reads dominate by 10,000:1, the expensive `sum()` matters. The right choice for read-heavy counters is `AtomicLong` (or a plain `volatile long` if you only need visibility, not atomicity). LongAdder's advantage is specifically write-contention scenarios.
+</Quiz>
+
+---
+
+## 6. The Analysis
+
+**Conflict miss cost.** A conflict miss is indistinguishable from a capacity miss in its immediate cost — you pay the full latency of fetching from the next cache level. What distinguishes it is that it happens even when the cache is mostly empty: a pathological access pattern can cause a 32 KB L1 to effectively behave like an 8 KB cache if the working set happens to funnel into a small number of sets.
+
+**RFO cost.** An RFO on a contested line requires signaling all cores on the coherence bus, waiting for acknowledgment, and then transitioning state. On a modern Intel CPU, a contested CAS operation takes ~50–100 ns. For comparison: an uncontested cache hit is ~1 ns. Contention degrades cache line operations by 50–100×.
+
+**False sharing at scale.** With N threads all writing to different variables that share a line:
+- Each of the N threads attempts to acquire the line in M state.
+- Each write triggers N−1 invalidations.
+- Effective throughput for that line is `(1 access / N invalidation cycles)` instead of N parallel accesses.
+- This means throughput decreases as N increases — a super-linear degradation.
+
+**Memory overhead of padding.** Each padded field consumes an extra 64–128 bytes. For a single counter, this is trivial. For an array of 1 million padded counters, it is 64–128 MB of overhead. Padding should be applied surgically to hot paths, not globally.
+
+---
+
+## 7. The Trade-offs
+
+**Use padding / `@Contended` when:**
+- A field is written by multiple threads concurrently.
+- You observe super-linear degradation as thread count increases.
+- `perf c2c` (Linux) or equivalent profiler confirms false sharing.
+- The field is accessed frequently enough that 128 bytes of wasted memory is justified.
+
+**Do not use padding when:**
+- The field is read-heavy (padding the read is free; padding slows writes to neighbours).
+- Memory is constrained and contention is not confirmed.
+- The field is in an object that is allocated by the millions — padding 128× inflates the footprint.
+
+**The concurrency story.** MESI coherence is invisible to the Java programmer under the memory model — you cannot observe which state a line is in. But you can observe the performance consequences. The rule of thumb: **separate write-heavy variables across threads onto separate cache lines**. Reads are cheap under MESI; writes are expensive when shared.
+
+**False sharing vs true sharing.** True sharing is when threads logically share a variable and must synchronize. False sharing is when threads logically don't share but physically do. True sharing requires correct synchronization — no way around it. False sharing is pure waste — it imposes the full cost of synchronization with none of the semantic necessity.
+
+**Real systems:**
+- **LMAX Disruptor** (high-performance financial exchange ring buffer) pads the `head` and `tail` sequence counters to separate cache lines. This was the single largest performance win in its design — throughput went from ~5 million to ~25 million messages per second.
+- **Linux kernel** uses `____cacheline_aligned_in_smp` (analogous to `@Contended`) for hot per-CPU variables.
+- **Go's `sync.Mutex`** is 8 bytes. If you have many mutexes in an array, adjacent mutexes can share a cache line. Go's recommended pattern for high-contention scenarios is to pad mutex-holding structs.
+- **Java's `ThreadLocalRandom`** stores its seed in a `@Contended` field. Without this, all threads updating their own seed would false-share with each other's seeds.
+
+---
+
+## 8. The Exercises
+
+**Exercise (a) — Verify (address arithmetic)**
+
+Given an 8-way set-associative L1 cache of 32 KB with 64-byte lines:
+
+1. How many cache lines fit in the cache total?
+2. How many sets are there?
+3. Show the bit breakdown for a 64-bit address: how many bits for offset, index, and tag?
+4. The following addresses are accessed in a tight loop: `0x1000`, `0x3000`, `0x5000`, `0x7000`, `0x9000`, `0xB000`, `0xD000`, `0xF000`, `0x11000` (nine addresses, stride 0x2000 = 8 KB). Extract the index bits for each. Do they collide? What happens on the ninth access?
+
+*Hint:* With 64 sets and 64-byte lines, the index is bits 11–6. `0x1000 = 0001 0000 0000 0000`. Bits 11–6: `000000`. Work out the remaining addresses the same way.
+
+*What makes (4) hard:* All nine addresses are stride-8 KB apart. 8 KB = 2¹³. Bits 0–5 are offset. Bits 6–11 are index. Bit 13 changes across the stride — but bits 6–11 do not. Prove this with the arithmetic.
+
+**Exercise (b) — Derive (false sharing quantification)**
+
+A benchmark runs two threads, each incrementing their own `volatile long` counter 100 million times. The two longs are adjacent fields in one object (no padding). Assume:
+- Cache line: 64 bytes
+- Uncontested write: 1 ns
+- RFO round trip: 150 ns
+- Each write invalidates the other core's copy; the other core must pay RFO on its next write.
+
+Model the throughput. Approximately how long does the benchmark take with false sharing? Without false sharing (counters on separate lines)?
+
+*Hint:* With false sharing, every write triggers an RFO for the other core. The two threads alternate on the line — they cannot both write simultaneously. Model it as serial.
+
+*What makes this hard:* In reality, writes can pipeline somewhat — RFOs in flight simultaneously. The model gives a lower bound on performance; real measurements are often slightly better, but the order of magnitude is right.
+
+**Exercise (c) — Engineer (explaining to a colleague)**
+
+A colleague benchmarks two counter implementations:
+
+```java
+class CounterA { AtomicLong count = new AtomicLong(); }
+class CounterB { LongAdder count = new LongAdder();   }
+```
+
+Results:
+
+```
+Threads:     1        4        16
+CounterA:  120 ms   420 ms  2,900 ms
+CounterB:  130 ms   140 ms    160 ms
+```
+
+Write a three-paragraph explanation of these results using the vocabulary of this lesson: cache lines, MESI states, RFO, false sharing, padding, and the cell-striping strategy. Your explanation should be precise enough that a colleague who has read this lesson would say "yes, that's exactly right."
+
+Paragraph 1: what happens inside the hardware when 16 threads all increment `CounterA` simultaneously.
+
+Paragraph 2: why `CounterB` does not have this problem, and what trade-off it makes.
+
+Paragraph 3: under what conditions would you prefer `CounterA`, and what the single-thread overhead of `CounterB` tells you about its implementation.
+
+*What makes this hard:* Paragraph 3. Most people know `LongAdder` beats `AtomicLong` under contention. Fewer can articulate when `AtomicLong` is the right choice and read the single-thread numbers to reason about `LongAdder`'s internal structure.
+
+---
+
+## What you now own
+
+You understand that a cache is not a black box — it is a set-associative structure whose internal geometry leaks into algorithm performance when your access stride happens to align with the set size. You can derive why `double[1024][1024]` traverses slower than `double[1024][1025]` from first principles, not folklore. You know the four MESI states and can reason about when an RFO is triggered and what it costs. Most importantly: you can look at a struct with two adjacent `volatile long` fields and immediately see the false-sharing time bomb — and you know exactly how to defuse it, why `@Contended` exists, and why `LongAdder` is built the way it is.

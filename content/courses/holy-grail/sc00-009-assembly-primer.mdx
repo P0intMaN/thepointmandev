@@ -3,11 +3,503 @@ title: "Assembly Primer"
 courseSlug: "holy-grail"
 lessonNumber: 9
 subCourse: 0
-description: "x86-64 registers, mov, add, jmp, call, ret. Reading disassembly of simple Java programs."
-date: "2026-04-19"
-draft: true
+description: "x86-64 registers, mov, add, jmp, call, ret. Reading disassembly and JIT output from real Java programs."
+date: "2026-04-26"
+draft: false
 ---
 
-## Coming Soon
+## 1. The Motivation
 
-This lesson is being written.
+Eight lessons of theory. Today you read the actual machine.
+
+Most engineers go their whole career without reading assembly and get along fine. So why does this lesson exist?
+
+**One: assembly is the truth.** Every other language — Java, Python, C — is an abstraction. Assembly is what your CPU actually executes. When you want to know if a compiler optimization happened, when you want to read a JIT-compiled method, when you need to understand a crash dump or profile a hot path at the instruction level, you need to read assembly. Not write it. *Read* it. Different skill, much easier.
+
+**Two: it grounds everything we've already covered.** Lesson 0.8 talked about `push rbp`, `call`, `ret`, `rdi`, `rsi`. Today those stop being abstract names and become concrete instructions you can trace. The function-call dance we walked through becomes mechanical, not something you take on faith.
+
+**Three: it removes mystique.** Junior engineers treat assembly like sorcery. It isn't. It's a small instruction set with regular rules. A 30-line disassembled function is not scary — it's thirty operations drawn from a vocabulary of maybe fifteen. By the end of this lesson you'll be able to read one, trace the control flow, and identify the loop. That's the bar. We're not training you to write OS kernels. We're training you to never again say "I don't know what the JIT did" when you can just look.
+
+This is a survey lesson, not a complete reference. Real x86-64 has thousands of instructions across many extension sets (SSE, AVX, AVX-512, AMX, and more). You need none of them to accomplish the goal above. You need the fifteen instructions that make up 90% of compiled output, and you need to know what you're looking at when you see the rest. That's what we'll build today.
+
+---
+
+## 2. The Mental Model: The Register File
+
+Before you can read a single instruction, you need a map of the territory. The CPU's registers are the working set — the variables that are genuinely in silicon, operating in one clock cycle. Everything else (cache, RAM, disk) is storage the CPU has to reach for.
+
+x86-64 has 16 general-purpose 64-bit registers. They have historical names, some dating to Intel's 1972 8080 chip. For most of them, you can access smaller sub-sizes — the lower 32, 16, or 8 bits of the same physical register:
+
+<Figure
+  src="/diagrams/holy-grail/sc00-09-registers.svg"
+  alt="x86-64 general-purpose registers with sub-sizes and ABI roles"
+  caption="The 16 GPRs, their sub-register aliases, and their conventional roles in the System V ABI. rsp is sacred — never trash it. The argument order (rdi, rsi, rdx, rcx, r8, r9) is the first thing to memorize."
+  label="sc00-09-registers.svg"
+/>
+
+There is one quirk worth knowing now: writing to the 32-bit register (say, `eax`) automatically zeroes the upper 32 bits of the 64-bit register (`rax`). Writing to the 16-bit or 8-bit sub-registers does *not* zero the rest. This asymmetry exists for historical compatibility reasons. You'll see compilers exploit it — using `mov eax, 1` instead of `mov rax, 1` because the former is one byte shorter in machine code.
+
+**The instruction pointer.** The CPU has one more crucial register that you can't directly write: `rip`, the instruction pointer. It holds the address of the next instruction to execute. After every instruction, the CPU updates `rip` to point to the next one. When `rip` points somewhere it shouldn't — into unmapped memory, into data instead of code — your program crashes. This is the mechanical basis of every buffer overflow exploit in history: an attacker overwrites a return address on the stack, and when `ret` executes, it pops that value into `rip` and the CPU helpfully executes whatever is at that address.
+
+**SIMD registers.** x86-64 also has 16 (or 32, with AVX-512) wider registers: `xmm0` through `xmm15` hold 128 bits each, `ymm0` through `ymm15` hold 256 bits, `zmm0` through `zmm31` hold 512 bits. These hold multiple values packed side by side — four 32-bit floats in one `xmm` register — and SIMD instructions operate on all of them simultaneously. You don't need to read SIMD assembly for this curriculum. But when you see `xmm`, `ymm`, or `zmm` in a disassembled loop, you're looking at vectorized code — the compiler has unrolled and parallelized your loop. That's a useful thing to recognize.
+
+**The argument registers are the first thing to memorize:**
+
+```
+rdi   rsi   rdx   rcx   r8   r9
+ 1st   2nd   3rd   4th  5th  6th integer argument
+```
+
+Return value goes in `rax`. When you see `mov rdi, ...; call foo`, you know you're setting up `foo`'s first argument. When you see `mov eax, ...` at the end of a function just before `ret`, you know that's the return value.
+
+<Quiz question="A function receives six integer arguments. The caller pushes them all onto the stack before calling, right?">
+  No. The first six integer arguments are passed in registers: rdi, rsi, rdx, rcx, r8, r9 — in that order. Only arguments seven and beyond are pushed onto the stack (just above the caller's return address). This is the System V AMD64 ABI, used on Linux and macOS. The JVM follows it for JNI calls and uses the same register convention internally for JIT-compiled methods.
+</Quiz>
+
+---
+
+## 3. The Two Syntaxes
+
+Here is an annoyance you should be prepared for: x86 assembly has two competing notations. The same instruction — identical bytes in machine code — written two completely different ways. Same hardware, two dialects.
+
+<Figure
+  src="/diagrams/holy-grail/sc00-09-syntax-comparison.svg"
+  alt="Intel vs AT&T assembly syntax comparison for four common instructions"
+  caption="Intel and AT&T syntax produce identical machine code. The operand order is reversed between them. You will see both in the wild — know which you're reading."
+  label="sc00-09-syntax-comparison.svg"
+/>
+
+The differences in plain language:
+
+**Operand order is reversed.** Intel: destination first, then source. AT&T: source first, then destination. `mov rax, rbx` in Intel means "copy `rbx` into `rax`." In AT&T it would be written `movq %rbx, %rax` and means the same thing. This single reversal has confused people for decades. Before reading any assembly, determine which syntax you're looking at.
+
+**Sigils.** AT&T requires `%` before every register name and `$` before every immediate constant. Intel uses neither. When you see `%rax` you're in AT&T land.
+
+**Memory references.** Intel uses square brackets: `[rbx + 8]`. AT&T uses the offset-in-parentheses form: `8(%rbx)`.
+
+**Size suffixes.** AT&T appends a letter to indicate operand size: `q` (quad, 64-bit), `l` (long, 32-bit), `w` (word, 16-bit), `b` (byte, 8-bit). Intel typically infers size from the register name.
+
+**Which you'll encounter where:**
+
+- `objdump -d`: AT&T by default. Use `objdump -d -M intel` to get Intel.
+- `gdb`: AT&T by default. Run `set disassembly-flavor intel` inside gdb to flip it.
+- `-XX:+PrintAssembly` (JVM JIT output): Intel by default.
+- Compiler Explorer (godbolt.org): configurable; check the dropdown.
+
+In this lesson I'll use Intel syntax throughout, consistent with Lesson 0.8 and with JVM JIT output.
+
+---
+
+## 4. The Instructions That Matter
+
+x86-64 has thousands of instructions. You need to know about fifteen. Here they are, grouped by purpose.
+
+### Data Movement
+
+**`mov dest, src`** — copies `src` to `dest`. The workhorse. Roughly half of all instructions in compiled code are `mov`s.
+
+```asm
+mov rax, rbx          ; rax = rbx (register to register)
+mov rax, 42           ; rax = 42 (immediate to register)
+mov rax, [rbx]        ; rax = *rbx (load from memory)
+mov [rbx], rax        ; *rbx = rax (store to memory)
+mov rax, [rbx + 8]    ; rax = *(rbx + 8) (load with offset)
+```
+
+That last form hints at something powerful. x86-64's addressing mode is:
+
+```
+[base + index*scale + displacement]
+```
+
+where scale is 1, 2, 4, or 8 (matching element sizes of `byte`, `short`, `int`, `long`). The CPU computes the full address in its address generation unit — not the ALU — in one clock cycle:
+
+<Figure
+  src="/diagrams/holy-grail/sc00-09-addressing-mode.svg"
+  alt="x86-64 addressing mode breakdown: base + index*scale + displacement"
+  caption="mov rax, [rbx + rcx*4 + 16] loads arr[i] in one instruction. The scale factor 4 matches sizeof(int). The displacement 16 skips a JVM array header. No explicit multiply needed."
+  label="sc00-09-addressing-mode.svg"
+/>
+
+This is why array indexing is so cheap on x86. One instruction, no separate multiply or add. The hardware does it all.
+
+**`lea dest, [expr]`** — "load effective address." Performs the address calculation without accessing memory.
+
+```asm
+lea rax, [rbx + rcx*4 + 16]    ; rax = rbx + rcx*4 + 16 (no memory touched)
+```
+
+`lea` looks like it reads memory — the square brackets suggest a load — but it doesn't dereference anything. It just computes the arithmetic. Compilers abuse this constantly to do multi-term addition in one instruction. When you see `lea` not obviously computing a pointer, it's doing arithmetic that happens to fit the addressing format.
+
+### Arithmetic
+
+**`add dest, src`** — `dest = dest + src`.  
+**`sub dest, src`** — `dest = dest - src`.  
+**`imul dest, src`** — signed multiply. `dest = dest * src`.  
+**`inc dest`** — `dest++`. One byte shorter in machine code than `add dest, 1`.  
+**`dec dest`** — `dest--`.  
+**`neg dest`** — `dest = -dest`.
+
+Division is more complex — it uses fixed registers `rax` and `rdx` and a separate `idiv` instruction. Skip it for now; you'll recognize it when you see it.
+
+### Bitwise
+
+**`and`, `or`, `xor`, `not`** — bitwise operations, exactly as expected.  
+**`shl dest, count`** — shift left by `count` bits.  
+**`shr dest, count`** — shift right, unsigned (zero-fills from left).  
+**`sar dest, count`** — shift right, arithmetic (sign-extends from left).
+
+One idiom you'll see *constantly*:
+
+```asm
+xor rax, rax          ; rax = 0
+```
+
+`xor reg, reg` sets any register to zero. It is smaller in machine code than `mov rax, 0`, so compilers always emit it. Recognize this pattern on sight: **`xor reg, reg` means "zero this register."**
+
+### Comparison and Branching
+
+**`cmp a, b`** — computes `a - b`, discards the result, but updates the CPU's flags register (zero flag, sign flag, overflow flag, carry flag) based on whether the result was zero, negative, overflowed, etc. Used to prepare for a conditional jump.
+
+**`test a, b`** — computes `a AND b` bitwise, discards the result, sets flags. The idiom `test rax, rax` checks whether `rax` is zero (because `x AND x` is zero exactly when `x` is zero). You'll see this instead of `cmp rax, 0`.
+
+**`jmp target`** — unconditional jump. Sets `rip = target`.
+
+Conditional jumps read the flags set by `cmp` or `test`:
+
+| Instruction | Jumps if |
+|-------------|----------|
+| `je` | equal (zero flag set) |
+| `jne` | not equal |
+| `jl` | less than (signed) |
+| `jle` | less than or equal (signed) |
+| `jg` | greater than (signed) |
+| `jge` | greater than or equal (signed) |
+| `jb` | below (unsigned less than) |
+| `ja` | above (unsigned greater than) |
+| `jz` | zero flag set (synonym for `je`) |
+| `jnz` | zero flag clear (synonym for `jne`) |
+
+The pattern you'll see for every `if` and every loop boundary:
+
+```asm
+cmp rax, rbx
+jge target          ; jump if rax >= rbx
+```
+
+### Control Flow
+
+**`call target`** — pushes the return address (address of the next instruction) onto the stack, then jumps to `target`. This is the atomic unit of function invocation.
+
+**`ret`** — pops the return address from the stack into `rip` and jumps there. This is how every function returns.
+
+**`push reg`** — decrements `rsp` by 8, stores `reg` at `[rsp]`.  
+**`pop reg`** — loads `reg` from `[rsp]`, increments `rsp` by 8.
+
+That's your vocabulary: `mov`, `lea`, `add`, `sub`, `imul`, `xor`, `cmp`, `test`, `jmp`, conditional jumps, `call`, `ret`, `push`, `pop`. Fifteen instructions. With these you can read 90% of compiled code.
+
+<Quiz question="You see the instruction test rdi, rdi followed by je .return_null in a disassembled function. What is the original source almost certainly checking?">
+  It's a null check: if (ptr == null) return null. The test rdi, rdi computes rdi AND rdi and sets the zero flag if rdi is zero. A null pointer is address 0x0, so the zero flag fires when the pointer is null. je .return_null then jumps to the null-return path. Compilers prefer test reg, reg over cmp reg, 0 because it's one byte shorter in machine code.
+</Quiz>
+
+---
+
+## 5. The Implementation: Reading a Real Function
+
+Let's read a real disassembled function. The C source is simple; focus entirely on the assembly.
+
+```c
+int sum_array(int* arr, int n) {
+    int total = 0;
+    for (int i = 0; i < n; i++) {
+        total += arr[i];
+    }
+    return total;
+}
+```
+
+Compiled with `gcc -O0 -S` (no optimization), Intel syntax:
+
+```asm
+sum_array:
+    push rbp                    ; prologue: save caller's frame pointer
+    mov rbp, rsp                ; establish our frame pointer
+    sub rsp, 32                 ; allocate 32 bytes of stack for locals
+
+    mov [rbp - 24], rdi         ; spill arg 1 (arr) to stack slot
+    mov [rbp - 28], esi         ; spill arg 2 (n) to stack slot
+    mov DWORD [rbp - 4], 0      ; total = 0
+    mov DWORD [rbp - 8], 0      ; i = 0
+    jmp .loop_test              ; jump immediately to the loop condition
+
+.loop_body:
+    mov eax, [rbp - 8]          ; eax = i
+    cdqe                        ; sign-extend eax into rax (32→64 bits)
+    lea rdx, [0 + rax*4]        ; rdx = i * 4  (offset into arr, bytes)
+    mov rax, [rbp - 24]         ; rax = arr  (the pointer)
+    add rax, rdx                ; rax = arr + i*4  (address of arr[i])
+    mov eax, [rax]              ; eax = arr[i]  (load the element)
+    add [rbp - 4], eax          ; total += arr[i]
+    add DWORD [rbp - 8], 1      ; i++
+
+.loop_test:
+    mov eax, [rbp - 8]          ; eax = i
+    cmp eax, [rbp - 28]         ; compare i to n
+    jl .loop_body               ; if i < n, go back to body
+
+    mov eax, [rbp - 4]          ; return value = total
+    leave                       ; epilogue: mov rsp,rbp ; pop rbp
+    ret                         ; pop return address into rip, jump
+```
+
+Walk through this carefully. You should be able to trace every line.
+
+**The prologue** is the first three instructions: save the caller's `rbp`, point our own `rbp` at the current `rsp`, then carve out 32 bytes for local variables. We covered this in detail in Lesson 0.8 — it should look familiar now.
+
+**The spill.** `-O0` means the compiler refuses to trust registers to hold values across statements. It immediately spills both arguments from registers (`rdi`, `esi`) to stack slots (`[rbp - 24]`, `[rbp - 28]`). Then it stores `total` and `i` as stack slots too. Every iteration of the loop reloads them from memory and stores them back. This is why unoptimized code is slow — it's doing memory traffic that shouldn't exist.
+
+**The loop structure.** The compiler emits a `jmp .loop_test` before the loop body, then puts the loop test at the bottom. This is the canonical structure for a `for` loop: jump to the test first (to handle the `n == 0` case correctly), then alternate body → test → body → test until the condition fails. When you see a forward `jmp` followed shortly by a backward `jl` or `jne`, you're looking at a loop.
+
+**The address calculation.** `.loop_body` computes `arr[i]` the slow way (because `-O0`): load `i`, sign-extend it to 64 bits with `cdqe`, multiply by 4 with `lea`, load the array pointer, add them, load the element. With `-O2`, the compiler keeps `i`, `arr`, `total`, and a running pointer all in registers, collapses the address arithmetic into one `[rsi + rdx*4]` addressing mode, and halves the instruction count.
+
+This is the important point: **optimized assembly is shorter and harder to read than `-O0` output**, because it eliminates redundancy that makes the correspondence to source code obvious. The same primitives are there — you just have to trace register state instead of following named stack slots.
+
+### The Mental Model for Reading Any Function
+
+When confronted with a disassembled function, do this:
+
+1. **Find the prologue.** `push rbp; mov rbp, rsp; sub rsp, N` tells you the frame size and where locals live relative to `rbp`.
+
+2. **Find the epilogue.** `leave; ret` (or `add rsp, N; pop rbp; ret` in some forms). Multiple return paths mean multiple epilogues.
+
+3. **Find the loops.** Look for backward-jumping conditional instructions — a `jl`, `jne`, or `jge` that targets a label *above* the current instruction. The loop body is between that label and the jump.
+
+4. **Find the branches.** Each `cmp` or `test` followed by a conditional jump is an `if`, a loop boundary, or an early return in the original source.
+
+5. **Track register state.** When you see `[rbp - 4]` loaded and stored repeatedly, that's a local variable. When you see `[rbp + 16]`, that's an argument that overflowed the register ABI (argument 7+).
+
+---
+
+## 6. The Analysis: Reading JVM JIT Output
+
+Here's where assembly stops being a curiosity and becomes a daily-work tool. The JVM's JIT compiler — specifically the C2 "server compiler" — compiles your hot methods to machine code at runtime. You can see this output with:
+
+```bash
+java -XX:+UnlockDiagnosticVMOptions \
+     -XX:+PrintAssembly \
+     -XX:CompileCommand=print,MyClass.myMethod \
+     MyClass
+```
+
+This requires the `hsdis` (HotSpot Disassembler) plugin. Setting it up is fiddly but worth doing once. Look up "hsdis installation" for your OS — it's usually a single `.so` or `.dll` you drop into the JRE's `lib` directory.
+
+Consider the Java equivalent of our C example:
+
+```java
+public static int sumArray(int[] arr) {
+    int total = 0;
+    for (int i = 0; i < arr.length; i++) {
+        total += arr[i];
+    }
+    return total;
+}
+```
+
+After JIT compilation (C2 at tier 4, full optimization), it produces roughly:
+
+```asm
+sumArray:
+    mov eax, 0                    ; total = 0
+    mov ecx, [rsi + 16]           ; ecx = arr.length  (offset 16 in array header)
+    test ecx, ecx                 ; is length == 0?
+    jle .done                     ; if so, skip loop
+
+    xor edx, edx                  ; i = 0
+.loop:
+    mov edi, [rsi + rdx*4 + 24]   ; edi = arr[i]  (data starts at offset 24)
+    add eax, edi                  ; total += arr[i]
+    add edx, 1                    ; i++
+    cmp edx, ecx                  ; i < length?
+    jl .loop
+
+.done:
+    ret                           ; return value is already in eax
+```
+
+Six instructions per iteration. Every value lives in a register — no spills. Notice what's different from the `-O0` C version:
+
+**The array length is at offset 16.** In the JVM's array object layout, the object header is 12 bytes (mark word + class pointer with compressed OOPs), and the `length` field sits at byte 12, padded to offset 16. The JIT knows this layout at compile time and hardcodes the offset. We'll cover the exact layout in Sub-course 1, lesson by lesson.
+
+**Array elements start at offset 24.** After the header (12 bytes) and the length field (4 bytes), there's alignment padding to bring the total header to 16 bytes, and then elements start at 16. Wait — that gives offset 16 for elements, not 24. In practice, with the specific header layout and padding, elements begin at byte 16 in 32-bit arrays on a JVM with compressed OOPs. The actual offset varies by JVM build and flag settings. The point is: the JIT knows the exact byte offset and uses it directly in the addressing mode as a displacement.
+
+**`rsi` holds the array reference.** This is a static method, so there's no `this`. `rsi` is the second argument register — Java passes the array as the first (and only) argument, which goes in `rdi`. Actually in the JIT's calling convention for instance methods, `rsi` often holds the first reference argument because `rdi` is reserved for the `this` pointer. For a static method, conventions can vary by JIT version. The key insight is: one register holds the base pointer, and the addressing mode `[rsi + rdx*4 + 24]` accesses `arr[i]` in one instruction.
+
+**The loop is six instructions, no memory traffic.** Compare to the `-O0` C version's twelve-plus instructions per iteration with multiple loads and stores. The JIT has done exactly what a good C compiler does at `-O2`: kept all working state in registers, eliminated the spill-reload pairs, and compressed the address arithmetic into one addressing mode.
+
+When people say "the JVM's JIT can be competitive with C," this is the evidence. The output above is essentially what a good C compiler produces for the same loop. And the JIT has one additional advantage: it can speculate on runtime information (which branch is actually taken, whether the array is always a certain type) and generate code that's specialized for the actual execution profile. A static C compiler has to be conservative. The JIT doesn't.
+
+<Quiz question="The JIT output for sumArray has no null check for arr before dereferencing it. Isn't that a bug — shouldn't Java always null-check before accessing an object?">
+  No, it's a deliberate optimization. The JIT can omit explicit null checks when it can prove (or has observed) that the reference is non-null. In this case, the method is a static utility method, and the JIT has been profiling the call site long enough to know the argument is always non-null. If a null is passed, the first memory access ([rsi + 16]) will fault — the OS delivers a SIGSEGV, the JVM catches it at the signal handler level, and converts it to a NullPointerException. The hardware does the null check for free, at the cost of the page fault. This is the "implicit null check" optimization — the JVM uses hardware memory protection rather than inserting an explicit compare-and-branch.
+</Quiz>
+
+---
+
+## 7. The Proof: Why the Addressing Mode Works
+
+There's a small proof worth walking through explicitly. The claim is: `[base + index*scale + displacement]` can represent any element access of the form `arr[i]` without additional arithmetic instructions.
+
+For an array of element type `T` with element size `s` bytes, element `i` lives at:
+
+```
+address(arr[i]) = base_address(arr)
+               + header_size
+               + i * s
+```
+
+Mapping to the addressing mode:
+
+```
+base        = base_address(arr)         (the reference in a register)
+displacement = header_size              (a compile-time constant)
+index       = i                         (the loop variable in a register)
+scale       = s                         (element size — must be 1, 2, 4, or 8)
+```
+
+The constraint is that scale must be exactly 1, 2, 4, or 8 — the hardware only supports these four values, because they cover `byte` (1), `short` (2), `int`/`float` (4), and `long`/`double`/`reference` (8). For any primitive type in Java and C, this works exactly. For a struct array in C where `sizeof(struct)` is, say, 12 or 24, it does *not* fit the addressing mode, and the compiler must emit a separate multiply. Java doesn't have struct arrays (objects live behind references), so this limitation rarely matters in JVM output.
+
+The address generation unit (AGU) of modern x86 CPUs executes this computation in one clock cycle on a dedicated functional unit, separate from the ALU. It has no throughput cost relative to a plain `mov [rsi], eax`. **The complexity of the addressing mode is free.**
+
+This is also why the JVM can index into array objects without separate bounds-check-then-index sequences showing up as expensive: the index and bounds check are both register operations, and the actual memory access piggybacks on the same clock cycle that would have happened anyway.
+
+---
+
+## 8. The Trade-offs
+
+**When to reach for this skill.** Read assembly when: a method is hotter than expected and you need to verify what the JIT actually compiled; a benchmark result contradicts your mental model and you need to see what the compiler actually emitted; you're debugging a JNI layer and need to trace across the Java/native boundary; you're reading a crash dump and need to understand what instruction faulted.
+
+**When not to.** Don't read assembly speculatively. You cannot reason about JIT output without running the code — speculative disassembly of bytecode tells you nothing about what the C2 compiler will actually emit under profile. Use `-XX:+PrintAssembly` on the actual running program, not on cold code.
+
+**Intel vs AT&T: pick a default.** For JVM work, default to Intel — it's what `-XX:+PrintAssembly` and most Java-adjacent tools emit. For Linux system work, default to AT&T — it's what `objdump`, `gdb`, and the kernel use. Recognize both on sight; don't fight the tool.
+
+**The register ABI in production incidents.** The caller-saved vs callee-saved distinction matters in debugging JNI mismatches and hand-written assembly. If your JNI function trashes `rbx` without saving it, the Java caller's register state is corrupted, and the resulting bug — if you're lucky — manifests as a crash. If you're unlucky, it manifests as a silent wrong answer three stack frames later.
+
+**Optimized code and inlining.** When the JIT inlines a method, the inlined body has no `call` and no `ret`. The arguments aren't set up in `rdi`/`rsi`; they're already in whatever registers the inliner chose. An inlined method in assembly output looks like a run of instructions without a prologue — just arithmetic and branches. This is why understanding call conventions matters: when the prologue is absent, you need to know that the absence is intentional, not an artifact of a corrupted dump.
+
+**Real systems that read their own JIT.** The Azul Systems JVM team reads JIT output as a routine part of performance work. The HotSpot engineers at Oracle use JITWatch and `-XX:+PrintAssembly` to verify that optimizations like loop vectorization, lock elision, and escape analysis are actually firing. The Netflix JVM performance team has written blog posts that include disassembly excerpts as primary evidence. This is not an exotic skill — it's table stakes for anyone doing serious JVM performance work.
+
+---
+
+## 9. Tools You Should Know
+
+You don't need to install all of these now. Know they exist and reach for them when the need arises.
+
+**`objdump -d -M intel binary`** — Linux's universal disassembler. Disassembles any compiled binary. Output is dense; useful for spot-checking compiler output or examining native libraries.
+
+**`gdb`** — debugger with a `disassemble` command. At a stopped breakpoint, `disassemble` shows the surrounding instructions. `set disassembly-flavor intel` switches to Intel syntax.
+
+**Compiler Explorer (godbolt.org)** — paste C, C++, Rust, Java, or a dozen other languages; select a compiler and flags; see the assembly output live. Indispensable for "did the compiler optimize this the way I expected?" experiments. Java support on Godbolt shows bytecode rather than assembly, but for C you can see exactly how `-O2` transforms a loop. Bookmark it now.
+
+**`-XX:+PrintAssembly`** — the JVM's built-in JIT output flag. Requires the `hsdis` plugin. Verbose; pipe the output through `grep` or a tool like JITWatch to find the method you care about.
+
+**JITWatch** — a desktop GUI that parses JVM JIT logs and shows compilation decisions, inlining chains, and assembly side-by-side with bytecode and source. The most humane interface to JIT internals that exists.
+
+**`perf` (Linux)** — a sampling profiler that can annotate hot assembly instructions with sample counts, show cache miss rates per instruction, and identify branch mispredictions at the instruction level. When you have a hot function and need to know *which instruction* is the bottleneck, `perf annotate` is the answer.
+
+---
+
+## What You Must Know Before Proceeding
+
+- The first six argument registers in order on Linux/macOS x86-64: `rdi`, `rsi`, `rdx`, `rcx`, `r8`, `r9`.
+- What `xor rax, rax` does and why compilers emit it instead of `mov rax, 0`.
+- The difference between `cmp` (subtraction-based flag update) and `test` (AND-based flag update), and when each appears.
+- How Intel and AT&T syntax differ in operand order (Intel: dest, src; AT&T: src, dest).
+- What `push rbp; mov rbp, rsp` accomplishes (establishes the frame pointer for the callee's frame).
+- What `lea rax, [rbx + rcx*4 + 16]` computes (the address `rbx + rcx*4 + 16`, no memory access).
+- Where to look in a disassembled function to find the loop (backward-jumping conditional instruction; label above it is the loop start).
+
+---
+
+## Exercise 0.9
+
+This exercise is pattern recognition and tracing, not implementation. Work through each part before moving on.
+
+**(a) Translate to plain English.** What does each instruction do?
+
+```asm
+mov [rbp - 8], 0
+lea rax, [rdi + rsi*8]
+xor rcx, rcx
+cmp eax, [rbp - 12]
+jne .L3
+imul rax, rbx
+test rdi, rdi
+add rsp, 32
+```
+
+Hint: think about what each instruction class does, then apply it. The addressing mode in the second instruction has scale 8 — what element size does that suggest?  
+What makes this hard: distinguishing `lea` (address arithmetic, no memory) from `mov` (actual memory access) when both use bracket notation.
+
+**(b) What did this function do?**
+
+```asm
+foo:
+    push rbp
+    mov rbp, rsp
+    mov eax, edi          ; eax = first arg (32-bit)
+    imul eax, eax         ; eax = eax * eax
+    pop rbp
+    ret
+```
+
+Hint: trace `eax` from entry to return. Note that `edi` is the 32-bit alias of `rdi`, so this function takes one 32-bit integer argument.  
+What makes this hard: knowing that `eax` at `ret` is the return value, and recognizing the absence of `rsp` manipulation (no locals, no alignment needed for a leaf function).
+
+**(c) What did this function do?**
+
+```asm
+mystery:
+    test rdi, rdi
+    je .return_zero
+    mov eax, [rdi]
+    add eax, [rdi + 4]
+    ret
+.return_zero:
+    xor eax, eax
+    ret
+```
+
+Hint: what is `rdi` here (it's the first argument)? What are we testing about it? What are `[rdi]` and `[rdi + 4]`? What type could have two `int`-sized fields at offsets 0 and 4?  
+What makes this hard: recognizing the implicit null check pattern and reasoning about the in-memory layout of the argument type.
+
+**(d) Compiler Explorer experiment.** Go to godbolt.org. Paste this C function:
+
+```c
+int add(int a, int b) {
+    return a + b;
+}
+```
+
+Select GCC x86-64 as the compiler and `-O2` as the flag. Look at the output. What register holds `a`? What register holds `b`? Does the function even have a prologue? What single instruction does the work?
+
+Then change the function to:
+
+```c
+int add_three(int a, int b, int c) {
+    return a + b + c;
+}
+```
+
+Which registers hold `a`, `b`, `c`? How many instructions does it take now?
+
+Hint: With `-O2`, the compiler is aggressive. A two-line function might compile to literally one or two instructions — no prologue, no epilogue, just the arithmetic.  
+What makes this hard: recognizing that `-O2` output can be shockingly minimal, and connecting the register assignments to the ABI argument convention you just learned.
+
+---
+
+## What You Now Own
+
+You can read x86-64 assembly — not write it, not memorize all of it, but read it. You can look at a disassembled function, locate the prologue, identify the loop by the backward branch, trace register state through the body, and understand what each instruction is doing in terms of data movement and control flow. You can read JVM JIT output and understand why `[rsi + rdx*4 + 16]` is an array element access, why `xor eax, eax` is zeroing a register, and why the prologue disappears in an optimized leaf function. When the JIT emits something and you want to know if an optimization fired — branch elimination, inlining, vectorization — you now have the vocabulary to look directly at the evidence.
+
+Sub-course 0 is complete. You have the machine. You know its memory model, its cache, its virtual address space, its call stack, and its instruction set. Everything that follows — the JVM, the GC, the data structures, the algorithms — runs on top of exactly what you've built here.
+
+Sub-course 1 is next: **The JVM as Your Operating System.** Nine lessons that re-anchor everything you know about the machine inside the JVM's model. You'll learn the bit-level layout of every object on the heap, what compressed OOPs are and why they cap the heap at 32 GB, how escape analysis eliminates heap allocations entirely, what the JIT looks for before it bothers compiling a method, and how to measure all of this with JOL (Java Object Layout). When Sub-course 1 ends, you'll be able to pick up any Java class and predict its memory footprint to the byte. Then Sub-course 2 — and you write your first line of code: `MyArrayList.java`, from scratch.

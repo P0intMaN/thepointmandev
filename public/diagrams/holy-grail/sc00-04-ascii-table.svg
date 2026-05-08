@@ -1,0 +1,100 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="680" height="205" viewBox="0 0 680 205" font-family="'Geist Mono', monospace">
+  <rect width="680" height="205" fill="#0f0d09"/>
+
+  <!-- Title -->
+  <text x="340" y="16" text-anchor="middle" fill="#92400e" font-size="10" letter-spacing="2" font-weight="700">ASCII — KEY VALUES AND THE CASE-FLIP TRICK</text>
+
+  <!-- 8 character cells: y=22 to y=88, width=70, gap starts at x=15 -->
+  <!-- \0 null -->
+  <rect x="15"  y="22" width="70" height="66" rx="3" fill="#1a1510" stroke="#3d2e0f" stroke-width="1"/>
+  <text x="50"  y="47" text-anchor="middle" fill="#3d2e0f" font-size="15" font-weight="700">\0</text>
+  <text x="50"  y="62" text-anchor="middle" fill="#3d2e0f" font-size="8">null</text>
+  <text x="50"  y="76" text-anchor="middle" fill="#3d2e0f" font-size="8">0 / 0x00</text>
+
+  <!-- \n newline -->
+  <rect x="100" y="22" width="70" height="66" rx="3" fill="#1a1510" stroke="#3d2e0f" stroke-width="1"/>
+  <text x="135" y="47" text-anchor="middle" fill="#3d2e0f" font-size="15" font-weight="700">\n</text>
+  <text x="135" y="62" text-anchor="middle" fill="#3d2e0f" font-size="8">newline</text>
+  <text x="135" y="76" text-anchor="middle" fill="#3d2e0f" font-size="8">10 / 0x0A</text>
+
+  <!-- space -->
+  <rect x="185" y="22" width="70" height="66" rx="3" fill="#1a1510" stroke="#3d2e0f" stroke-width="1"/>
+  <text x="220" y="47" text-anchor="middle" fill="#3d2e0f" font-size="15" font-weight="700">SP</text>
+  <text x="220" y="62" text-anchor="middle" fill="#3d2e0f" font-size="8">space</text>
+  <text x="220" y="76" text-anchor="middle" fill="#3d2e0f" font-size="8">32 / 0x20</text>
+
+  <!-- '0' digit -->
+  <rect x="270" y="22" width="70" height="66" rx="3" fill="#1a1510" stroke="#3d2e0f" stroke-width="1"/>
+  <text x="305" y="50" text-anchor="middle" fill="#fbbf24" font-size="22" font-weight="700">0</text>
+  <text x="305" y="76" text-anchor="middle" fill="#92400e" font-size="8">48 / 0x30</text>
+
+  <!-- 'A' uppercase — highlighted, bit 5 = 0 -->
+  <rect x="355" y="22" width="70" height="66" rx="3" fill="#1f1608" stroke="#f59e0b" stroke-width="1.5"/>
+  <text x="390" y="50" text-anchor="middle" fill="#fbbf24" font-size="22" font-weight="700">A</text>
+  <text x="390" y="65" text-anchor="middle" fill="#f59e0b" font-size="8">65 / 0x41</text>
+  <text x="390" y="78" text-anchor="middle" fill="#3d2e0f" font-size="7">bit5 = 0</text>
+
+  <!-- 'Z' -->
+  <rect x="440" y="22" width="70" height="66" rx="3" fill="#1a1510" stroke="#3d2e0f" stroke-width="1"/>
+  <text x="475" y="50" text-anchor="middle" fill="#fbbf24" font-size="22" font-weight="700">Z</text>
+  <text x="475" y="76" text-anchor="middle" fill="#92400e" font-size="8">90 / 0x5A</text>
+
+  <!-- 'a' lowercase — highlighted, bit 5 = 1 -->
+  <rect x="525" y="22" width="70" height="66" rx="3" fill="#1f1608" stroke="#f59e0b" stroke-width="1.5"/>
+  <text x="560" y="50" text-anchor="middle" fill="#fbbf24" font-size="22" font-weight="700">a</text>
+  <text x="560" y="65" text-anchor="middle" fill="#f59e0b" font-size="8">97 / 0x61</text>
+  <text x="560" y="78" text-anchor="middle" fill="#3d2e0f" font-size="7">bit5 = 1</text>
+
+  <!-- 'z' -->
+  <rect x="610" y="22" width="70" height="66" rx="3" fill="#1a1510" stroke="#3d2e0f" stroke-width="1"/>
+  <text x="645" y="50" text-anchor="middle" fill="#fbbf24" font-size="22" font-weight="700">z</text>
+  <text x="645" y="76" text-anchor="middle" fill="#92400e" font-size="8">122 / 0x7A</text>
+
+  <!-- Divider -->
+  <line x1="15" y1="96" x2="665" y2="96" stroke="#3d2e0f" stroke-width="1" stroke-dasharray="3 3"/>
+
+  <!-- Case flip bit diagram -->
+  <!-- Bit position labels -->
+  <text x="155" y="108" text-anchor="middle" fill="#3d2e0f" font-size="8">7</text>
+  <text x="183" y="108" text-anchor="middle" fill="#3d2e0f" font-size="8">6</text>
+  <text x="211" y="108" text-anchor="middle" fill="#f59e0b" font-size="8" font-weight="700">5</text>
+  <text x="239" y="108" text-anchor="middle" fill="#3d2e0f" font-size="8">4</text>
+  <text x="267" y="108" text-anchor="middle" fill="#3d2e0f" font-size="8">3</text>
+  <text x="295" y="108" text-anchor="middle" fill="#3d2e0f" font-size="8">2</text>
+  <text x="323" y="108" text-anchor="middle" fill="#3d2e0f" font-size="8">1</text>
+  <text x="351" y="108" text-anchor="middle" fill="#3d2e0f" font-size="8">0</text>
+
+  <!-- 'A' row: 0 1 0 0 0 0 0 1 (bit5=0, in red box) -->
+  <text x="70" y="126" text-anchor="middle" fill="#f59e0b" font-size="11" font-weight="700">'A'</text>
+  <text x="70" y="140" text-anchor="middle" fill="#3d2e0f" font-size="9">0x41</text>
+
+  <rect x="141" y="112" width="26" height="22" rx="2" fill="#1a1510" stroke="#3d2e0f" stroke-width="1"/><text x="154" y="128" text-anchor="middle" fill="#b7b1b1" font-size="12">0</text>
+  <rect x="169" y="112" width="26" height="22" rx="2" fill="#1a1510" stroke="#3d2e0f" stroke-width="1"/><text x="182" y="128" text-anchor="middle" fill="#fef3c7" font-size="12">1</text>
+  <rect x="197" y="112" width="26" height="22" rx="2" fill="#1a0f0f" stroke="#f87171" stroke-width="1.5"/><text x="210" y="128" text-anchor="middle" fill="#f87171" font-size="12" font-weight="700">0</text>
+  <rect x="225" y="112" width="26" height="22" rx="2" fill="#1a1510" stroke="#3d2e0f" stroke-width="1"/><text x="238" y="128" text-anchor="middle" fill="#b7b1b1" font-size="12">0</text>
+  <rect x="253" y="112" width="26" height="22" rx="2" fill="#1a1510" stroke="#3d2e0f" stroke-width="1"/><text x="266" y="128" text-anchor="middle" fill="#b7b1b1" font-size="12">0</text>
+  <rect x="281" y="112" width="26" height="22" rx="2" fill="#1a1510" stroke="#3d2e0f" stroke-width="1"/><text x="294" y="128" text-anchor="middle" fill="#b7b1b1" font-size="12">0</text>
+  <rect x="309" y="112" width="26" height="22" rx="2" fill="#1a1510" stroke="#3d2e0f" stroke-width="1"/><text x="322" y="128" text-anchor="middle" fill="#b7b1b1" font-size="12">0</text>
+  <rect x="337" y="112" width="26" height="22" rx="2" fill="#1a1510" stroke="#3d2e0f" stroke-width="1"/><text x="350" y="128" text-anchor="middle" fill="#fef3c7" font-size="12">1</text>
+
+  <!-- XOR indicator -->
+  <text x="210" y="148" text-anchor="middle" fill="#f59e0b" font-size="12">↕</text>
+  <text x="380" y="143" fill="#3d2e0f" font-size="9">XOR 0x20 (32) — flips bit 5 only</text>
+  <text x="380" y="156" fill="#f59e0b" font-size="9" font-weight="700">c ^ 0x20  converts case in O(1) — no branch, one instruction</text>
+
+  <!-- 'a' row: 0 1 1 0 0 0 0 1 (bit5=1, in green box) -->
+  <text x="70" y="173" text-anchor="middle" fill="#f59e0b" font-size="11" font-weight="700">'a'</text>
+  <text x="70" y="186" text-anchor="middle" fill="#3d2e0f" font-size="9">0x61</text>
+
+  <rect x="141" y="159" width="26" height="22" rx="2" fill="#1a1510" stroke="#3d2e0f" stroke-width="1"/><text x="154" y="175" text-anchor="middle" fill="#b7b1b1" font-size="12">0</text>
+  <rect x="169" y="159" width="26" height="22" rx="2" fill="#1a1510" stroke="#3d2e0f" stroke-width="1"/><text x="182" y="175" text-anchor="middle" fill="#fef3c7" font-size="12">1</text>
+  <rect x="197" y="159" width="26" height="22" rx="2" fill="#0f1a0f" stroke="#4ade80" stroke-width="1.5"/><text x="210" y="175" text-anchor="middle" fill="#4ade80" font-size="12" font-weight="700">1</text>
+  <rect x="225" y="159" width="26" height="22" rx="2" fill="#1a1510" stroke="#3d2e0f" stroke-width="1"/><text x="238" y="175" text-anchor="middle" fill="#b7b1b1" font-size="12">0</text>
+  <rect x="253" y="159" width="26" height="22" rx="2" fill="#1a1510" stroke="#3d2e0f" stroke-width="1"/><text x="266" y="175" text-anchor="middle" fill="#b7b1b1" font-size="12">0</text>
+  <rect x="281" y="159" width="26" height="22" rx="2" fill="#1a1510" stroke="#3d2e0f" stroke-width="1"/><text x="294" y="175" text-anchor="middle" fill="#b7b1b1" font-size="12">0</text>
+  <rect x="309" y="159" width="26" height="22" rx="2" fill="#1a1510" stroke="#3d2e0f" stroke-width="1"/><text x="322" y="175" text-anchor="middle" fill="#b7b1b1" font-size="12">0</text>
+  <rect x="337" y="159" width="26" height="22" rx="2" fill="#1a1510" stroke="#3d2e0f" stroke-width="1"/><text x="350" y="175" text-anchor="middle" fill="#fef3c7" font-size="12">1</text>
+
+  <!-- Bottom note -->
+  <text x="340" y="198" text-anchor="middle" fill="#3d2e0f" font-size="8" letter-spacing="1">ASCII IS 7-BIT (0–127)  ·  '0'–'9' = 0x30–0x39  ·  'A'–'Z' = 0x41–0x5A  ·  'a'–'z' = 0x61–0x7A</text>
+</svg>

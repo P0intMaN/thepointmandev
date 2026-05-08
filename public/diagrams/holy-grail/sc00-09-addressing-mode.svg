@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="680" height="220" viewBox="0 0 680 220" font-family="'Geist Mono', monospace">
+  <rect width="680" height="220" fill="#0f0d09"/>
+
+  <!-- Title -->
+  <text x="340" y="16" text-anchor="middle" fill="#92400e" font-size="10" letter-spacing="2" font-weight="700">x86-64 ADDRESSING MODE: [base + index*scale + displacement]</text>
+
+  <!-- The instruction text -->
+  <text x="340" y="48" text-anchor="middle" fill="#fef3c7" font-size="18" font-weight="700">mov rax, [rbx + rcx*4 + 16]</text>
+
+  <!-- Bracket annotation arrows pointing down to labels -->
+  <!-- rbx bracket -->
+  <line x1="184" y1="54" x2="184" y2="80" stroke="#f59e0b" stroke-width="1.5"/>
+  <polygon points="180,80 184,88 188,80" fill="#f59e0b"/>
+  <rect x="130" y="90" width="108" height="30" rx="3" fill="#1a1510" stroke="#f59e0b" stroke-width="1"/>
+  <text x="184" y="104" text-anchor="middle" fill="#f59e0b" font-size="9" font-weight="700">base = rbx</text>
+  <text x="184" y="116" text-anchor="middle" fill="#3d2e0f" font-size="8">start of array</text>
+
+  <!-- rcx bracket -->
+  <line x1="290" y1="54" x2="290" y2="80" stroke="#67e8f9" stroke-width="1.5"/>
+  <polygon points="286,80 290,88 294,80" fill="#67e8f9"/>
+  <rect x="240" y="90" width="100" height="30" rx="3" fill="#0c1518" stroke="#67e8f9" stroke-width="1"/>
+  <text x="290" y="104" text-anchor="middle" fill="#67e8f9" font-size="9" font-weight="700">index = rcx</text>
+  <text x="290" y="116" text-anchor="middle" fill="#3d2e0f" font-size="8">loop variable i</text>
+
+  <!-- *4 bracket -->
+  <line x1="366" y1="54" x2="366" y2="80" stroke="#4ade80" stroke-width="1.5"/>
+  <polygon points="362,80 366,88 370,80" fill="#4ade80"/>
+  <rect x="316" y="90" width="100" height="30" rx="3" fill="#0f1a0f" stroke="#4ade80" stroke-width="1"/>
+  <text x="366" y="104" text-anchor="middle" fill="#4ade80" font-size="9" font-weight="700">scale = 4</text>
+  <text x="366" y="116" text-anchor="middle" fill="#3d2e0f" font-size="8">sizeof(int) = 4</text>
+
+  <!-- 16 bracket -->
+  <line x1="456" y1="54" x2="456" y2="80" stroke="#f87171" stroke-width="1.5"/>
+  <polygon points="452,80 456,88 460,80" fill="#f87171"/>
+  <rect x="406" y="90" width="100" height="30" rx="3" fill="#1a0f0f" stroke="#f87171" stroke-width="1"/>
+  <text x="456" y="104" text-anchor="middle" fill="#f87171" font-size="9" font-weight="700">disp = 16</text>
+  <text x="456" y="116" text-anchor="middle" fill="#3d2e0f" font-size="8">array header bytes</text>
+
+  <!-- Formula row -->
+  <line x1="10" y1="132" x2="668" y2="132" stroke="#3d2e0f" stroke-width="1" stroke-dasharray="3 3"/>
+
+  <text x="340" y="152" text-anchor="middle" fill="#fef3c7" font-size="11">effective address = rbx + rcx × 4 + 16</text>
+  <text x="340" y="170" text-anchor="middle" fill="#3d2e0f" font-size="9">= &amp;arr[0]  +  i × sizeof(int)  +  header_offset</text>
+  <text x="340" y="186" text-anchor="middle" fill="#3d2e0f" font-size="9">= arr[i]   (one instruction, zero extra arithmetic)</text>
+
+  <!-- Scale valid values note -->
+  <text x="340" y="208" text-anchor="middle" fill="#92400e" font-size="8">scale must be 1, 2, 4, or 8 — matching byte sizes of char, short, int, long. The CPU computes this in the address generation unit, not the ALU.</text>
+</svg>

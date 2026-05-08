@@ -1,0 +1,107 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="680" height="250" viewBox="0 0 680 250" font-family="'Geist Mono', monospace">
+  <rect width="680" height="250" fill="#0f0d09"/>
+
+  <!-- Title -->
+  <text x="340" y="16" text-anchor="middle" fill="#92400e" font-size="10" letter-spacing="2" font-weight="700">TEMPORAL vs SPATIAL LOCALITY</text>
+
+  <!-- Left panel: temporal locality -->
+  <rect x="10" y="24" width="320" height="210" rx="4" fill="#1a1510" stroke="#f59e0b" stroke-width="1.5"/>
+  <text x="170" y="42" text-anchor="middle" fill="#f59e0b" font-size="10" font-weight="700" letter-spacing="1">TEMPORAL LOCALITY</text>
+  <text x="170" y="56" text-anchor="middle" fill="#92400e" font-size="8">recently used data is likely to be used again</text>
+
+  <!-- Timeline for temporal: same address accessed at t=1, t=2, t=3 -->
+  <!-- Time axis -->
+  <line x1="30" y1="140" x2="310" y2="140" stroke="#3d2e0f" stroke-width="1"/>
+  <text x="30" y="153" fill="#3d2e0f" font-size="8">t=0</text>
+  <text x="163" y="153" fill="#3d2e0f" font-size="8" text-anchor="middle">time →</text>
+  <text x="305" y="153" fill="#3d2e0f" font-size="8" text-anchor="end">t=n</text>
+
+  <!-- Accesses to addr X (loop variable) at multiple times -->
+  <circle cx="70"  cy="140" r="6" fill="#f59e0b"/>
+  <circle cx="120" cy="140" r="6" fill="#f59e0b"/>
+  <circle cx="170" cy="140" r="6" fill="#f59e0b"/>
+  <circle cx="220" cy="140" r="6" fill="#f59e0b"/>
+  <circle cx="270" cy="140" r="6" fill="#f59e0b"/>
+
+  <text x="170" y="128" text-anchor="middle" fill="#fef3c7" font-size="9">addr X (loop counter)</text>
+  <line x1="70" y1="130" x2="70" y2="134" stroke="#f59e0b" stroke-width="1"/>
+
+  <!-- First access label -->
+  <text x="70"  y="168" text-anchor="middle" fill="#f87171" font-size="8">MISS</text>
+  <text x="120" y="168" text-anchor="middle" fill="#4ade80" font-size="8">HIT</text>
+  <text x="170" y="168" text-anchor="middle" fill="#4ade80" font-size="8">HIT</text>
+  <text x="220" y="168" text-anchor="middle" fill="#4ade80" font-size="8">HIT</text>
+  <text x="270" y="168" text-anchor="middle" fill="#4ade80" font-size="8">HIT</text>
+
+  <!-- Access to different addr Y (less frequent) -->
+  <circle cx="85"  cy="190" r="4" fill="#3d2e0f"/>
+  <circle cx="255" cy="190" r="4" fill="#3d2e0f"/>
+  <text x="85"  y="190" fill="#3d2e0f" font-size="8" dx="8">Y</text>
+  <text x="255" y="190" fill="#3d2e0f" font-size="8" dx="8">Y</text>
+
+  <!-- Example code -->
+  <text x="30"  y="80" fill="#3d2e0f" font-size="9">for (int i=0; i &lt; n; i++)</text>
+  <text x="30"  y="95" fill="#fef3c7" font-size="9">    sum += arr[i];</text>
+  <text x="30"  y="110" fill="#3d2e0f" font-size="8">sum, i touched every iteration</text>
+  <text x="30"  y="122" fill="#4ade80" font-size="8">→ stay hot in L1 the whole loop</text>
+
+  <text x="30"  y="215" fill="#3d2e0f" font-size="8">• LRU eviction exploits this</text>
+  <text x="30"  y="227" fill="#3d2e0f" font-size="8">• Register allocation exploits this</text>
+
+  <!-- Right panel: spatial locality -->
+  <rect x="350" y="24" width="320" height="210" rx="4" fill="#1a1510" stroke="#67e8f9" stroke-width="1.5"/>
+  <text x="510" y="42" text-anchor="middle" fill="#67e8f9" font-size="10" font-weight="700" letter-spacing="1">SPATIAL LOCALITY</text>
+  <text x="510" y="56" text-anchor="middle" fill="#92400e" font-size="8">nearby addresses are likely to be accessed together</text>
+
+  <!-- Memory strip showing sequential access -->
+  <!-- 8 cells, each 30px, y=90 -->
+  <text x="370" y="80" fill="#3d2e0f" font-size="9">for (int i=0; i &lt; n; i++)</text>
+  <text x="370" y="95" fill="#fef3c7" font-size="9">    sum += arr[i];</text>
+
+  <!-- Cache line loaded -->
+  <rect x="362" y="108" width="300" height="36" rx="3" fill="#1f2520" stroke="#67e8f9" stroke-width="1" stroke-dasharray="4 2"/>
+  <text x="512" y="106" text-anchor="middle" fill="#67e8f9" font-size="8">← cache line loaded on arr[0] miss →</text>
+
+  <!-- 8 cells inside the line -->
+  <rect x="364" y="110" width="35" height="32" rx="2" fill="#1a0f0f" stroke="#f87171" stroke-width="1.5"/>
+  <text x="381" y="130" text-anchor="middle" fill="#f87171" font-size="8">[0]</text>
+
+  <rect x="401" y="110" width="35" height="32" rx="2" fill="#0f1a0f" stroke="#4ade80" stroke-width="1"/>
+  <text x="418" y="130" text-anchor="middle" fill="#4ade80" font-size="8">[1]</text>
+
+  <rect x="438" y="110" width="35" height="32" rx="2" fill="#0f1a0f" stroke="#4ade80" stroke-width="1"/>
+  <text x="455" y="130" text-anchor="middle" fill="#4ade80" font-size="8">[2]</text>
+
+  <rect x="475" y="110" width="35" height="32" rx="2" fill="#0f1a0f" stroke="#4ade80" stroke-width="1"/>
+  <text x="492" y="130" text-anchor="middle" fill="#4ade80" font-size="8">[3]</text>
+
+  <rect x="512" y="110" width="35" height="32" rx="2" fill="#0f1a0f" stroke="#4ade80" stroke-width="1"/>
+  <text x="529" y="130" text-anchor="middle" fill="#4ade80" font-size="8">[4]</text>
+
+  <rect x="549" y="110" width="35" height="32" rx="2" fill="#0f1a0f" stroke="#4ade80" stroke-width="1"/>
+  <text x="566" y="130" text-anchor="middle" fill="#4ade80" font-size="8">[5]</text>
+
+  <rect x="586" y="110" width="35" height="32" rx="2" fill="#0f1a0f" stroke="#4ade80" stroke-width="1"/>
+  <text x="603" y="130" text-anchor="middle" fill="#4ade80" font-size="8">[6]</text>
+
+  <rect x="623" y="110" width="35" height="32" rx="2" fill="#0f1a0f" stroke="#4ade80" stroke-width="1"/>
+  <text x="640" y="130" text-anchor="middle" fill="#4ade80" font-size="8">[7]</text>
+
+  <!-- Miss/hit labels -->
+  <text x="381" y="155" text-anchor="middle" fill="#f87171" font-size="8">MISS</text>
+  <text x="418" y="155" text-anchor="middle" fill="#4ade80" font-size="8">HIT</text>
+  <text x="455" y="155" text-anchor="middle" fill="#4ade80" font-size="8">HIT</text>
+  <text x="492" y="155" text-anchor="middle" fill="#4ade80" font-size="8">HIT</text>
+  <text x="529" y="155" text-anchor="middle" fill="#4ade80" font-size="8">HIT</text>
+  <text x="566" y="155" text-anchor="middle" fill="#4ade80" font-size="8">HIT</text>
+  <text x="603" y="155" text-anchor="middle" fill="#4ade80" font-size="8">HIT</text>
+  <text x="640" y="155" text-anchor="middle" fill="#4ade80" font-size="8">HIT</text>
+
+  <text x="370" y="178" fill="#3d2e0f" font-size="8">Consecutive elements share cache lines.</text>
+  <text x="370" y="190" fill="#3d2e0f" font-size="8">One miss → 7 free neighbours loaded.</text>
+  <text x="370" y="215" fill="#3d2e0f" font-size="8">• Cache line size (64B) exploits this</text>
+  <text x="370" y="227" fill="#3d2e0f" font-size="8">• Prefetchers exploit sequential patterns</text>
+
+  <!-- Bottom rule -->
+  <text x="340" y="244" text-anchor="middle" fill="#3d2e0f" font-size="8" letter-spacing="1">CACHE WORKS BECAUSE REAL PROGRAMS EXHIBIT BOTH PROPERTIES</text>
+</svg>

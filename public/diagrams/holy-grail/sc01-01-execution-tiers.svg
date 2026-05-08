@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="680" height="260" viewBox="0 0 680 260" font-family="'Geist Mono', monospace">
+  <rect width="680" height="260" fill="#0f0d09"/>
+
+  <!-- Title -->
+  <text x="340" y="16" text-anchor="middle" fill="#92400e" font-size="10" letter-spacing="2" font-weight="700">HOTSPOT TIERED COMPILATION</text>
+  <text x="340" y="28" text-anchor="middle" fill="#3d2e0f" font-size="8">Every method starts interpreted. Hot methods promote through C1 then C2. Deoptimization can roll back.</text>
+
+  <!-- Tier 0: Interpreter -->
+  <rect x="10" y="38" width="180" height="90" rx="3" fill="#1a1510" stroke="#3d2e0f" stroke-width="1.5"/>
+  <text x="100" y="56" text-anchor="middle" fill="#f87171" font-size="11" font-weight="700">Interpreter</text>
+  <text x="100" y="72" text-anchor="middle" fill="#3d2e0f" font-size="9">Tier 0</text>
+  <text x="100" y="88" text-anchor="middle" fill="#3d2e0f" font-size="8">Every method starts here</text>
+  <text x="100" y="102" text-anchor="middle" fill="#3d2e0f" font-size="8">~10× slower than native</text>
+  <text x="100" y="116" text-anchor="middle" fill="#3d2e0f" font-size="8">Zero compile latency</text>
+
+  <!-- Arrow 0→1 -->
+  <line x1="192" y1="83" x2="232" y2="83" stroke="#f59e0b" stroke-width="2"/>
+  <polygon points="232,79 240,83 232,87" fill="#f59e0b"/>
+  <text x="212" y="76" text-anchor="middle" fill="#92400e" font-size="7">~1,500</text>
+  <text x="212" y="97" text-anchor="middle" fill="#92400e" font-size="7">invocations</text>
+
+  <!-- Tier 1-3: C1 -->
+  <rect x="242" y="38" width="180" height="90" rx="3" fill="#1a1510" stroke="#f59e0b" stroke-width="1.5"/>
+  <text x="332" y="56" text-anchor="middle" fill="#f59e0b" font-size="11" font-weight="700">C1 Compiler</text>
+  <text x="332" y="72" text-anchor="middle" fill="#3d2e0f" font-size="9">Tiers 1–3</text>
+  <text x="332" y="88" text-anchor="middle" fill="#3d2e0f" font-size="8">Quick compile, modest opts</text>
+  <text x="332" y="102" text-anchor="middle" fill="#3d2e0f" font-size="8">1.5×–3× faster than interp</text>
+  <text x="332" y="116" text-anchor="middle" fill="#3d2e0f" font-size="8">Collects profiling data for C2</text>
+
+  <!-- Arrow 1→2 -->
+  <line x1="424" y1="83" x2="464" y2="83" stroke="#4ade80" stroke-width="2"/>
+  <polygon points="464,79 472,83 464,87" fill="#4ade80"/>
+  <text x="444" y="76" text-anchor="middle" fill="#4ade80" font-size="7">~10,000</text>
+  <text x="444" y="97" text-anchor="middle" fill="#4ade80" font-size="7">invocations</text>
+
+  <!-- Tier 4: C2 -->
+  <rect x="474" y="38" width="194" height="90" rx="3" fill="#0f1a0f" stroke="#4ade80" stroke-width="2"/>
+  <text x="571" y="56" text-anchor="middle" fill="#4ade80" font-size="11" font-weight="700">C2 Compiler</text>
+  <text x="571" y="72" text-anchor="middle" fill="#3d2e0f" font-size="9">Tier 4</text>
+  <text x="571" y="88" text-anchor="middle" fill="#fef3c7" font-size="8">Aggressive: inline · unroll · vectorize</text>
+  <text x="571" y="102" text-anchor="middle" fill="#fef3c7" font-size="8">escape analysis · dead code elim</text>
+  <text x="571" y="116" text-anchor="middle" fill="#4ade80" font-size="8">Rivals hand-written C</text>
+
+  <!-- Deoptimization arrow -->
+  <path d="M571,130 Q571,162 440,162 Q340,162 230,162 Q160,162 100,140" stroke="#f87171" stroke-width="1.5" fill="none" stroke-dasharray="4 2"/>
+  <polygon points="96,144 100,136 104,144" fill="#f87171"/>
+  <text x="340" y="158" text-anchor="middle" fill="#f87171" font-size="8">deoptimize — assumption violated (new subclass loaded, branch profile changed)</text>
+
+  <!-- What C2 does box -->
+  <rect x="10" y="178" width="658" height="68" rx="3" fill="#1a1510" stroke="#3d2e0f" stroke-width="1"/>
+  <text x="340" y="194" text-anchor="middle" fill="#92400e" font-size="9" font-weight="700">WHAT C2's OPTIMIZATIONS MEAN IN PRACTICE</text>
+
+  <text x="30" y="212" fill="#4ade80" font-size="8" font-weight="700">Inlining:</text>
+  <text x="90" y="212" fill="#3d2e0f" font-size="8">replaces call sites with callee's body — eliminates call overhead, enables further opts</text>
+
+  <text x="30" y="226" fill="#4ade80" font-size="8" font-weight="700">Escape analysis:</text>
+  <text x="130" y="226" fill="#3d2e0f" font-size="8">if an object doesn't escape the method, allocate it on the stack or eliminate it entirely</text>
+
+  <text x="30" y="240" fill="#4ade80" font-size="8" font-weight="700">Vectorization:</text>
+  <text x="110" y="240" fill="#3d2e0f" font-size="8">rewrite loops over arrays as SIMD instructions — 4× or 8× throughput improvement</text>
+</svg>

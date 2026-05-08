@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="680" height="310" viewBox="0 0 680 310" font-family="'Geist Mono', monospace">
+  <rect width="680" height="310" fill="#0f0d09"/>
+
+  <!-- Title -->
+  <text x="340" y="16" text-anchor="middle" fill="#92400e" font-size="10" letter-spacing="2" font-weight="700">SET-ASSOCIATIVE CACHE — ADDRESS BIT BREAKDOWN</text>
+
+  <!-- Address bit strip -->
+  <text x="22" y="34" fill="#3d2e0f" font-size="9">64-BIT ADDRESS (example: 32 KB L1, 64-byte lines, 8-way → 64 sets)</text>
+
+  <!-- Address bar: 640px wide, split: tag=400px, index=120px (6 bits of 64 sets), offset=96px (6 bits) -->
+  <!-- Tag: bits 63–12 = 52 bits → large region -->
+  <rect x="22" y="40" width="380" height="36" rx="3" fill="#1a1510" stroke="#f59e0b" stroke-width="1.5"/>
+  <text x="212" y="63" text-anchor="middle" fill="#f59e0b" font-size="11" font-weight="700">TAG (bits 63 – 12) · 52 bits</text>
+
+  <!-- Index: bits 11–6 = 6 bits (log₂64) -->
+  <rect x="404" y="40" width="144" height="36" rx="3" fill="#1f1608" stroke="#67e8f9" stroke-width="1.5"/>
+  <text x="476" y="54" text-anchor="middle" fill="#67e8f9" font-size="10" font-weight="700">INDEX</text>
+  <text x="476" y="69" text-anchor="middle" fill="#67e8f9" font-size="9">bits 11–6 · 6 bits</text>
+
+  <!-- Offset: bits 5–0 = 6 bits (log₂64) -->
+  <rect x="550" y="40" width="110" height="36" rx="3" fill="#120e08" stroke="#4ade80" stroke-width="1.5"/>
+  <text x="605" y="54" text-anchor="middle" fill="#4ade80" font-size="10" font-weight="700">OFFSET</text>
+  <text x="605" y="69" text-anchor="middle" fill="#4ade80" font-size="9">bits 5–0 · 6 bits</text>
+
+  <!-- Arrows and labels -->
+  <text x="212" y="88" text-anchor="middle" fill="#f59e0b" font-size="8">stored with the line to verify it's the right address</text>
+  <text x="476" y="88" text-anchor="middle" fill="#67e8f9" font-size="8">selects 1 of 64 sets</text>
+  <text x="605" y="88" text-anchor="middle" fill="#4ade80" font-size="8">byte within the 64B line</text>
+
+  <!-- Divider -->
+  <line x1="22" y1="98" x2="658" y2="98" stroke="#3d2e0f" stroke-width="1" stroke-dasharray="3 3"/>
+
+  <!-- Cache structure: 64 sets × 8 ways -->
+  <text x="22" y="114" fill="#92400e" font-size="9" letter-spacing="1" font-weight="700">CACHE STRUCTURE — 8-WAY SET ASSOCIATIVE</text>
+  <text x="22" y="126" fill="#3d2e0f" font-size="8">Each set has 8 slots (ways). Address maps to 1 set; can live in any of 8 ways.</text>
+
+  <!-- Set 0 row: 8 ways -->
+  <text x="22" y="148" fill="#3d2e0f" font-size="9">Set 0</text>
+  <rect x="60"  y="135" width="70" height="22" rx="2" fill="#1a1510" stroke="#f59e0b" stroke-width="1"/>
+  <text x="95"  y="150" text-anchor="middle" fill="#f59e0b" font-size="9">tag A · data</text>
+  <rect x="132" y="135" width="70" height="22" rx="2" fill="#1a1510" stroke="#3d2e0f" stroke-width="1"/>
+  <text x="167" y="150" text-anchor="middle" fill="#3d2e0f" font-size="9">tag B · data</text>
+  <rect x="204" y="135" width="70" height="22" rx="2" fill="#1a1510" stroke="#3d2e0f" stroke-width="1"/>
+  <text x="239" y="150" text-anchor="middle" fill="#3d2e0f" font-size="9">tag C · data</text>
+  <rect x="276" y="135" width="70" height="22" rx="2" fill="#1a1510" stroke="#3d2e0f" stroke-width="1"/>
+  <rect x="348" y="135" width="70" height="22" rx="2" fill="#1a1510" stroke="#3d2e0f" stroke-width="1"/>
+  <rect x="420" y="135" width="70" height="22" rx="2" fill="#1a1510" stroke="#3d2e0f" stroke-width="1"/>
+  <rect x="492" y="135" width="70" height="22" rx="2" fill="#1a1510" stroke="#3d2e0f" stroke-width="1"/>
+  <rect x="564" y="135" width="70" height="22" rx="2" fill="#1a1510" stroke="#3d2e0f" stroke-width="1"/>
+  <text x="360" y="150" text-anchor="middle" fill="#3d2e0f" font-size="9">way 3–7 (empty)</text>
+
+  <!-- Set 1 row -->
+  <text x="22" y="170" fill="#3d2e0f" font-size="9">Set 1</text>
+  <rect x="60"  y="157" width="70" height="22" rx="2" fill="#1a1510" stroke="#3d2e0f" stroke-width="1"/>
+  <rect x="132" y="157" width="70" height="22" rx="2" fill="#1a1510" stroke="#3d2e0f" stroke-width="1"/>
+  <!-- ... more sets elided ... -->
+  <text x="360" y="170" text-anchor="middle" fill="#3d2e0f" font-size="8">set 1 … (empty)</text>
+
+  <!-- Ellipsis -->
+  <text x="340" y="188" text-anchor="middle" fill="#3d2e0f" font-size="10">⋮  (sets 2–62)  ⋮</text>
+
+  <!-- Set 63 row -->
+  <text x="22" y="208" fill="#3d2e0f" font-size="9">Set 63</text>
+  <rect x="60"  y="195" width="70" height="22" rx="2" fill="#1a0f0f" stroke="#f87171" stroke-width="1.5"/>
+  <text x="95"  y="210" text-anchor="middle" fill="#f87171" font-size="9">evict (LRU)</text>
+  <rect x="132" y="195" width="70" height="22" rx="2" fill="#1a0f0f" stroke="#f87171" stroke-width="1"/>
+  <rect x="204" y="195" width="70" height="22" rx="2" fill="#1a0f0f" stroke="#f87171" stroke-width="1"/>
+  <rect x="276" y="195" width="70" height="22" rx="2" fill="#1a0f0f" stroke="#f87171" stroke-width="1"/>
+  <rect x="348" y="195" width="70" height="22" rx="2" fill="#1a0f0f" stroke="#f87171" stroke-width="1"/>
+  <rect x="420" y="195" width="70" height="22" rx="2" fill="#1a0f0f" stroke="#f87171" stroke-width="1"/>
+  <rect x="492" y="195" width="70" height="22" rx="2" fill="#1a0f0f" stroke="#f87171" stroke-width="1"/>
+  <rect x="564" y="195" width="70" height="22" rx="2" fill="#1a0f0f" stroke="#f87171" stroke-width="1"/>
+  <text x="400" y="210" text-anchor="middle" fill="#f87171" font-size="8">all 8 ways FULL — 9th address with same index evicts one</text>
+
+  <!-- Divider -->
+  <line x1="22" y1="226" x2="658" y2="226" stroke="#3d2e0f" stroke-width="1" stroke-dasharray="3 3"/>
+
+  <!-- Conflict thrashing explanation -->
+  <text x="22" y="242" fill="#92400e" font-size="9" letter-spacing="1" font-weight="700">CONFLICT MISS — POWER-OF-TWO STRIDE PATHOLOGY</text>
+  <text x="22" y="258" fill="#fef3c7" font-size="9">Addresses 0x1000, 0x3000, 0x5000 ... (stride = 8 KB = 2¹³)</text>
+  <text x="22" y="272" fill="#3d2e0f" font-size="9">All share the same index bits → map to the same set → thrash each other out</text>
+  <text x="22" y="286" fill="#f87171" font-size="9" font-weight="700">Fix: add 1 element of padding to break the stride alignment</text>
+  <text x="22" y="302" fill="#3d2e0f" font-size="8">double[1024][1024] → conflict thrash   ·   double[1024][1025] → no conflict</text>
+</svg>

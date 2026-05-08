@@ -1,0 +1,102 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="680" height="260" viewBox="0 0 680 260" font-family="'Geist Mono', monospace">
+  <rect width="680" height="260" fill="#0f0d09"/>
+
+  <!-- Title -->
+  <text x="340" y="16" text-anchor="middle" fill="#92400e" font-size="10" letter-spacing="2" font-weight="700">THE FULL VIRTUAL MEMORY ACCESS SPECTRUM</text>
+  <text x="340" y="28" text-anchor="middle" fill="#3d2e0f" font-size="8">source code: arr[i] — actual cost: anywhere in this range</text>
+
+  <!-- Timeline bar (logarithmic latency scale) -->
+  <!-- 1 ns to 10 ms = 7 orders of magnitude, 636px wide -->
+  <line x1="22" y1="60" x2="658" y2="60" stroke="#3d2e0f" stroke-width="2"/>
+
+  <!-- Tick marks at each order of magnitude -->
+  <!-- 1ns=22, 10ns=113, 100ns=204, 1µs=295, 10µs=386, 100µs=477, 1ms=568, 10ms=659 -->
+  <line x1="22"  y1="56" x2="22"  y2="64" stroke="#3d2e0f" stroke-width="1.5"/>
+  <text x="22"   y="74" text-anchor="middle" fill="#3d2e0f" font-size="8">1 ns</text>
+
+  <line x1="113" y1="56" x2="113" y2="64" stroke="#3d2e0f" stroke-width="1"/>
+  <text x="113"  y="74" text-anchor="middle" fill="#3d2e0f" font-size="8">10 ns</text>
+
+  <line x1="204" y1="56" x2="204" y2="64" stroke="#3d2e0f" stroke-width="1.5"/>
+  <text x="204"  y="74" text-anchor="middle" fill="#f59e0b" font-size="8" font-weight="700">100 ns</text>
+
+  <line x1="295" y1="56" x2="295" y2="64" stroke="#3d2e0f" stroke-width="1"/>
+  <text x="295"  y="74" text-anchor="middle" fill="#3d2e0f" font-size="8">1 µs</text>
+
+  <line x1="386" y1="56" x2="386" y2="64" stroke="#3d2e0f" stroke-width="1"/>
+  <text x="386"  y="74" text-anchor="middle" fill="#3d2e0f" font-size="8">10 µs</text>
+
+  <line x1="477" y1="56" x2="477" y2="64" stroke="#3d2e0f" stroke-width="1"/>
+  <text x="477"  y="74" text-anchor="middle" fill="#3d2e0f" font-size="8">100 µs</text>
+
+  <line x1="568" y1="56" x2="568" y2="64" stroke="#3d2e0f" stroke-width="1.5"/>
+  <text x="568"  y="74" text-anchor="middle" fill="#f87171" font-size="8">1 ms</text>
+
+  <line x1="658" y1="56" x2="658" y2="64" stroke="#3d2e0f" stroke-width="1.5"/>
+  <text x="658"  y="74" text-anchor="middle" fill="#f87171" font-size="8">10 ms</text>
+
+  <!-- Events plotted on the scale -->
+  <!-- TLB hit + L1 hit: ~1 ns (x=22) -->
+  <rect x="14"  y="85" width="16" height="16" rx="2" fill="#4ade80"/>
+  <line x1="22" y1="101" x2="22" y2="60" stroke="#4ade80" stroke-width="1" stroke-dasharray="3 2"/>
+  <text x="22"  y="116" text-anchor="middle" fill="#4ade80" font-size="7">TLB hit</text>
+  <text x="22"  y="126" text-anchor="middle" fill="#4ade80" font-size="7">+ L1 hit</text>
+  <text x="22"  y="136" text-anchor="middle" fill="#4ade80" font-size="7">~1 ns</text>
+
+  <!-- TLB hit + L2 hit: ~4 ns (x≈58) -->
+  <rect x="50"  y="85" width="16" height="16" rx="2" fill="#4ade80"/>
+  <line x1="58" y1="101" x2="58" y2="60" stroke="#4ade80" stroke-width="1" stroke-dasharray="3 2"/>
+  <text x="58"  y="116" text-anchor="middle" fill="#4ade80" font-size="7">TLB hit</text>
+  <text x="58"  y="126" text-anchor="middle" fill="#4ade80" font-size="7">+ L2 hit</text>
+  <text x="58"  y="136" text-anchor="middle" fill="#4ade80" font-size="7">~4 ns</text>
+
+  <!-- TLB hit + L3 hit: ~12 ns (x≈84) -->
+  <rect x="76"  y="85" width="16" height="16" rx="2" fill="#fbbf24"/>
+  <line x1="84" y1="101" x2="84" y2="60" stroke="#fbbf24" stroke-width="1" stroke-dasharray="3 2"/>
+  <text x="84"  y="116" text-anchor="middle" fill="#fbbf24" font-size="7">TLB hit</text>
+  <text x="84"  y="126" text-anchor="middle" fill="#fbbf24" font-size="7">+ L3 hit</text>
+  <text x="84"  y="136" text-anchor="middle" fill="#fbbf24" font-size="7">~12 ns</text>
+
+  <!-- TLB hit + RAM: ~100 ns (x=204) -->
+  <rect x="196" y="85" width="16" height="16" rx="2" fill="#f59e0b"/>
+  <line x1="204" y1="101" x2="204" y2="60" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="3 2"/>
+  <text x="204"  y="116" text-anchor="middle" fill="#f59e0b" font-size="7">TLB hit</text>
+  <text x="204"  y="126" text-anchor="middle" fill="#f59e0b" font-size="7">+ RAM</text>
+  <text x="204"  y="136" text-anchor="middle" fill="#f59e0b" font-size="7">~100 ns</text>
+
+  <!-- TLB miss + hot tables: ~50-400 ns range -->
+  <rect x="168" y="148" width="72" height="16" rx="2" fill="#f87171" stroke="#f87171" stroke-width="1"/>
+  <text x="204"  y="160" text-anchor="middle" fill="#0f0d09" font-size="7" font-weight="700">TLB miss (tables in cache/RAM)</text>
+  <line x1="168" y1="60" x2="168" y2="144" stroke="#f87171" stroke-width="1" stroke-dasharray="2 2"/>
+  <line x1="240" y1="60" x2="240" y2="144" stroke="#f87171" stroke-width="1" stroke-dasharray="2 2"/>
+  <text x="204"  y="174" text-anchor="middle" fill="#f87171" font-size="7">~50–400 ns</text>
+
+  <!-- Minor page fault: ~1-10 µs (x=295-386) -->
+  <rect x="295" y="85" width="91" height="16" rx="2" fill="#f87171"/>
+  <line x1="295" y1="101" x2="295" y2="60" stroke="#f87171" stroke-width="1.5" stroke-dasharray="3 2"/>
+  <line x1="386" y1="101" x2="386" y2="60" stroke="#f87171" stroke-width="1.5" stroke-dasharray="3 2"/>
+  <text x="340"  y="116" text-anchor="middle" fill="#fef3c7" font-size="8" font-weight="700">minor page fault</text>
+  <text x="340"  y="128" text-anchor="middle" fill="#f87171" font-size="7">page not yet backed · OS maps + zeros a page</text>
+  <text x="340"  y="140" text-anchor="middle" fill="#f87171" font-size="7">~1–10 µs</text>
+
+  <!-- Major page fault (SSD): ~100µs (x=477) -->
+  <rect x="469" y="85" width="16" height="16" rx="2" fill="#f87171"/>
+  <line x1="477" y1="101" x2="477" y2="60" stroke="#f87171" stroke-width="1.5" stroke-dasharray="3 2"/>
+  <text x="477"  y="116" text-anchor="middle" fill="#f87171" font-size="7">major fault</text>
+  <text x="477"  y="128" text-anchor="middle" fill="#f87171" font-size="7">(SSD)</text>
+  <text x="477"  y="140" text-anchor="middle" fill="#f87171" font-size="7">~100 µs</text>
+
+  <!-- Major page fault (HDD): ~1-10 ms (x=568-658) -->
+  <rect x="560" y="85" width="98" height="16" rx="2" fill="#f87171"/>
+  <line x1="560" y1="101" x2="560" y2="60" stroke="#f87171" stroke-width="1.5" stroke-dasharray="3 2"/>
+  <line x1="658" y1="101" x2="658" y2="60" stroke="#f87171" stroke-width="1.5" stroke-dasharray="3 2"/>
+  <text x="609"  y="116" text-anchor="middle" fill="#fef3c7" font-size="8" font-weight="700">major fault (HDD)</text>
+  <text x="609"  y="128" text-anchor="middle" fill="#f87171" font-size="7">read from disk · ~1–10 ms</text>
+
+  <!-- Bottom label -->
+  <line x1="22" y1="195" x2="658" y2="195" stroke="#3d2e0f" stroke-width="1" stroke-dasharray="3 3"/>
+  <text x="340" y="212" text-anchor="middle" fill="#3d2e0f" font-size="9">All of the above are triggered by the same line of source code: arr[i]</text>
+  <text x="340" y="228" text-anchor="middle" fill="#3d2e0f" font-size="8">The variance — 7 orders of magnitude — is determined entirely by TLB, cache, and backing state.</text>
+  <text x="340" y="244" text-anchor="middle" fill="#f59e0b" font-size="9" font-weight="700">-XX:+AlwaysPreTouch forces minor page faults to happen at JVM startup, not at runtime.</text>
+  <text x="340" y="258" text-anchor="middle" fill="#3d2e0f" font-size="8">Huge pages (2 MB) eliminate TLB misses for large working sets: 1 TLB entry covers 512× more memory.</text>
+</svg>

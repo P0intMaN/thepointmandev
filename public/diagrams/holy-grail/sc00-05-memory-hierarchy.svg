@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="680" height="370" viewBox="0 0 680 370" font-family="'Geist Mono', monospace">
+  <rect width="680" height="370" fill="#0f0d09"/>
+
+  <!-- Title -->
+  <text x="340" y="16" text-anchor="middle" fill="#92400e" font-size="10" letter-spacing="2" font-weight="700">THE MEMORY HIERARCHY — LATENCY AND SIZE</text>
+
+  <!-- Column headers -->
+  <text x="22"  y="32" fill="#3d2e0f" font-size="9" font-weight="700">LEVEL</text>
+  <text x="260" y="32" fill="#3d2e0f" font-size="9" font-weight="700">SIZE</text>
+  <text x="370" y="32" fill="#3d2e0f" font-size="9" font-weight="700">LATENCY</text>
+  <text x="500" y="32" fill="#3d2e0f" font-size="9" font-weight="700">CYCLES @ 3GHz</text>
+
+  <!-- Row heights: y starts at 38, each row 30px tall, 8px gap -->
+
+  <!-- Registers -->
+  <rect x="10" y="38" width="660" height="30" rx="3" fill="#1a1510" stroke="#f59e0b" stroke-width="1.5"/>
+  <text x="22"  y="58" fill="#f59e0b" font-size="11" font-weight="700">CPU Registers</text>
+  <text x="260" y="58" fill="#fef3c7" font-size="10">~1 KB / core</text>
+  <text x="370" y="58" fill="#4ade80" font-size="10" font-weight="700">0.33 ns</text>
+  <text x="500" y="58" fill="#4ade80" font-size="10" font-weight="700">1 cycle</text>
+
+  <!-- L1 cache -->
+  <rect x="10" y="72" width="660" height="30" rx="3" fill="#1a1510" stroke="#f59e0b" stroke-width="1.2"/>
+  <text x="22"  y="92" fill="#fbbf24" font-size="11" font-weight="700">L1 Cache</text>
+  <text x="260" y="92" fill="#fef3c7" font-size="10">32–64 KB / core</text>
+  <text x="370" y="92" fill="#4ade80" font-size="10" font-weight="700">~1 ns</text>
+  <text x="500" y="92" fill="#4ade80" font-size="10" font-weight="700">3–4 cycles</text>
+
+  <!-- L2 cache -->
+  <rect x="10" y="106" width="660" height="30" rx="3" fill="#1a1510" stroke="#f59e0b" stroke-width="1"/>
+  <text x="22"  y="126" fill="#fbbf24" font-size="11" font-weight="700">L2 Cache</text>
+  <text x="260" y="126" fill="#fef3c7" font-size="10">256 KB – 1 MB / core</text>
+  <text x="370" y="126" fill="#fbbf24" font-size="10">~4 ns</text>
+  <text x="500" y="126" fill="#fbbf24" font-size="10">10–15 cycles</text>
+
+  <!-- L3 cache -->
+  <rect x="10" y="140" width="660" height="30" rx="3" fill="#1a1510" stroke="#3d2e0f" stroke-width="1"/>
+  <text x="22"  y="160" fill="#fbbf24" font-size="11" font-weight="700">L3 Cache</text>
+  <text x="260" y="160" fill="#fef3c7" font-size="10">8–64 MB (shared)</text>
+  <text x="370" y="160" fill="#fbbf24" font-size="10">~12 ns</text>
+  <text x="500" y="160" fill="#fbbf24" font-size="10">30–50 cycles</text>
+
+  <!-- Separator line -->
+  <line x1="10" y1="177" x2="670" y2="177" stroke="#3d2e0f" stroke-width="1" stroke-dasharray="4 3"/>
+  <text x="340" y="187" text-anchor="middle" fill="#3d2e0f" font-size="8" letter-spacing="1">— OFF-CHIP BOUNDARY —</text>
+
+  <!-- RAM -->
+  <rect x="10" y="193" width="660" height="30" rx="3" fill="#120e08" stroke="#3d2e0f" stroke-width="1"/>
+  <text x="22"  y="213" fill="#92400e" font-size="11" font-weight="700">Main RAM</text>
+  <text x="260" y="213" fill="#fef3c7" font-size="10">8 GB – 1 TB</text>
+  <text x="370" y="213" fill="#f87171" font-size="10" font-weight="700">~100 ns</text>
+  <text x="500" y="213" fill="#f87171" font-size="10" font-weight="700">~300 cycles</text>
+
+  <!-- NVMe SSD -->
+  <rect x="10" y="227" width="660" height="30" rx="3" fill="#120e08" stroke="#3d2e0f" stroke-width="1"/>
+  <text x="22"  y="247" fill="#92400e" font-size="11" font-weight="700">NVMe SSD</text>
+  <text x="260" y="247" fill="#fef3c7" font-size="10">TBs</text>
+  <text x="370" y="247" fill="#f87171" font-size="10">~20 µs</text>
+  <text x="500" y="247" fill="#f87171" font-size="10">200,000 cycles</text>
+
+  <!-- HDD -->
+  <rect x="10" y="261" width="660" height="30" rx="3" fill="#120e08" stroke="#3d2e0f" stroke-width="1"/>
+  <text x="22"  y="281" fill="#92400e" font-size="11" font-weight="700">Hard Disk (HDD)</text>
+  <text x="260" y="281" fill="#fef3c7" font-size="10">TBs</text>
+  <text x="370" y="281" fill="#f87171" font-size="10">~10 ms (seek)</text>
+  <text x="500" y="281" fill="#f87171" font-size="10">30,000,000 cycles</text>
+
+  <!-- Network LAN -->
+  <rect x="10" y="295" width="660" height="30" rx="3" fill="#120e08" stroke="#3d2e0f" stroke-width="1"/>
+  <text x="22"  y="315" fill="#92400e" font-size="11" font-weight="700">Network (same DC)</text>
+  <text x="260" y="315" fill="#fef3c7" font-size="10">unbounded</text>
+  <text x="370" y="315" fill="#f87171" font-size="10">~500 µs</text>
+  <text x="500" y="315" fill="#f87171" font-size="10">1,500,000,000 cy</text>
+
+  <!-- Network cross-world -->
+  <rect x="10" y="329" width="660" height="30" rx="3" fill="#120e08" stroke="#3d2e0f" stroke-width="1"/>
+  <text x="22"  y="349" fill="#92400e" font-size="11" font-weight="700">Network (cross-world)</text>
+  <text x="260" y="349" fill="#fef3c7" font-size="10">unbounded</text>
+  <text x="370" y="349" fill="#f87171" font-size="10">~150 ms</text>
+  <text x="500" y="349" fill="#f87171" font-size="10">450,000,000,000 cy</text>
+
+  <!-- Bottom note: 7 orders of magnitude -->
+  <text x="340" y="366" text-anchor="middle" fill="#3d2e0f" font-size="8" letter-spacing="1">REGISTER → CROSS-WORLD NETWORK: 7 ORDERS OF MAGNITUDE  ·  0.33 ns → 150 ms</text>
+</svg>

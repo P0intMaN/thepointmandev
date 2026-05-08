@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="680" height="250" viewBox="0 0 680 250" font-family="'Geist Mono', monospace">
+  <rect width="680" height="250" fill="#0f0d09"/>
+
+  <!-- Title -->
+  <text x="340" y="16" text-anchor="middle" fill="#92400e" font-size="10" letter-spacing="2" font-weight="700">HEAP FRAGMENTATION vs GC COMPACTION</text>
+
+  <!-- === LEFT: Fragmented heap === -->
+  <text x="170" y="34" text-anchor="middle" fill="#f87171" font-size="10" font-weight="700">After hours of alloc/free</text>
+  <text x="170" y="46" text-anchor="middle" fill="#3d2e0f" font-size="8">1 GB free total — no contiguous block &gt; 80 KB</text>
+
+  <!-- Heap bar: 330px wide, mixed used/free blocks -->
+  <!-- Row 1 -->
+  <rect x="10"  y="54" width="80" height="24" rx="2" fill="#1a0f0f" stroke="#f87171" stroke-width="1"/>
+  <text x="50"  y="70" text-anchor="middle" fill="#f87171" font-size="8">USED</text>
+  <rect x="92"  y="54" width="30" height="24" rx="2" fill="#0f1a0f" stroke="#4ade80" stroke-width="1" stroke-dasharray="3 1"/>
+  <text x="107" y="70" text-anchor="middle" fill="#4ade80" font-size="7">free</text>
+  <rect x="124" y="54" width="100" height="24" rx="2" fill="#1a0f0f" stroke="#f87171" stroke-width="1"/>
+  <text x="174" y="70" text-anchor="middle" fill="#f87171" font-size="8">USED</text>
+  <rect x="226" y="54" width="20" height="24" rx="2" fill="#0f1a0f" stroke="#4ade80" stroke-width="1" stroke-dasharray="3 1"/>
+  <text x="236" y="70" text-anchor="middle" fill="#4ade80" font-size="6">fr</text>
+  <rect x="248" y="54" width="60" height="24" rx="2" fill="#1a0f0f" stroke="#f87171" stroke-width="1"/>
+  <text x="278" y="70" text-anchor="middle" fill="#f87171" font-size="8">USED</text>
+  <rect x="310" y="54" width="25" height="24" rx="2" fill="#0f1a0f" stroke="#4ade80" stroke-width="1" stroke-dasharray="3 1"/>
+  <text x="322" y="70" text-anchor="middle" fill="#4ade80" font-size="7">free</text>
+
+  <!-- Row 2 -->
+  <rect x="10"  y="82" width="45" height="24" rx="2" fill="#0f1a0f" stroke="#4ade80" stroke-width="1" stroke-dasharray="3 1"/>
+  <text x="32"  y="98" text-anchor="middle" fill="#4ade80" font-size="7">free</text>
+  <rect x="57"  y="82" width="120" height="24" rx="2" fill="#1a0f0f" stroke="#f87171" stroke-width="1"/>
+  <text x="117" y="98" text-anchor="middle" fill="#f87171" font-size="8">USED</text>
+  <rect x="179" y="82" width="35" height="24" rx="2" fill="#0f1a0f" stroke="#4ade80" stroke-width="1" stroke-dasharray="3 1"/>
+  <text x="196" y="98" text-anchor="middle" fill="#4ade80" font-size="7">free</text>
+  <rect x="216" y="82" width="70" height="24" rx="2" fill="#1a0f0f" stroke="#f87171" stroke-width="1"/>
+  <text x="251" y="98" text-anchor="middle" fill="#f87171" font-size="8">USED</text>
+  <rect x="288" y="82" width="47" height="24" rx="2" fill="#0f1a0f" stroke="#4ade80" stroke-width="1" stroke-dasharray="3 1"/>
+  <text x="311" y="98" text-anchor="middle" fill="#4ade80" font-size="7">free</text>
+
+  <!-- "OOM despite free space" label -->
+  <rect x="10"  y="112" width="325" height="24" rx="2" fill="#1a0f0f" stroke="#f87171" stroke-width="1.5"/>
+  <text x="172" y="128" text-anchor="middle" fill="#f87171" font-size="9">malloc(100KB) fails — no contiguous 100KB block exists</text>
+
+  <!-- Legend: USED, free -->
+  <rect x="10"  y="142" width="14" height="10" rx="1" fill="#1a0f0f" stroke="#f87171" stroke-width="1"/>
+  <text x="30"  y="152" fill="#3d2e0f" font-size="8">live objects</text>
+  <rect x="100" y="142" width="14" height="10" rx="1" fill="#0f1a0f" stroke="#4ade80" stroke-width="1" stroke-dasharray="3 1"/>
+  <text x="120" y="152" fill="#3d2e0f" font-size="8">free space (fragmented)</text>
+
+  <!-- === RIGHT: Compacted heap === -->
+  <text x="510" y="34" text-anchor="middle" fill="#4ade80" font-size="10" font-weight="700">After GC compaction</text>
+  <text x="510" y="46" text-anchor="middle" fill="#3d2e0f" font-size="8">same live data — now contiguous — large free block available</text>
+
+  <!-- Compacted: live objects packed left, free space right -->
+  <rect x="350" y="54" width="200" height="52" rx="3" fill="#1a0f0f" stroke="#f87171" stroke-width="1.5"/>
+  <text x="450" y="78" text-anchor="middle" fill="#f87171" font-size="10" font-weight="700">Live Objects</text>
+  <text x="450" y="93" text-anchor="middle" fill="#3d2e0f" font-size="8">(same total size as above)</text>
+
+  <rect x="552" y="54" width="116" height="52" rx="3" fill="#0f1a0f" stroke="#4ade80" stroke-width="1.5"/>
+  <text x="610" y="74" text-anchor="middle" fill="#4ade80" font-size="10" font-weight="700">FREE</text>
+  <text x="610" y="88" text-anchor="middle" fill="#4ade80" font-size="8">contiguous</text>
+  <text x="610" y="100" text-anchor="middle" fill="#4ade80" font-size="8">malloc OK</text>
+
+  <!-- Bump pointer arrow -->
+  <line x1="552" y1="80" x2="552" y2="112" stroke="#4ade80" stroke-width="1.5"/>
+  <polygon points="548,112 552,120 556,112" fill="#4ade80"/>
+  <text x="556" y="114" fill="#4ade80" font-size="8">bump ptr</text>
+  <text x="556" y="126" fill="#3d2e0f" font-size="7">next alloc here</text>
+
+  <!-- Explanation -->
+  <line x1="10" y1="162" x2="658" y2="162" stroke="#3d2e0f" stroke-width="1" stroke-dasharray="3 3"/>
+
+  <text x="340" y="178" text-anchor="middle" fill="#92400e" font-size="9" font-weight="700" letter-spacing="1">WHY JAVA DOESN'T SUFFER LONG-TERM FRAGMENTATION</text>
+  <text x="340" y="194" text-anchor="middle" fill="#fef3c7" font-size="9">G1 GC, ZGC, Shenandoah — all compact the heap. Live objects are moved to fill gaps.</text>
+  <text x="340" y="210" text-anchor="middle" fill="#3d2e0f" font-size="9">After compaction, allocation is a bump-pointer: next alloc = just advance by N bytes. ~5 ns.</text>
+  <text x="340" y="226" text-anchor="middle" fill="#f87171" font-size="9">C's malloc/free has no compaction. Fragmentation accumulates forever in long-running servers.</text>
+  <text x="340" y="242" text-anchor="middle" fill="#3d2e0f" font-size="8">Cost of compaction: GC pause (or concurrent relocation work). Trade-off: predictable memory for intermittent pauses.</text>
+</svg>

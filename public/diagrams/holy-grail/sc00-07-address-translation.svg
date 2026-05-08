@@ -1,0 +1,92 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="680" height="290" viewBox="0 0 680 290" font-family="'Geist Mono', monospace">
+  <rect width="680" height="290" fill="#0f0d09"/>
+
+  <!-- Title -->
+  <text x="340" y="16" text-anchor="middle" fill="#92400e" font-size="10" letter-spacing="2" font-weight="700">VIRTUAL → PHYSICAL ADDRESS TRANSLATION</text>
+
+  <!-- Virtual address bit breakdown -->
+  <text x="22" y="34" fill="#3d2e0f" font-size="9">48-BIT VIRTUAL ADDRESS (x86-64, 4-level paging)</text>
+
+  <!-- Five fields of the virtual address -->
+  <!-- PML4: 9 bits -->
+  <rect x="22"  y="38" width="96" height="34" rx="3" fill="#1f1608" stroke="#f59e0b" stroke-width="1.5"/>
+  <text x="70"  y="52" text-anchor="middle" fill="#f59e0b" font-size="9" font-weight="700">PML4</text>
+  <text x="70"  y="65" text-anchor="middle" fill="#92400e" font-size="8">9 bits [47–39]</text>
+
+  <!-- PDPT: 9 bits -->
+  <rect x="120" y="38" width="96" height="34" rx="3" fill="#1f1608" stroke="#f59e0b" stroke-width="1.2"/>
+  <text x="168" y="52" text-anchor="middle" fill="#f59e0b" font-size="9" font-weight="700">PDPT</text>
+  <text x="168" y="65" text-anchor="middle" fill="#92400e" font-size="8">9 bits [38–30]</text>
+
+  <!-- PD: 9 bits -->
+  <rect x="218" y="38" width="96" height="34" rx="3" fill="#1f1608" stroke="#f59e0b" stroke-width="1"/>
+  <text x="266" y="52" text-anchor="middle" fill="#f59e0b" font-size="9" font-weight="700">PD</text>
+  <text x="266" y="65" text-anchor="middle" fill="#92400e" font-size="8">9 bits [29–21]</text>
+
+  <!-- PT: 9 bits -->
+  <rect x="316" y="38" width="96" height="34" rx="3" fill="#1f1608" stroke="#f59e0b" stroke-width="1"/>
+  <text x="364" y="52" text-anchor="middle" fill="#f59e0b" font-size="9" font-weight="700">PT</text>
+  <text x="364" y="65" text-anchor="middle" fill="#92400e" font-size="8">9 bits [20–12]</text>
+
+  <!-- Offset: 12 bits -->
+  <rect x="414" y="38" width="244" height="34" rx="3" fill="#0c1518" stroke="#67e8f9" stroke-width="1.5"/>
+  <text x="536" y="52" text-anchor="middle" fill="#67e8f9" font-size="9" font-weight="700">OFFSET within page</text>
+  <text x="536" y="65" text-anchor="middle" fill="#67e8f9" font-size="8">12 bits [11–0]  ·  2¹² = 4096 bytes</text>
+
+  <!-- VPN bracket label -->
+  <line x1="22" y1="80" x2="410" y2="80" stroke="#f59e0b" stroke-width="1"/>
+  <line x1="22" y1="76" x2="22" y2="80" stroke="#f59e0b" stroke-width="1"/>
+  <line x1="410" y1="76" x2="410" y2="80" stroke="#f59e0b" stroke-width="1"/>
+  <text x="216" y="92" text-anchor="middle" fill="#f59e0b" font-size="8">Virtual Page Number (36 bits) — translated by MMU</text>
+
+  <!-- Offset bracket label -->
+  <line x1="414" y1="80" x2="658" y2="80" stroke="#67e8f9" stroke-width="1"/>
+  <line x1="414" y1="76" x2="414" y2="80" stroke="#67e8f9" stroke-width="1"/>
+  <line x1="658" y1="76" x2="658" y2="80" stroke="#67e8f9" stroke-width="1"/>
+  <text x="536" y="92" text-anchor="middle" fill="#67e8f9" font-size="8">passes through unchanged</text>
+
+  <!-- Divider -->
+  <line x1="22" y1="102" x2="658" y2="102" stroke="#3d2e0f" stroke-width="1" stroke-dasharray="3 3"/>
+
+  <!-- Flow diagram: VA → MMU → PA -->
+  <text x="22" y="120" fill="#3d2e0f" font-size="9">TRANSLATION FLOW (TLB HIT — fast path)</text>
+
+  <!-- Process box -->
+  <rect x="22"  y="128" width="130" height="36" rx="3" fill="#1a1510" stroke="#3d2e0f" stroke-width="1"/>
+  <text x="87"  y="144" text-anchor="middle" fill="#fef3c7" font-size="9">Your program</text>
+  <text x="87"  y="158" text-anchor="middle" fill="#3d2e0f" font-size="8">virtual addr 0x7FFE...C408</text>
+
+  <!-- Arrow to MMU -->
+  <line x1="152" y1="146" x2="210" y2="146" stroke="#f59e0b" stroke-width="1.5"/>
+  <polygon points="210,142 218,146 210,150" fill="#f59e0b"/>
+
+  <!-- MMU / TLB box -->
+  <rect x="218" y="128" width="160" height="36" rx="3" fill="#1f1608" stroke="#f59e0b" stroke-width="1.5"/>
+  <text x="298" y="144" text-anchor="middle" fill="#f59e0b" font-size="9" font-weight="700">MMU + TLB</text>
+  <text x="298" y="158" text-anchor="middle" fill="#4ade80" font-size="8">~1 cycle (TLB hit)</text>
+
+  <!-- Arrow to physical -->
+  <line x1="378" y1="146" x2="436" y2="146" stroke="#4ade80" stroke-width="1.5"/>
+  <polygon points="436,142 444,146 436,150" fill="#4ade80"/>
+
+  <!-- Physical address box -->
+  <rect x="444" y="128" width="210" height="36" rx="3" fill="#0f1a0f" stroke="#4ade80" stroke-width="1.5"/>
+  <text x="549" y="144" text-anchor="middle" fill="#4ade80" font-size="9" font-weight="700">physical addr 0x000198423408</text>
+  <text x="549" y="158" text-anchor="middle" fill="#3d2e0f" font-size="8">PPN (36 bits) :: Offset (12 bits)</text>
+
+  <!-- Arrow to DRAM -->
+  <line x1="549" y1="164" x2="549" y2="192" stroke="#4ade80" stroke-width="1.5"/>
+  <polygon points="545,192 549,200 553,192" fill="#4ade80"/>
+
+  <!-- DRAM box -->
+  <rect x="444" y="200" width="210" height="30" rx="3" fill="#120e08" stroke="#3d2e0f" stroke-width="1"/>
+  <text x="549" y="219" text-anchor="middle" fill="#92400e" font-size="9">DRAM chip — actual storage</text>
+
+  <!-- Divider -->
+  <line x1="22" y1="242" x2="658" y2="242" stroke="#3d2e0f" stroke-width="1" stroke-dasharray="3 3"/>
+
+  <!-- Key facts -->
+  <text x="22"  y="258" fill="#3d2e0f" font-size="9">Every process has its own virtual address space.</text>
+  <text x="22"  y="272" fill="#3d2e0f" font-size="9">Two processes can both use address 0x7FFE...C408 — they map to different physical pages.</text>
+  <text x="22"  y="286" fill="#f59e0b" font-size="9" font-weight="700">Translation happens on every memory access. Offset (12 bits) passes through unchanged. Only the VPN is translated.</text>
+</svg>

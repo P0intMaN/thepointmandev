@@ -5,9 +5,517 @@ lessonNumber: 4
 subCourse: 0
 description: "ASCII, UTF-8, UTF-16, UTF-32. Why Java's char is 16 bits and why that is a lie."
 date: "2026-04-19"
-draft: true
+draft: false
 ---
 
-## Coming Soon
+## 1. The Motivation
 
-This lesson is being written.
+In 2018, a single text message crashed every iPhone within Bluetooth range. The message contained a Telugu character — a perfectly valid Unicode code point, one that had existed in the standard for years. iOS's font renderer, faced with a specific sequence of Unicode scalar values, tried to count the display length of a zero-width joiner sequence and dereferenced a null pointer. iPhones rebooted. Tens of millions of them.
+
+This was not a buffer overflow. Not a memory corruption bug. A *character encoding* bug. A piece of code that believed all characters fit neatly into a fixed-size unit, that assumed the distance from "start of character" to "end of character" was always 1, that treated the text layer as a solved problem.
+
+The text layer is not a solved problem. It never was. Every production system that handles international text has encoding bugs waiting for the right input. The reason is historical: character encodings evolved over sixty years through a succession of incompatible standards, each designed to solve a specific problem without breaking the installed base, each leaving a seam that future engineers would have to navigate.
+
+This lesson makes you immune. Not just "knows the API" immune — *understands the machine* immune. By the end, you will be able to reason from first principles about what `String.length()` returns, why it lies, what bytes are actually on the wire, and how to write Java that handles every Unicode character correctly without guessing.
+
+---
+
+## 2. The Mental Model
+
+There are four distinct layers between a human reading a character and a CPU storing a byte. Most engineers conflate them. Every encoding bug you have ever seen came from conflating them.
+
+**Layer 1 — Bytes.** The machine layer. A sequence of 8-bit values. This is what lives in files, what travels over networks, what `getBytes()` returns. A byte sequence has no meaning until you know the encoding.
+
+**Layer 2 — Code units.** The encoding's atomic unit. In UTF-8, code units are bytes (8 bits). In UTF-16, code units are 16-bit values. In UTF-32, code units are 32-bit values. `String.length()` in Java returns the number of UTF-16 code units. This is not the number of characters.
+
+**Layer 3 — Code points.** Abstract Unicode identifiers. `U+0041` is the code point for LATIN CAPITAL LETTER A. `U+1F600` is the code point for 😀. Code points are integers in the range `U+0000` to `U+10FFFF`. There are 1,114,112 of them; about 150,000 are assigned. `codePointCount()` counts these.
+
+**Layer 4 — Grapheme clusters.** What a human perceives as "one character." The flag emoji 🇺🇸 is one grapheme cluster, two code points, four UTF-16 code units, and eight UTF-8 bytes. An accented character like é can be one code point (`U+00E9`, precomposed) or two code points (`U+0065` + `U+0301`, base + combining accent) — and both are correct Unicode.
+
+<Figure
+  src="/diagrams/holy-grail/sc00-04-abstraction-levels.svg"
+  alt="The four abstraction levels for the 🇺🇸 flag emoji"
+  caption="One grapheme cluster. Two code points. Four UTF-16 code units. Eight UTF-8 bytes. This is not an edge case — it is the rule for any emoji outside the Basic Multilingual Plane."
+  label="abstraction-levels.svg"
+/>
+
+When you know which layer you are on, encoding questions have exact answers. When you conflate layers — which every encoding API tempts you to do — you write bugs.
+
+<Quiz question="Java's String.length() returns 4 for the string '🇺🇸'. Without running any code, derive that number from the diagram above.">
+  🇺🇸 consists of two Regional Indicator letters, each a code point above U+FFFF (specifically U+1F1FA and U+1F1F8). Code points above U+FFFF cannot fit in a single 16-bit UTF-16 code unit, so each is encoded as a surrogate pair — two code units. Two code points × two code units each = four code units. `String.length()` counts code units, so it returns 4.
+</Quiz>
+
+---
+
+## 3. ASCII: The Foundation and Its Trick
+
+ASCII — the American Standard Code for Information Interchange — was published in 1963. It maps 128 characters to the integers 0–127. Everything fits in 7 bits.
+
+<Figure
+  src="/diagrams/holy-grail/sc00-04-ascii-table.svg"
+  alt="ASCII key values and the case-flip trick using bit 5"
+  caption="The gap between 'A' (65, 0x41) and 'a' (97, 0x61) is exactly 32. In binary, 32 is 0b00100000 — bit 5. Flipping bit 5 toggles case."
+  label="ascii-table.svg"
+/>
+
+Several values are worth memorising. `'0'` is 48 (`0x30`). `'A'` is 65 (`0x41`). `'a'` is 97 (`0x61`). The null terminator is 0. Newline is 10. Space is 32.
+
+The gap between uppercase and lowercase is exactly 32 — `0x20` in hex, `0b00100000` in binary. That means bit 5 is 0 for uppercase letters and 1 for lowercase. XOR with 32 flips that bit and nothing else:
+
+```java
+char c = 'A';
+char lower = (char)(c ^ 0x20);   // 'a'
+char upper = (char)(lower ^ 0x20); // 'A'
+```
+
+This is not a curiosity — it is an O(1), branchless case conversion that compiles to a single XOR instruction. Embedded parsers and lexers use it. It works *only* for ASCII letters. Do not use it for anything involving Unicode.
+
+ASCII covers English. It does not cover French, German, Arabic, Chinese, Japanese, or any of the other several thousand writing systems humans use. The decades that followed ASCII produced a fracture.
+
+---
+
+## 4. The Babel Decades: Code Pages and Mojibake
+
+From the 1970s through the 1990s, the world solved "not enough characters" by defining code pages. A code page is a lookup table: byte value 0–127 maps to ASCII, byte values 128–255 map to some region-specific set. ISO 8859-1 (Latin-1) used the upper half for Western European accented characters. Windows-1252 was a Microsoft variant with subtle differences. ISO 8859-5 used the upper half for Cyrillic. IBM's EBCDIC was entirely different and still lives in mainframes.
+
+The fatal flaw: a byte sequence has no self-describing encoding. If you receive bytes `0xC0 0xE9` and you do not know whether the sender used ISO 8859-1, Windows-1252, or something else, you cannot decode it correctly. Guess wrong and you get mojibake — "文字化け," Japanese for "character transformation," which is itself a beautiful irony because the word describes the experience of seeing Japanese rendered as garbage characters.
+
+The web made this catastrophic. A server would send HTML in one encoding. The browser would guess wrong. Users saw `Ã©` instead of `é`. Or `â€™` instead of `'`. Or columns of boxes and question marks. Entire document archives were rendered permanently unreadable when the encoding metadata was lost.
+
+The industry needed one encoding that could represent every character in every writing system without ambiguity.
+
+---
+
+## 5. Unicode: One Standard to Rule Them All
+
+Unicode assigns a unique integer — a *code point* — to every character in every writing system, past and present. The Unicode Standard, currently at version 15.1, defines 149,813 characters across 161 scripts.
+
+Code points are written in `U+` notation followed by four to six hex digits: `U+0041` is A, `U+00E9` is é, `U+4E2D` is 中, `U+1F600` is 😀. The full range is `U+0000` to `U+10FFFF`, partitioned into 17 *planes* of 65,536 code points each.
+
+**Plane 0** is the Basic Multilingual Plane (BMP). It contains virtually every character in current use: Latin, Cyrillic, Greek, Arabic, Hebrew, CJK ideographs, symbols, punctuation. Code points in the BMP fit in 16 bits.
+
+**Planes 1–16** are the supplementary planes. They contain historical scripts, mathematical symbols, emoji, and the Regional Indicator letters that form flag emoji. Code points in supplementary planes require more than 16 bits — they need at least 17 bits, up to 21 bits for the maximum value `U+10FFFF`.
+
+This distinction — BMP vs. supplementary planes — is the source of most Java string bugs.
+
+---
+
+## 6. The Encodings: UTF-32, UTF-16, and the Java Char Lie
+
+Unicode defines code points. It does not define bytes. You need an encoding — a rule for converting code points to bytes. Three encodings matter in practice.
+
+### UTF-32: The Simple One
+
+UTF-32 encodes every code point as a fixed 4-byte (32-bit) integer. Simple. Wasteful. An ASCII file in UTF-32 is four times larger than in ASCII. No widely-used format or protocol uses UTF-32 for storage or transmission. It appears in internal processing (ICU uses it) because fixed-width encoding makes random access trivial: character `n` is at byte offset `4n`.
+
+### UTF-16: The Java Lie
+
+UTF-16 was designed when the Unicode Consortium believed all code points would fit in 16 bits — that 65,536 characters would be enough. Java was designed in 1995 during this era. Java's `char` is a 16-bit type. Java's `String` is a sequence of UTF-16 code units. This was not a mistake at the time.
+
+Then Unicode assigned code points above `U+FFFF`. UTF-16 needed a way to encode them. The solution: *surrogate pairs*. The BMP range `U+D800` to `U+DFFF` (2,048 code points) was permanently reserved — those code points will never be assigned to characters. Instead, a high surrogate (`U+D800`–`U+DBFF`) followed by a low surrogate (`U+DC00`–`U+DFFF`) encodes a supplementary code point.
+
+The math: a high surrogate carries 10 bits of payload; a low surrogate carries 10 bits. Together, 20 bits encode values from 0 to 1,048,575. Add `0x10000` and you cover `U+10000` to `U+10FFFF`. Exactly the supplementary planes.
+
+```
+Code point U+1F600 (😀):
+  Subtract 0x10000  →  0x0F600  =  0b00001111011000000000
+
+Split into two 10-bit halves:
+  High 10 bits:  0b0000111101  =  0x3D
+  Low  10 bits:  0b1000000000  =  0x200
+
+High surrogate:  0xD800 + 0x3D   = 0xD83D
+Low  surrogate:  0xDC00 + 0x200  = 0xDE00
+
+UTF-16 encoding of 😀:  D83D DE00  (two 16-bit code units)
+```
+
+Now the lie is visible. In Java:
+
+```java
+String s = "😀";
+System.out.println(s.length());          // 2 — two code units
+System.out.println(s.codePointCount(0, s.length())); // 1 — one code point
+System.out.println(s.charAt(0));         // ? — first surrogate, not a real char
+System.out.println((int) s.charAt(0));   // 55357 = 0xD83D
+```
+
+`String.length()` is the number of UTF-16 code units. For any string containing emoji or characters outside the BMP, it is *not* the number of characters. `char` in Java is not a character. It is a UTF-16 code unit. The distinction matters every time you iterate over a string character by character.
+
+The correct way to iterate:
+
+```java
+String s = "Hello 😀 World";
+s.codePoints().forEach(cp -> {
+    System.out.printf("U+%04X  %s%n", cp, Character.getName(cp));
+});
+```
+
+```
+U+0048  LATIN CAPITAL LETTER H
+U+0065  LATIN SMALL LETTER E
+U+006C  LATIN SMALL LETTER L
+U+006C  LATIN SMALL LETTER L
+U+006F  LATIN SMALL LETTER O
+U+0020  SPACE
+U+1F600 GRINNING FACE
+U+0020  SPACE
+U+0057  LATIN CAPITAL LETTER W
+...
+```
+
+<Quiz question="A Java method receives a String and returns the number of characters the user would see. What is wrong with `return s.length()`, and what should you use instead?">
+  `s.length()` returns UTF-16 code units. For strings containing emoji or any code point above U+FFFF, each such character contributes 2 to the length instead of 1. The correct answer depends on what "character" means to your user: `s.codePointCount(0, s.length())` counts Unicode scalar values (code points); `BreakIterator.getCharacterInstance()` counts grapheme clusters (what the user sees). For most "how many characters did the user type?" use cases, you want grapheme clusters via `BreakIterator`.
+</Quiz>
+
+---
+
+## 7. UTF-8: The Web's Encoding
+
+UTF-8 is the dominant encoding on the internet. It is also elegant engineering: a self-synchronizing, ASCII-compatible, variable-width encoding that encodes all 1,114,112 Unicode code points without ambiguity.
+
+<Figure
+  src="/diagrams/holy-grail/sc00-04-utf8-encoding.svg"
+  alt="UTF-8 encoding: 1 to 4 bytes per code point, framing bits in amber, payload bits in cyan"
+  caption="The leading byte tells you how many bytes follow. Continuation bytes always start with 10, which means you can re-sync to a character boundary after any corruption."
+  label="utf8-encoding.svg"
+/>
+
+**Six properties that make UTF-8 win:**
+
+1. **ASCII compatibility.** Code points `U+0000`–`U+007F` encode as single bytes identical to their ASCII values. Every ASCII file is a valid UTF-8 file. The reverse is not true — UTF-8 files that use only ASCII are also valid ASCII.
+
+2. **Self-synchronisation.** Continuation bytes always start with `10`. Start bytes always start with `0` (1-byte), `110` (2-byte), `1110` (3-byte), or `11110` (4-byte). If you drop into the middle of a UTF-8 stream, you can find the next character boundary by scanning forward for a byte that does not start with `10`. This is impossible with fixed-width encodings like UTF-16.
+
+3. **No null bytes in the payload.** The null byte (`0x00`) only represents `U+0000` (the null character). This means UTF-8 strings can be safely handled by C's null-terminated string functions — which is why Unix filesystems and most C APIs work naturally with UTF-8.
+
+4. **Byte order independence.** UTF-8 has no endianness. There is no need for a Byte Order Mark (BOM). UTF-16 and UTF-32 need BOMs to declare endianness.
+
+5. **Sort order preservation for BMP.** Sorting UTF-8 byte sequences lexicographically produces the same order as sorting by Unicode code point for all BMP characters. This is why UTF-8 works naturally with byte-oriented sort algorithms.
+
+6. **Compact for common scripts.** Latin, Greek, Cyrillic, and most symbols use 1–2 bytes. CJK uses 3 bytes. Only emoji and rare scripts use 4 bytes. UTF-32 always uses 4 bytes regardless.
+
+**The 😀 encoding worked out:**
+
+```
+Code point: U+1F600
+
+Binary:  0001 1111 0110 0000 0000
+         (21 bits needed — requires 4-byte form)
+
+4-byte template:  11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
+                          |||      ||        ||        ||
+Fill in 21 bits:  11110000 10011111 10011000 10000000
+                  = 0xF0   0x9F     0x98     0x80
+```
+
+Verify in Java:
+
+```java
+byte[] bytes = "😀".getBytes(StandardCharsets.UTF_8);
+for (byte b : bytes) {
+    System.out.printf("%02X ", b);
+}
+// F0 9F 98 80
+```
+
+```
+F0 9F 98 80
+```
+
+Every claim in the diagram is verifiable with a `getBytes()` call.
+
+---
+
+## 8. The Four Abstraction Levels in Practice
+
+Take the 🇺🇸 flag emoji. It is not a single code point. It is two *Regional Indicator* letters — `U+1F1FA` (Regional Indicator Symbol Letter U) and `U+1F1F8` (Regional Indicator Symbol Letter S). The Unicode specification says that adjacent Regional Indicators form a flag. The renderer — not the encoding standard, the font renderer — decides what flag to show.
+
+The four layers:
+
+| Layer | Count | Values |
+|---|---|---|
+| Grapheme clusters | 1 | 🇺🇸 |
+| Code points | 2 | U+1F1FA, U+1F1F8 |
+| UTF-16 code units | 4 | D83C DDFA D83C DDF8 |
+| UTF-8 bytes | 8 | F0 9F 87 BA F0 9F 87 B8 |
+
+```java
+String flag = "🇺🇸";
+
+System.out.println(flag.length());                          // 4 (UTF-16 code units)
+System.out.println(flag.codePointCount(0, flag.length()));  // 2 (code points)
+System.out.println(flag.getBytes(StandardCharsets.UTF_8).length); // 8 (bytes)
+
+// Grapheme clusters require BreakIterator
+BreakIterator it = BreakIterator.getCharacterInstance();
+it.setText(flag);
+int clusters = 0;
+while (it.next() != BreakIterator.DONE) clusters++;
+System.out.println(clusters); // 1
+```
+
+```
+4
+2
+8
+1
+```
+
+The 2018 iPhone crash exploited exactly this gap. iOS's CoreText renderer, when processing certain Telugu sequences with zero-width joiners, attempted to compute the display width by iterating over grapheme clusters. A specific combination caused it to compute a negative size — which it passed to `malloc`, which on some iOS versions could return a non-null pointer for a zero or negative size, after which rendering code wrote past the allocated buffer. The specific trigger sequence was found by a security researcher testing combinations. It propagated by SMS because Messages auto-rendered previews.
+
+The lesson: the grapheme cluster layer is where human semantics live. The code point layer is where Unicode lives. The code unit layer is where Java lives. The byte layer is where the network lives. Any code that assumes these layers are the same is a bug waiting for input.
+
+<Quiz question="A user pastes '🏳️‍🌈' (rainbow flag emoji) into a text field. Your code runs `if (input.length() > 10) reject()`. The rainbow flag causes the validation to reject a single emoji as too long. What is the actual length and why?">
+  The rainbow flag is a ZWJ sequence: White Flag (U+1F3F3) + Variation Selector 16 (U+FE0F) + Zero Width Joiner (U+200D) + Rainbow (U+1F308). That is four code points. In UTF-16: White Flag is outside BMP → 2 code units (surrogate pair); VS-16 is in BMP → 1 code unit; ZWJ is in BMP → 1 code unit; Rainbow is outside BMP → 2 code units. Total: `2 + 1 + 1 + 2 = 6` code units. `String.length()` returns 6. If your limit is meant to be "6 visible characters," the validation is wrong — you need grapheme cluster counting.
+</Quiz>
+
+---
+
+## 9. The Implementation: Java Encoding API
+
+Java's encoding API evolved to support the full complexity above. The correct patterns:
+
+### Encoding and Decoding
+
+Always name the charset explicitly. Never rely on the platform default — it differs between operating systems, JVM flags, and Docker images.
+
+```java
+import java.nio.charset.StandardCharsets;
+
+// String → bytes
+byte[] utf8Bytes  = "Hello 中文".getBytes(StandardCharsets.UTF_8);
+byte[] utf16Bytes = "Hello 中文".getBytes(StandardCharsets.UTF_16);
+
+// bytes → String
+String decoded = new String(utf8Bytes, StandardCharsets.UTF_8);
+
+// Streams — always specify charset
+try (BufferedReader reader = new BufferedReader(
+        new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
+    String line;
+    while ((line = reader.readLine()) != null) {
+        process(line);
+    }
+}
+```
+
+### Correct Length Counting
+
+```java
+String text = "Hello 😀 🇺🇸";
+
+// Wrong for user-visible length:
+int wrong = text.length();                              // counts UTF-16 code units
+
+// Right for "how many code points":
+int codePoints = text.codePointCount(0, text.length()); // Unicode scalars
+
+// Right for "how many characters the user sees":
+BreakIterator bi = BreakIterator.getCharacterInstance();
+bi.setText(text);
+int clusters = 0;
+int boundary = bi.first();
+while ((boundary = bi.next()) != BreakIterator.DONE) clusters++;
+// clusters == 9: H e l l o [space] 😀 [space] 🇺🇸
+```
+
+### Correct Iteration
+
+```java
+// WRONG: iterates UTF-16 code units, breaks on supplementary chars
+for (int i = 0; i < s.length(); i++) {
+    char c = s.charAt(i); // broken for emoji
+}
+
+// RIGHT: iterates code points
+s.codePoints().forEach(cp -> {
+    // cp is a full Unicode code point
+});
+
+// RIGHT (indexed, for mutation):
+for (int i = 0; i < s.length(); ) {
+    int cp = s.codePointAt(i);
+    // process cp
+    i += Character.charCount(cp); // advance by 1 or 2 code units
+}
+```
+
+### Normalisation
+
+The same visible character can have multiple Unicode representations. `é` can be `U+00E9` (precomposed, one code point) or `U+0065 U+0301` (base e + combining accent, two code points). These are canonically equivalent but not byte-equal. Use `Normalizer` before comparing or hashing user text:
+
+```java
+import java.text.Normalizer;
+
+String a = "\u00E9";          // é precomposed
+String b = "e\u0301";        // e + combining accent
+
+System.out.println(a.equals(b));         // false — different bytes
+System.out.println(a.length());          // 1
+System.out.println(b.length());          // 2
+
+String nfcA = Normalizer.normalize(a, Normalizer.Form.NFC);
+String nfcB = Normalizer.normalize(b, Normalizer.Form.NFC);
+System.out.println(nfcA.equals(nfcB));   // true
+```
+
+```
+false
+1
+2
+true
+```
+
+NFC (Canonical Decomposition, followed by Canonical Composition) is the right normalisation form for comparing text that will be displayed. NFD is useful when you need to strip accents (normalise to NFD, then filter out `Character.NON_SPACING_MARK` category code points).
+
+---
+
+## 10. The Analysis
+
+The encoding choices are engineering trade-offs with measurable costs.
+
+**UTF-8 vs UTF-16 for storage:**
+
+| Script | UTF-8 bytes/char | UTF-16 bytes/char |
+|---|---|---|
+| ASCII / Latin | 1 | 2 |
+| Greek, Cyrillic | 2 | 2 |
+| CJK (Chinese, Japanese, Korean) | 3 | 2 |
+| Emoji (supplementary) | 4 | 4 |
+
+UTF-16 wins for CJK-heavy content. UTF-8 wins for English-heavy content. UTF-8 is the correct default for everything sent over a wire or stored in a file, because it is self-describing and has no endianness ambiguity.
+
+**Java's internal encoding:** Since Java 9, `String` uses a compact representation: Latin-1 (1 byte/char) when all code units fit in 8 bits, UTF-16 otherwise. This halves memory for ASCII-dominant workloads. You cannot observe this from the API — `charAt()` still returns a `char`, not a byte.
+
+**Random access cost:** UTF-8 and UTF-16 are variable-width encodings. Finding character `n` requires scanning from the beginning — O(n) per access. UTF-32 is fixed-width: O(1). For most workloads, sequential access dominates and this is irrelevant. For workloads with random character access (certain text editors, rope data structures), the fixed-width property matters.
+
+---
+
+## 11. The Proof: Why UTF-8 Cannot Be Ambiguous
+
+A byte stream is a valid UTF-8 sequence if and only if it matches the grammar:
+
+```
+sequence := *character
+character := single-byte
+           | two-byte
+           | three-byte
+           | four-byte
+
+single-byte  := 0xxxxxxx
+two-byte     := 110xxxxx 10xxxxxx
+three-byte   := 1110xxxx 10xxxxxx 10xxxxxx
+four-byte    := 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
+```
+
+**Claim:** Given a byte, you can determine its role (start of 1/2/3/4-byte sequence, or continuation) from its first two bits alone, without any lookahead or state.
+
+**Proof by exhaustion of cases:**
+
+```
+Byte starts with 0         →  single-byte character (0xxxxxxx)
+Byte starts with 10        →  continuation byte (10xxxxxx)
+Byte starts with 110       →  start of 2-byte sequence
+Byte starts with 1110      →  start of 3-byte sequence
+Byte starts with 11110     →  start of 4-byte sequence
+Byte starts with 11111     →  invalid (no valid UTF-8 byte starts with 5 ones)
+```
+
+These six cases are exhaustive and mutually exclusive. No byte value maps to two roles. A byte starting with `10` is *always* a continuation byte. A byte starting with `0` is *always* a single-byte character. This is the self-synchronisation property: if you lose your position in a stream, you scan forward until you find a byte that does not start with `10` — that byte is the start of the next character.
+
+**Claim:** UTF-8 encoding is uniquely decodable — no two distinct sequences of code points produce the same byte sequence.
+
+**Proof sketch:** Each encoding form uses a distinct leading byte pattern (different number of leading `1` bits). The payload bits uniquely determine the code point. Two different code points produce different payload bits. Therefore two different sequences of code points produce different byte sequences. □
+
+**Claim:** The code point range U+D800–U+DFFF (surrogates) is explicitly forbidden in UTF-8.
+
+**Proof:** The 3-byte form can encode values from U+0800 to U+FFFF. U+D800 would encode as `ED A0 80`. U+DFFF would encode as `ED BF BF`. These are syntactically valid byte sequences — but the Unicode Standard declares them ill-formed. A conformant UTF-8 decoder must reject them. This is why you cannot round-trip arbitrary Java strings (which can contain unpaired surrogates) through UTF-8 encoding and decoding — the encoder will throw or replace the surrogate on the way out.
+
+---
+
+## 12. The Trade-offs
+
+**Use UTF-8 when:**
+- Storing text in files, databases, or transmitting over networks. It is the universal default.
+- Your content is predominantly ASCII or Latin script.
+- You need null-byte safety in C-adjacent code.
+- You need byte-order independence.
+
+**Use UTF-16 when:**
+- Implementing Java internals (you have no choice — `String` is UTF-16).
+- Processing CJK text internally where random code-unit access matters.
+- Interoperating with Windows APIs (Windows uses UTF-16 internally).
+
+**Use UTF-32 when:**
+- You need O(1) random code-point access and memory is not a constraint.
+- ICU-based internal processing pipelines.
+- Never for storage or transmission.
+
+**The concurrency story:** `String` in Java is immutable. No synchronisation needed for reads. Encoding/decoding via `Charset`, `CharsetEncoder`, and `CharsetDecoder` are not thread-safe — each thread needs its own instance. `StandardCharsets` constants are singletons and are safe to share, but the encoder/decoder instances they produce are not.
+
+**Known failure modes in production:**
+- **Platform default charset.** `new String(bytes)` without a charset uses `Charset.defaultCharset()`. On Linux this is UTF-8. On legacy Windows it may be windows-1252. Docker containers with minimal base images may have unexpected defaults. Always specify.
+- **Unpaired surrogates.** A Java `String` can contain unpaired surrogates (half a surrogate pair). These are not valid Unicode. If you pass such a string to `getBytes(UTF_8)`, you get `U+FFFD` replacement characters or an exception depending on the encoder's error mode. The `WTF-8` encoding exists precisely to handle this — it encodes surrogates as 3-byte sequences, sacrificing strict Unicode compliance for round-trip fidelity.
+- **Normalisation collisions.** Two strings that look identical to a user can fail `.equals()` if one is NFC and the other is NFD. This breaks `HashMap` lookups, `TreeMap` ordering, and database unique constraints. Normalise to NFC on input.
+- **BOM in UTF-8.** UTF-8 files sometimes begin with the byte sequence `EF BB BF` — the UTF-8 encoding of the BOM. Some Windows tools add it. Unix tools generally do not expect it. If you read a UTF-8 file and the first character is `\uFEFF`, strip it.
+
+**Real systems that chose carefully:**
+- **MySQL** defaults to `utf8mb3` (a misnomer — it is a 3-byte subset of UTF-8 that rejects 4-byte sequences, i.e., emoji). You want `utf8mb4` for real UTF-8. This is a production footgun that has bitten countless Django and Rails applications.
+- **Go** chose to make strings sequences of bytes, not code points or characters. Iterating a Go string with a `range` loop yields runes (code points). Indexing with `[]` yields bytes. The distinction is explicit in the language.
+- **Python 3** chose to make strings sequences of Unicode code points internally (using a compact representation similar to Java's since CPython 3.3). This hides the UTF-16 vs UTF-32 question from the programmer.
+
+---
+
+## 13. The Exercises
+
+**Exercise 1 — Verify (understanding)**
+
+Write a Java method `int countGraphemeClusters(String s)` that returns the number of user-visible characters in a string. Test it against: `"Hello"` (5), `"Hello 😀"` (7), `"🇺🇸"` (1), `"é"` (1, regardless of whether it is precomposed or decomposed).
+
+*Hint:* `BreakIterator.getCharacterInstance()`.
+
+*What makes this hard:* The normalisation case. An NFC `é` (1 code point) and an NFD `é` (2 code points) must both return 1. Does `BreakIterator` handle this correctly without explicit normalisation? Test it.
+
+**Exercise 2 — Derive (proof)**
+
+A file contains 1,000,000 Chinese characters (CJK Unified Ideographs, all in the BMP). Calculate the file size in bytes if encoded as UTF-8, UTF-16 (without BOM), and UTF-32. Then calculate what fraction of a modern 64-byte cache line each encoding fills per character. Which encoding best aligns CJK characters to cache line boundaries?
+
+*Hint:* CJK characters are in the range U+4E00–U+9FFF. All are 3-byte in UTF-8, 2-byte in UTF-16.
+
+*What makes this hard:* Cache line alignment. A UTF-16 character is 2 bytes, so 32 characters fit in a 64-byte cache line perfectly. A UTF-8 CJK character is 3 bytes, which does not divide evenly into 64 — after 21 characters you have 63 bytes used and 1 byte wasted, with the 22nd character spanning a cache line boundary. What is the fraction of characters that will straddle a cache line in UTF-8?
+
+**Exercise 3 — Engineer (design decision)**
+
+You are building a full-text search index for a social media platform. Users post in 50 languages. The system must:
+- Accept post text as input
+- Count the number of "characters" for the 280-character limit
+- Store the text efficiently (billions of posts)
+- Support prefix search (autocomplete)
+- Handle emoji, flag emoji, and ZWJ sequences correctly
+
+For each requirement, state which Unicode layer you operate on (bytes / code units / code points / grapheme clusters), which encoding you use for storage, and justify the choice. Then identify two places where an engineering team that did not read this lesson would get it wrong.
+
+*Hint:* The 280-character limit is grapheme clusters. Storage is UTF-8. Prefix search has a subtlety when normalisation is not applied on write.
+
+*What makes this hard:* Prefix search on UTF-8 bytes works correctly for BMP characters but breaks for multi-byte emoji that share a leading byte. You need to search on code point boundaries, not byte boundaries.
+
+**Exercise 4 — Derive (the iPhone crash)**
+
+The 2018 iOS crash occurred in CoreText's grapheme cluster enumeration. Assume a simplified model: the renderer allocates a buffer of `n` bytes where `n` is computed as `clusterCount * averageBytesPerCluster`. A specific Telugu ZWJ sequence causes `clusterCount` to be computed as `-1` due to integer underflow.
+
+(a) On a system where `malloc(-1)` is equivalent to `malloc(SIZE_MAX)`, what does `malloc(-1)` return on a typical OS, and why?
+
+(b) If `malloc` returns non-null for `malloc(-1)`, and the renderer writes `averageBytesPerCluster` bytes to the returned pointer, what type of memory safety violation occurs?
+
+(c) Why does this specific bug crash the *receiving* device rather than requiring the sender to craft a malicious payload?
+
+*Hint for (a):* `SIZE_MAX` bytes is larger than any address space. `malloc` returns `NULL`. On *some* configurations it does not.
+
+*What makes this hard:* Part (c). The crash is a denial-of-service by valid Unicode input, not by malformed bytes. The sender can send the sequence innocently.
+
+---
+
+## What you now own
+
+You can reason about character encoding at all four layers — bytes, code units, code points, and grapheme clusters — without consulting documentation. You know why `String.length()` lies, how to fix it, and what the correct API is for each counting question. You understand why UTF-8 dominates the internet (self-synchronising, ASCII-compatible, endian-free, compact), why Java chose UTF-16 internally (historical accident, now frozen by backward compatibility), and why MySQL's `utf8` is not UTF-8. When a colleague pastes `"🇺🇸".length()` and expects 1, you can explain the exact path from pixels to bytes in under a minute — without guessing.

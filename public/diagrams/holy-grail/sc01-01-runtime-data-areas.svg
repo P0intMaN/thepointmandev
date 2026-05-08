@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="680" height="360" viewBox="0 0 680 360" font-family="'Geist Mono', monospace">
+  <rect width="680" height="360" fill="#0f0d09"/>
+
+  <!-- Title -->
+  <text x="340" y="16" text-anchor="middle" fill="#92400e" font-size="10" letter-spacing="2" font-weight="700">JVM RUNTIME DATA AREAS</text>
+  <text x="340" y="28" text-anchor="middle" fill="#3d2e0f" font-size="8">Heap and Method Area are shared. JVM Stack, PC Register, Native Stack are per-thread.</text>
+
+  <!-- ── SHARED ZONE label ── -->
+  <rect x="10" y="36" width="658" height="130" rx="4" fill="#1a1510" stroke="#f59e0b" stroke-width="1.5"/>
+  <text x="20" y="50" fill="#92400e" font-size="8" font-weight="700" letter-spacing="2">SHARED ACROSS ALL THREADS</text>
+
+  <!-- Heap -->
+  <rect x="20" y="56" width="308" height="96" rx="3" fill="#0f1a0f" stroke="#4ade80" stroke-width="1.5"/>
+  <text x="174" y="76" text-anchor="middle" fill="#4ade80" font-size="13" font-weight="700">Heap</text>
+  <text x="174" y="92" text-anchor="middle" fill="#3d2e0f" font-size="9">All objects and arrays</text>
+  <text x="174" y="106" text-anchor="middle" fill="#3d2e0f" font-size="9">Managed by GC · -Xms / -Xmx</text>
+  <text x="174" y="120" text-anchor="middle" fill="#3d2e0f" font-size="8">new Object(), new int[1000], Strings...</text>
+  <text x="174" y="140" text-anchor="middle" fill="#92400e" font-size="8">Lesson 1.2 onward — object layout lives here</text>
+
+  <!-- Method Area (Metaspace) -->
+  <rect x="340" y="56" width="318" height="96" rx="3" fill="#0c1518" stroke="#67e8f9" stroke-width="1.5"/>
+  <text x="499" y="76" text-anchor="middle" fill="#67e8f9" font-size="13" font-weight="700">Method Area</text>
+  <text x="499" y="90" text-anchor="middle" fill="#fef3c7" font-size="9">("Metaspace" since Java 8)</text>
+  <text x="499" y="106" text-anchor="middle" fill="#3d2e0f" font-size="9">Class metadata · bytecode · constant pools</text>
+  <text x="499" y="120" text-anchor="middle" fill="#3d2e0f" font-size="9">Static fields · method tables · interned strings</text>
+  <text x="499" y="140" text-anchor="middle" fill="#92400e" font-size="8">Native memory — grew from PermGen (pre-Java 8, fixed-size)</text>
+
+  <!-- ── PER-THREAD ZONE label ── -->
+  <text x="20" y="186" fill="#92400e" font-size="8" font-weight="700" letter-spacing="2">PER-THREAD (each thread has its own independent copy)</text>
+
+  <!-- Thread 1 -->
+  <rect x="10" y="192" width="210" height="148" rx="4" fill="#1a1510" stroke="#f59e0b" stroke-width="1"/>
+  <text x="115" y="208" text-anchor="middle" fill="#f59e0b" font-size="9" font-weight="700">Thread 1 (main)</text>
+
+  <rect x="18" y="214" width="192" height="40" rx="2" fill="#1f1608" stroke="#f59e0b" stroke-width="1"/>
+  <text x="114" y="229" text-anchor="middle" fill="#fef3c7" font-size="9" font-weight="700">JVM Stack</text>
+  <text x="114" y="242" text-anchor="middle" fill="#3d2e0f" font-size="8">frames · locals · operand stack</text>
+
+  <rect x="18" y="258" width="88" height="36" rx="2" fill="#1a1510" stroke="#3d2e0f" stroke-width="1"/>
+  <text x="62" y="272" text-anchor="middle" fill="#fef3c7" font-size="8">PC Register</text>
+  <text x="62" y="284" text-anchor="middle" fill="#3d2e0f" font-size="7">current bytecode addr</text>
+
+  <rect x="114" y="258" width="96" height="36" rx="2" fill="#1a1510" stroke="#3d2e0f" stroke-width="1"/>
+  <text x="162" y="272" text-anchor="middle" fill="#fef3c7" font-size="8">Native Stack</text>
+  <text x="162" y="284" text-anchor="middle" fill="#3d2e0f" font-size="7">JNI / native calls</text>
+
+  <text x="114" y="330" text-anchor="middle" fill="#3d2e0f" font-size="7">-Xss sets stack size (default 512KB–1MB)</text>
+
+  <!-- Thread 2 -->
+  <rect x="230" y="192" width="210" height="148" rx="4" fill="#1a1510" stroke="#f59e0b" stroke-width="1"/>
+  <text x="335" y="208" text-anchor="middle" fill="#f59e0b" font-size="9" font-weight="700">Thread 2</text>
+
+  <rect x="238" y="214" width="192" height="40" rx="2" fill="#1f1608" stroke="#f59e0b" stroke-width="1"/>
+  <text x="334" y="229" text-anchor="middle" fill="#fef3c7" font-size="9" font-weight="700">JVM Stack</text>
+  <text x="334" y="242" text-anchor="middle" fill="#3d2e0f" font-size="8">frames · locals · operand stack</text>
+
+  <rect x="238" y="258" width="88" height="36" rx="2" fill="#1a1510" stroke="#3d2e0f" stroke-width="1"/>
+  <text x="282" y="272" text-anchor="middle" fill="#fef3c7" font-size="8">PC Register</text>
+  <text x="282" y="284" text-anchor="middle" fill="#3d2e0f" font-size="7">current bytecode addr</text>
+
+  <rect x="334" y="258" width="96" height="36" rx="2" fill="#1a1510" stroke="#3d2e0f" stroke-width="1"/>
+  <text x="382" y="272" text-anchor="middle" fill="#fef3c7" font-size="8">Native Stack</text>
+  <text x="382" y="284" text-anchor="middle" fill="#3d2e0f" font-size="7">JNI / native calls</text>
+
+  <text x="334" y="330" text-anchor="middle" fill="#3d2e0f" font-size="7">StackOverflowError when JVM Stack overflows</text>
+
+  <!-- Thread N -->
+  <rect x="450" y="192" width="218" height="148" rx="4" fill="#120e08" stroke="#3d2e0f" stroke-width="1" stroke-dasharray="4 2"/>
+  <text x="559" y="208" text-anchor="middle" fill="#3d2e0f" font-size="9">Thread N (... up to thousands)</text>
+
+  <rect x="458" y="214" width="202" height="40" rx="2" fill="#1a1510" stroke="#3d2e0f" stroke-width="1" stroke-dasharray="4 2"/>
+  <text x="559" y="237" text-anchor="middle" fill="#3d2e0f" font-size="8">JVM Stack</text>
+
+  <rect x="458" y="258" width="90" height="36" rx="2" fill="#1a1510" stroke="#3d2e0f" stroke-width="1" stroke-dasharray="4 2"/>
+  <text x="503" y="280" text-anchor="middle" fill="#3d2e0f" font-size="7">PC Register</text>
+
+  <rect x="558" y="258" width="102" height="36" rx="2" fill="#1a1510" stroke="#3d2e0f" stroke-width="1" stroke-dasharray="4 2"/>
+  <text x="609" y="280" text-anchor="middle" fill="#3d2e0f" font-size="7">Native Stack</text>
+
+  <text x="559" y="330" text-anchor="middle" fill="#3d2e0f" font-size="7">Virtual threads (Java 21+) have tiny stacks in heap memory</text>
+
+  <!-- Bottom note -->
+  <line x1="10" y1="346" x2="668" y2="346" stroke="#3d2e0f" stroke-width="1" stroke-dasharray="3 3"/>
+  <text x="340" y="358" text-anchor="middle" fill="#3d2e0f" font-size="8">Heap visibility: objects in the heap are visible to all threads — this is why Java needs synchronization. Stack frames are private — local variables are inherently thread-safe.</text>
+</svg>

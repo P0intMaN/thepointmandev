@@ -2,7 +2,12 @@
   "permissions": {
     "allow": [
       "Bash(python *)",
-      "Bash(grep -rn '\\\\\\\\\\\\<\\\\|\\\\\\\\<' C:/Dev/thepointmandev/content/courses/ --include=\"*.mdx\")"
+      "Bash(grep -rn '\\\\\\\\\\\\<\\\\|\\\\\\\\<' C:/Dev/thepointmandev/content/courses/ --include=\"*.mdx\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000/courses/holy-grail/sc00-005-memory-hierarchy)",
+      "Bash(npx next *)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" \"http://localhost:3001/courses/holy-grail/9\")",
+      "Bash(curl *)",
+      "Bash(pkill -f \"next dev\")"
     ]
   }
 }

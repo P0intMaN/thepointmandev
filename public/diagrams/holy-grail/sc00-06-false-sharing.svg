@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="680" height="280" viewBox="0 0 680 280" font-family="'Geist Mono', monospace">
+  <rect width="680" height="280" fill="#0f0d09"/>
+
+  <!-- Title -->
+  <text x="340" y="16" text-anchor="middle" fill="#92400e" font-size="10" letter-spacing="2" font-weight="700">FALSE SHARING — TWO INDEPENDENT VARIABLES, ONE CACHE LINE</text>
+
+  <!-- Memory layout of Counters object -->
+  <text x="22" y="34" fill="#3d2e0f" font-size="9">Counters object in heap memory:</text>
+
+  <!-- Object header: 16 bytes -->
+  <rect x="22" y="38" width="120" height="40" rx="3" fill="#120e08" stroke="#3d2e0f" stroke-width="1"/>
+  <text x="82" y="55" text-anchor="middle" fill="#3d2e0f" font-size="9">object header</text>
+  <text x="82" y="70" text-anchor="middle" fill="#3d2e0f" font-size="8">16 bytes</text>
+
+  <!-- counterA: 8 bytes -->
+  <rect x="144" y="38" width="120" height="40" rx="3" fill="#1f1608" stroke="#f59e0b" stroke-width="2"/>
+  <text x="204" y="55" text-anchor="middle" fill="#f59e0b" font-size="10" font-weight="700">counterA</text>
+  <text x="204" y="70" text-anchor="middle" fill="#f59e0b" font-size="8">8 bytes · @+16</text>
+
+  <!-- counterB: 8 bytes -->
+  <rect x="266" y="38" width="120" height="40" rx="3" fill="#0c1518" stroke="#67e8f9" stroke-width="2"/>
+  <text x="326" y="55" text-anchor="middle" fill="#67e8f9" font-size="10" font-weight="700">counterB</text>
+  <text x="326" y="70" text-anchor="middle" fill="#67e8f9" font-size="8">8 bytes · @+24</text>
+
+  <!-- Remaining bytes in cache line -->
+  <rect x="388" y="38" width="271" height="40" rx="3" fill="#1a1510" stroke="#3d2e0f" stroke-width="1" stroke-dasharray="4 2"/>
+  <text x="523" y="60" text-anchor="middle" fill="#3d2e0f" font-size="9">unused (32 bytes to fill 64-byte line)</text>
+
+  <!-- Cache line bracket -->
+  <text x="22" y="88" fill="#f87171" font-size="9" font-weight="700">← all 44 bytes (header + counterA + counterB) fit in ONE 64-byte cache line →</text>
+
+  <!-- Divider -->
+  <line x1="22" y1="98" x2="658" y2="98" stroke="#3d2e0f" stroke-width="1" stroke-dasharray="3 3"/>
+
+  <!-- Core A and Core B ping-pong diagram -->
+  <text x="140" y="115" text-anchor="middle" fill="#f59e0b" font-size="10" font-weight="700">Core A (Thread A)</text>
+  <text x="540" y="115" text-anchor="middle" fill="#67e8f9" font-size="10" font-weight="700">Core B (Thread B)</text>
+
+  <!-- Cache line boxes in each core's L1 -->
+  <rect x="60" y="120" width="160" height="30" rx="3" fill="#1f1608" stroke="#f59e0b" stroke-width="1.5"/>
+  <text x="140" y="140" text-anchor="middle" fill="#f59e0b" font-size="9">L1: line [counterA|counterB] M</text>
+
+  <rect x="460" y="120" width="160" height="30" rx="3" fill="#0c1518" stroke="#67e8f9" stroke-width="1.5"/>
+  <text x="540" y="140" text-anchor="middle" fill="#67e8f9" font-size="9">L1: line [counterA|counterB] M</text>
+
+  <!-- Arrow: A writes counterA → B's copy invalidated -->
+  <text x="340" y="138" text-anchor="middle" fill="#f87171" font-size="9" font-weight="700">RFO</text>
+  <!-- Arrow left to right -->
+  <line x1="220" y1="135" x2="460" y2="135" stroke="#f87171" stroke-width="1.5"/>
+  <polygon points="460,131 468,135 460,139" fill="#f87171"/>
+  <text x="340" y="160" text-anchor="middle" fill="#3d2e0f" font-size="8">Thread A writes counterA</text>
+  <text x="340" y="172" text-anchor="middle" fill="#3d2e0f" font-size="8">→ broadcasts RFO ("I want exclusive")</text>
+  <text x="340" y="184" text-anchor="middle" fill="#f87171" font-size="8">→ Core B's copy → INVALID</text>
+
+  <!-- Second arrow: B writes counterB → A's copy invalidated -->
+  <line x1="460" y1="200" x2="220" y2="200" stroke="#f87171" stroke-width="1.5"/>
+  <polygon points="220,196 212,200 220,204" fill="#f87171"/>
+  <text x="340" y="195" text-anchor="middle" fill="#3d2e0f" font-size="8">Thread B writes counterB</text>
+  <text x="340" y="207" text-anchor="middle" fill="#3d2e0f" font-size="8">→ broadcasts RFO</text>
+  <text x="340" y="219" text-anchor="middle" fill="#f87171" font-size="8">→ Core A's copy → INVALID</text>
+
+  <!-- Fix box -->
+  <line x1="22" y1="232" x2="658" y2="232" stroke="#3d2e0f" stroke-width="1" stroke-dasharray="3 3"/>
+  <text x="340" y="245" text-anchor="middle" fill="#92400e" font-size="9" letter-spacing="1" font-weight="700">FIX: PAD TO SEPARATE CACHE LINES</text>
+
+  <rect x="22"  y="250" width="140" height="22" rx="2" fill="#1f1608" stroke="#f59e0b" stroke-width="1.5"/>
+  <text x="92"  y="265" text-anchor="middle" fill="#f59e0b" font-size="9">counterA</text>
+
+  <rect x="164" y="250" width="288" height="22" rx="2" fill="#1a1510" stroke="#3d2e0f" stroke-width="1" stroke-dasharray="4 2"/>
+  <text x="308" y="265" text-anchor="middle" fill="#3d2e0f" font-size="8">56 bytes padding (7 × long) — fills rest of cache line</text>
+
+  <rect x="454" y="250" width="140" height="22" rx="2" fill="#0c1518" stroke="#67e8f9" stroke-width="1.5"/>
+  <text x="524" y="265" text-anchor="middle" fill="#67e8f9" font-size="9">counterB</text>
+
+  <text x="340" y="278" text-anchor="middle" fill="#4ade80" font-size="9">counterA and counterB now on separate cache lines — no false sharing — linear scalability</text>
+</svg>
